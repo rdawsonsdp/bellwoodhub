@@ -1,0 +1,422 @@
+[
+  {
+    "kind": "police",
+    "type": "domestic_disturbance",
+    "severity": "med",
+    "narrative": "{TIME} — officers responded to {ADDRESS} on a report of a domestic disturbance; {AGE}-year-old male and female occupants separated, verbal altercation only, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "domestic_disturbance",
+    "severity": "high",
+    "narrative": "{TIME} — call received for domestic disturbance at {ADDRESS}; upon arrival officers observed visible injuries to {AGE}-year-old female, male subject detained and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "domestic_disturbance",
+    "severity": "med",
+    "narrative": "{TIME} — officers dispatched to {ADDRESS} for a domestic in progress; parties were separated, {AGE}-year-old male advised to vacate premises and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "battery",
+    "severity": "high",
+    "narrative": "{TIME} — battery reported at {ADDRESS}; {AGE}-year-old male victim stated he was struck by a known subject; offender located nearby and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "battery",
+    "severity": "high",
+    "narrative": "{TIME} — officers responded to {ADDRESS} for a battery in progress; arriving units found {AGE}-year-old female victim with lacerations, offender fled on foot and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "battery",
+    "severity": "med",
+    "narrative": "{TIME} — report of battery between neighbors at {ADDRESS}; {AGE}-year-old complainant declined medical treatment, suspect identified and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "disorderly",
+    "severity": "low",
+    "narrative": "{TIME} — officers responded to {STREET} for a disorderly subject; {AGE}-year-old individual was loud and verbally abusive in a public area, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "disorderly",
+    "severity": "low",
+    "narrative": "{TIME} — disorderly conduct call at {ADDRESS}; {AGE}-year-old subject was causing a disturbance with other patrons and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "disorderly",
+    "severity": "med",
+    "narrative": "{TIME} — officers dispatched to {ADDRESS} for disorderly group; approximately four individuals were fighting in the parking lot, crowd dispersed and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "noise_complaint",
+    "severity": "low",
+    "narrative": "{TIME} — noise complaint received for {ADDRESS} (Route 64 Sports Bar); officers arrived to find amplified music exceeding permitted decibel levels, management {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "noise_complaint",
+    "severity": "low",
+    "narrative": "{TIME} — second noise complaint of the shift logged for The Hideout Lounge, {ADDRESS}; officers issued a written warning and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "noise_complaint",
+    "severity": "low",
+    "narrative": "{TIME} — noise complaint at El Faro Cantina, {ADDRESS}; outdoor sound equipment audible one block away, owner contacted and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "noise_complaint",
+    "severity": "low",
+    "narrative": "{TIME} — officers responded to {ADDRESS} for a residential noise complaint; {AGE}-year-old occupant was hosting a loud gathering, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "noise_complaint",
+    "severity": "low",
+    "narrative": "{TIME} — noise complaint on {STREET}; vehicle with excessively loud stereo circling the block, driver stopped and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "weapons",
+    "severity": "high",
+    "narrative": "{TIME} — shots-fired call on {STREET}; officers canvassed area and recovered spent casings, no victims located, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "weapons",
+    "severity": "high",
+    "narrative": "{TIME} — officers responded to {ADDRESS} for a report of a subject brandishing a firearm; {AGE}-year-old male detained, weapon recovered and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "weapons",
+    "severity": "high",
+    "narrative": "{TIME} — traffic stop on {STREET} yielded a concealed handgun in the center console; {AGE}-year-old driver {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "weapons",
+    "severity": "med",
+    "narrative": "{TIME} — caller reported seeing a subject with a long gun near {ADDRESS}; responding officers located {AGE}-year-old individual who produced valid FOID, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "narcotics",
+    "severity": "high",
+    "narrative": "{TIME} — narcotics arrest made during traffic stop on {STREET}; {AGE}-year-old driver found in possession of a controlled substance, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "narcotics",
+    "severity": "med",
+    "narrative": "{TIME} — officers on patrol observed hand-to-hand transaction near {ADDRESS}; {AGE}-year-old subject detained, narcotics recovered and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "narcotics",
+    "severity": "high",
+    "narrative": "{TIME} — search of vehicle at {ADDRESS} yielded suspected heroin and packaging material; {AGE}-year-old occupant {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "narcotics",
+    "severity": "med",
+    "narrative": "{TIME} — drug paraphernalia discovered during welfare check at {ADDRESS}; {AGE}-year-old occupant referred to services and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "welfare_check",
+    "severity": "med",
+    "narrative": "{TIME} — welfare check requested at {ADDRESS} for {AGE}-year-old female not heard from in 48 hours; officers made contact, subject safe and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "welfare_check",
+    "severity": "high",
+    "narrative": "{TIME} — welfare check at {ADDRESS} revealed {AGE}-year-old male unresponsive; EMS notified and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "welfare_check",
+    "severity": "low",
+    "narrative": "{TIME} — officers conducted welfare check on {STREET} per family request; {AGE}-year-old subject located in good health and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mental_health",
+    "severity": "high",
+    "narrative": "{TIME} — CIT officers responded to {ADDRESS} for a subject in mental health crisis; {AGE}-year-old individual transported to Loyola Gottlieb and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mental_health",
+    "severity": "high",
+    "narrative": "{TIME} — CIT call on {STREET}; {AGE}-year-old male threatening self-harm, de-escalated by officers and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mental_health",
+    "severity": "med",
+    "narrative": "{TIME} — officers and mental health co-responder deployed to {ADDRESS} for erratic behavior; {AGE}-year-old voluntarily accepted transport and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mental_health",
+    "severity": "med",
+    "narrative": "{TIME} — call for disoriented subject on {STREET}; {AGE}-year-old female appeared to be experiencing a psychiatric episode, CCMHB notified and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "burglary",
+    "severity": "high",
+    "narrative": "{TIME} — burglary reported at {ADDRESS}; unknown offender(s) forced rear door, electronics and cash taken, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "burglary",
+    "severity": "high",
+    "narrative": "{TIME} — residential burglary at {ADDRESS}; occupants returned to find front window broken and jewelry missing, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "burglary",
+    "severity": "high",
+    "narrative": "{TIME} — overnight burglary discovered at commercial property on {STREET}; safe had been tampered with, evidence technician called and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_burglary",
+    "severity": "med",
+    "narrative": "{TIME} — vehicle burglary reported on {STREET}; passenger window smashed and bag containing personal items removed, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_burglary",
+    "severity": "med",
+    "narrative": "{TIME} — {AGE}-year-old complainant reported vehicle burglarized overnight at {ADDRESS}; catalytic converter removed from underneath, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_burglary",
+    "severity": "med",
+    "narrative": "{TIME} — multiple vehicle burglaries reported in the {STREET} corridor; officers canvassed the block and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "theft",
+    "severity": "med",
+    "narrative": "{TIME} — retail theft at {ADDRESS}; {AGE}-year-old suspect apprehended by store loss prevention concealing merchandise valued over $500, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "theft",
+    "severity": "low",
+    "narrative": "{TIME} — theft reported at {ADDRESS}; complainant stated bicycle secured to fence post was cut loose and removed, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "theft",
+    "severity": "med",
+    "narrative": "{TIME} — {AGE}-year-old female reported purse snatch on {STREET}; suspect fled in unknown direction, description broadcast and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "criminal_damage",
+    "severity": "med",
+    "narrative": "{TIME} — criminal damage to property at {ADDRESS}; unknown subject(s) spray-painted graffiti on garage door, evidence photos taken and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "criminal_damage",
+    "severity": "med",
+    "narrative": "{TIME} — criminal damage reported on {STREET}; several vehicle windows shattered, canvass conducted and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "criminal_damage",
+    "severity": "low",
+    "narrative": "{TIME} — report of criminal damage at {ADDRESS}; front yard landscaping and mailbox found damaged, no suspect identified and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mvc",
+    "severity": "med",
+    "narrative": "{TIME} — motor vehicle crash at {ADDRESS}; two vehicles with moderate damage, {AGE}-year-old at-fault driver issued citations and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mvc",
+    "severity": "high",
+    "narrative": "{TIME} — injury accident at {STREET} and {ADDRESS}; {AGE}-year-old driver transported by EMS, road closed pending investigation and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mvc",
+    "severity": "low",
+    "narrative": "{TIME} — minor fender-bender in parking lot at {ADDRESS}; no injuries, information exchanged and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "dui",
+    "severity": "high",
+    "narrative": "{TIME} — {AGE}-year-old driver stopped on {STREET} for erratic operation; standardized field sobriety tests failed, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "dui",
+    "severity": "high",
+    "narrative": "{TIME} — DUI arrest following crash at {ADDRESS}; {AGE}-year-old driver registered 0.14 BAC on preliminary breath test and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "traffic_stop",
+    "severity": "low",
+    "narrative": "{TIME} — traffic stop on {STREET} for equipment violation; {AGE}-year-old driver issued written warning and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "traffic_stop",
+    "severity": "med",
+    "narrative": "{TIME} — traffic stop on {STREET} for expired plates; {AGE}-year-old operator found to have suspended license and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "warrant_arrest",
+    "severity": "med",
+    "narrative": "{TIME} — {AGE}-year-old subject contacted on {STREET} found to have an active Cook County arrest warrant; taken into custody and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "warrant_arrest",
+    "severity": "high",
+    "narrative": "{TIME} — traffic stop at {ADDRESS} led to warrant check revealing felony warrant for {AGE}-year-old passenger; subject {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "suspicious_person",
+    "severity": "low",
+    "narrative": "{TIME} — suspicious person reported near {ADDRESS}; officers located {AGE}-year-old individual who provided identification and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "suspicious_person",
+    "severity": "med",
+    "narrative": "{TIME} — caller reported unknown male peering into vehicles on {STREET}; subject stopped by officers and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "suspicious_person",
+    "severity": "low",
+    "narrative": "{TIME} — suspicious activity report near {ADDRESS}; officers investigated and determined subject was {AGE}-year-old resident returning from work, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "alarm",
+    "severity": "low",
+    "narrative": "{TIME} — burglar alarm activation at {ADDRESS}; officers responded, premises found secure and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "alarm",
+    "severity": "low",
+    "narrative": "{TIME} — commercial alarm at {ADDRESS}; keyholder contacted, no sign of forced entry, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "alarm",
+    "severity": "med",
+    "narrative": "{TIME} — panic alarm activated at {ADDRESS}; officers arrived to find {AGE}-year-old employee had accidentally triggered the device and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "assist_fire_ems",
+    "severity": "high",
+    "narrative": "{TIME} — officers assisted Bellwood Fire on {STREET} with crowd control at structure fire; perimeter established and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "assist_fire_ems",
+    "severity": "med",
+    "narrative": "{TIME} — officers responded to {ADDRESS} to assist EMS with combative {AGE}-year-old patient; subject restrained and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "assist_fire_ems",
+    "severity": "low",
+    "narrative": "{TIME} — PD assisted EMS at {ADDRESS} for lift assist of elderly {AGE}-year-old male, no injuries noted and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "recovered_property",
+    "severity": "low",
+    "narrative": "{TIME} — officers on patrol located unoccupied stolen vehicle on {STREET}; vehicle inventoried and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "recovered_property",
+    "severity": "med",
+    "narrative": "{TIME} — recovered stolen motorcycle on {STREET} matched report from neighboring jurisdiction; owner notified and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "ordinance_violation",
+    "severity": "low",
+    "narrative": "{TIME} — ordinance violation observed at {ADDRESS}; inoperable vehicle on blocks in driveway, {AGE}-year-old owner issued notice and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "ordinance_violation",
+    "severity": "low",
+    "narrative": "{TIME} — officers responded to complaint on {STREET} regarding overgrown lot; property owner identified and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "disorderly",
+    "severity": "med",
+    "narrative": "{TIME} — bar fight reported at Route 64 Sports Bar, {ADDRESS}; arriving officers separated two groups in the parking lot, {AGE}-year-old combatant and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "battery",
+    "severity": "high",
+    "narrative": "{TIME} — aggravated battery call at The Hideout Lounge, {ADDRESS}; {AGE}-year-old victim struck with a glass bottle, offender {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "noise_complaint",
+    "severity": "low",
+    "narrative": "{TIME} — third noise complaint of the weekend logged for Route 64 Sports Bar, {ADDRESS}; supervisor notified licensee that further violations may result in {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "disorderly",
+    "severity": "med",
+    "narrative": "{TIME} — El Faro Cantina, {ADDRESS}: officers removed {AGE}-year-old patron causing a disturbance; subject was escorted from premises and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "theft",
+    "severity": "med",
+    "narrative": "{TIME} — theft from person reported outside The Hideout Lounge, {ADDRESS}; {AGE}-year-old victim stated wallet was removed from jacket while inside, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mental_health",
+    "severity": "high",
+    "narrative": "{TIME} — CIT officers called to El Faro Cantina, {ADDRESS} for {AGE}-year-old patron displaying erratic behavior; individual transported for evaluation and {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "weapons",
+    "severity": "high",
+    "narrative": "{TIME} — weapons complaint outside Route 64 Sports Bar, {ADDRESS}; subject seen displaying a handgun, area searched and {DISPOSITION}. Report #{CASE}."
+  }
+]

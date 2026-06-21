@@ -1,0 +1,374 @@
+[
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for 68-year-old male with chest pain and diaphoresis; patient transported to Loyola University Medical Center in stable condition; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_cardiac",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for cardiac arrest; CPR in progress on arrival, AED applied, ROSC achieved; patient transported to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for 54-year-old female with difficulty breathing; assessed, administered nebulizer treatment, transported to Westlake Hospital; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_fall",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for 82-year-old female fall victim; complained of hip pain; immobilized and transported to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_overdose",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for unresponsive 31-year-old male; suspected opioid OD, two doses Narcan administered with positive response; transported to Westlake Hospital; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {STREET} for 72-year-old male with stroke symptoms including facial droop and left-side weakness; stroke alert activated, transported code 3 to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for 44-year-old female with diabetic emergency, blood glucose 38 mg/dL; dextrose IV administered on scene, patient refused transport; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for 61-year-old male experiencing acute respiratory distress; assisted ventilation administered, transported to Loyola University Medical Center in critical condition; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_fall",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for 77-year-old male fall from standing; no loss of consciousness, minor laceration to forehead; transported to Westlake Hospital per patient request; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "lift_assist",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for lift assist; 88-year-old female found on floor, unable to rise unassisted; no injuries noted, patient returned to chair, family notified; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for 58-year-old male seizure; generalized tonic-clonic activity on arrival, Versed administered IV, postictal on transport; transported to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_cardiac",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for 66-year-old female unresponsive, agonal breathing; cardiac arrest confirmed, resuscitation initiated, transported to Loyola University Medical Center with ongoing CPR; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_mvc_injury",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {STREET} for two-vehicle MVC with reported injuries; one patient with cervical pain cervically immobilized and transported to Westlake Hospital; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "structure_fire",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for working structure fire, second-floor bedroom involved; fire knocked down in 18 minutes, one occupant treated for smoke inhalation on scene; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "smoke_alarm",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for activated smoke alarm; crews investigated and found burnt food on stove, no fire, alarm reset and residence cleared; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "co_alarm",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for CO alarm activation; CO levels measured at 85 ppm in basement; gas company notified, occupants evacuated, furnace isolated; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for 39-year-old female with chest pain and anxiety; 12-lead ECG normal, vitals stable; transported to Westlake Hospital per patient request; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_overdose",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for 27-year-old female found unresponsive; suspected OD, one dose Narcan IM administered, patient became responsive; transported to Westlake Hospital; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "gas_leak",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for reported gas odor inside structure; crews confirmed leak at meter connection with combustible gas meter; Nicor Gas notified, building evacuated; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_fall",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for 91-year-old male fall down staircase; altered mental status and suspected femur fracture; transported code 3 to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "kitchen_fire",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for kitchen fire with smoke showing; grease fire on stovetop extinguished by crew using dry chemical, no extension to structure; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for 79-year-old female with difficulty breathing and SpO2 of 78%; oxygen therapy initiated, transported code 3 to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "false_alarm",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for automatic fire alarm; crews inspected entire structure, no smoke or fire found, system reset; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "vehicle_fire",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {STREET} for passenger vehicle fire in roadway; fire suppressed prior to extension, vehicle a total loss, no injuries; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for 50-year-old male with diabetic emergency, found pale and diaphoretic; glucometer read 42 mg/dL, oral glucose administered, patient stabilized and transported to Westlake Hospital; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "wires_down",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {STREET} for downed power lines across roadway following storm; ComEd notified, area cordoned off, traffic rerouted until utility restored; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_mvc_injury",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {STREET} for MVC with entrapment; Rescue tools used to extricate one patient, transported to Loyola University Medical Center with suspected internal injuries; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for 83-year-old female with altered level of consciousness; blood glucose critically low at 28 mg/dL, D50 administered IV, transported to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "pump_out",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for flooded basement following heavy rain; approximately 200 gallons removed with portable pump, occupant advised to contact private restoration service; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "public_assist",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for welfare check; elderly resident found in good health, no medical intervention required; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for 63-year-old male with complaint of dizziness and palpitations; 12-lead revealed atrial fibrillation with rapid ventricular response; transported to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "mutual_aid",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to provide mutual aid to Maywood Fire for working structure fire on {STREET}; crews assisted with fire attack and overhaul, returned to quarters at {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_fall",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for 70-year-old female fall in bathroom; complained of wrist and shoulder pain; immobilized and transported to Westlake Hospital; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for 55-year-old male with sudden onset of severe headache described as worst of life; stroke protocol activated, transported code 3 to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "hazmat",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for reported chemical odor; investigation revealed improper mixing of household cleaners producing chlorine gas; area ventilated, one occupant treated for eye irritation on scene; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for 48-year-old female seizure; single generalized seizure with rapid postictal recovery; patient transported to Westlake Hospital for evaluation; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "structure_fire",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for structure fire with heavy smoke from first floor; fire contained to room of origin, two residents displaced, Red Cross notified; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_overdose",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for 22-year-old male unresponsive, empty pill bottles in vicinity; Narcan administered IM x1, patient became responsive, transported to Westlake Hospital; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_cardiac",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for 74-year-old male in cardiac arrest; bystander CPR in progress on arrival, AED deployed, ROSC obtained with epinephrine x2; transported to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "lift_assist",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for lift assist; 95-year-old female unable to rise from floor after sliding from bed; no injuries, patient safely returned to bed, home health notified; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for 67-year-old male with left-sided weakness and slurred speech; Cincinnati Stroke Scale positive, transported code 3 to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "co_alarm",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for CO alarm with three occupants reporting headache and nausea; CO levels 210 ppm at floor level; all occupants transported to Loyola University Medical Center for evaluation; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for 36-year-old female with difficulty breathing and audible wheezing; asthma exacerbation, nebulizer administered en route, transported to Westlake Hospital; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_fall",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for 65-year-old male who slipped on ice; ambulatory on scene, complained of knee pain only; transported to Westlake Hospital per patient request; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "vehicle_fire",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {STREET} for fully involved vehicle fire adjacent to occupied structure; fire suppressed, exposure protected, no extension to building; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for 80-year-old female unresponsive with labored breathing; SpO2 64%, BVM ventilation initiated, transported code 3 to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "gas_leak",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for strong gas odor with occupants evacuated; meter reading showed explosive atmosphere in utility room; Nicor Gas emergency crew requested, block isolated; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_mvc_injury",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {STREET} for pedestrian struck by vehicle; 57-year-old male with lower extremity injury; immobilized and transported to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "false_alarm",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for smoke alarm activation; investigation revealed steam from shower activating detector, no fire, unit ventilated; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for 29-year-old female with diabetic emergency; blood glucose 510 mg/dL, complaints of nausea and weakness; transported to Westlake Hospital for insulin therapy; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "water_rescue",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {STREET} for child reported in flooded drainage ditch; child located and safely removed by crew, assessed for hypothermia, transported to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "smoke_alarm",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for smoke alarm activation in multi-unit building; crews found candles left unattended in unit, no fire, occupant advised, alarm reset; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for 77-year-old male with crushing substernal chest pressure radiating to jaw; 12-lead showed ST elevation, STEMI alert activated, transported code 3 to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "public_assist",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} to assist locked-out resident; elderly occupant confirmed identity, entry facilitated, no medical issues noted; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for 52-year-old male with complaint of seizure; single episode per witnesses, patient alert and oriented on arrival, no further activity; transported to Westlake Hospital; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "structure_fire",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for working fire, garage involved with extension to attached dwelling; fire contained after 25-minute operation, two occupants displaced; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_overdose",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for 34-year-old female found unresponsive; suspected fentanyl OD, three doses Narcan required for response; transported to Westlake Hospital; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_fall",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for 85-year-old male found on kitchen floor, unknown down time; GCS 13, complaint of back pain; cervically immobilized and transported to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "mutual_aid",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to provide mutual aid to Hillside Fire for reported structure fire on {STREET}; fire extinguished on arrival of additional resources, crews assisted with overhaul; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for 71-year-old female with difficulty breathing and bilateral leg edema; suspected acute CHF exacerbation, nitro and furosemide administered, transported code 3 to Loyola University Medical Center; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "lift_assist",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for lift assist on 300-lb patient unable to rise from floor; crew utilized lift equipment, no injuries to patient or personnel, home health aide on scene; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "kitchen_fire",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} for kitchen fire reported by neighbor; upon arrival, occupant had self-extinguished small grease fire with lid; crews verified suppression and aired out unit; report #{CASE}."
+  }
+]

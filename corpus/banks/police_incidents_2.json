@@ -1,0 +1,422 @@
+[
+  {
+    "kind": "police",
+    "type": "retail_theft",
+    "severity": "med",
+    "narrative": "{TIME} — officers responded to {ADDRESS} for a retail theft in progress; suspect, {AGE}, fled on foot toward {STREET} before being apprehended; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "retail_theft",
+    "severity": "med",
+    "narrative": "{TIME} — loss prevention at {ADDRESS} detained a {AGE}-year-old male after concealing merchandise valued at $240; subject released on citation; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "retail_theft",
+    "severity": "med",
+    "narrative": "{TIME} — store manager at {ADDRESS} reported two females exited without paying for items totaling approximately $180; suspects last seen eastbound on {STREET}; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "retail_theft",
+    "severity": "low",
+    "narrative": "{TIME} — security footage at {ADDRESS} captured a subject concealing energy drinks and toiletries; no suspect in custody; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "retail_theft",
+    "severity": "high",
+    "narrative": "{TIME} — organized group of four entered {ADDRESS}, gathered merchandise, and exited simultaneously; loss estimated at $1,100; one suspect detained, three fled in a dark SUV on {STREET}; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "burglary",
+    "severity": "high",
+    "narrative": "{TIME} — resident at {ADDRESS} reported unknown suspect(s) forced the rear door overnight and removed electronics and jewelry; no forced entry to interior rooms; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "burglary",
+    "severity": "high",
+    "narrative": "{TIME} — officers discovered smashed glass at the side entry of {ADDRESS}; interior ransacked; cash and a laptop reported missing; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "burglary",
+    "severity": "high",
+    "narrative": "{TIME} — business owner at {ADDRESS} arrived to find front window broken and cash register emptied; incident estimated to have occurred between 0200 and 0500 hrs; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "burglary",
+    "severity": "high",
+    "narrative": "{TIME} — complainant at {ADDRESS} reported a garage burglary; power tools and a bicycle taken; door pried open from the alley side; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "burglary",
+    "severity": "med",
+    "narrative": "{TIME} — attempted burglary at {ADDRESS}; door frame damaged but entry not completed; suspect likely disturbed; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_burglary",
+    "severity": "med",
+    "narrative": "{TIME} — complainant on {STREET} reported passenger window smashed and a bag containing a tablet and cash removed from their parked vehicle overnight; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_burglary",
+    "severity": "med",
+    "narrative": "{TIME} — multiple vehicle burglaries reported in the {STREET} block; at least three vehicles entered via broken windows; loose change and charging cables taken; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_burglary",
+    "severity": "med",
+    "narrative": "{TIME} — complainant at {ADDRESS} discovered driver's door unlocked and center console rifled; credit cards and sunglasses missing; vehicle reportedly left unlocked; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_burglary",
+    "severity": "med",
+    "narrative": "{TIME} — catalytic converter removed from complainant's vehicle parked at {ADDRESS}; loud grinding heard by neighbor around {TIME} but not reported until morning; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_burglary",
+    "severity": "low",
+    "narrative": "{TIME} — complainant on {STREET} reported driver's door ajar and a gym bag removed; no signs of forced entry; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "theft",
+    "severity": "med",
+    "narrative": "{TIME} — complainant at {ADDRESS} reported a bicycle stolen from an unlocked garage; blue mountain bike, no serial number on file; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "theft",
+    "severity": "med",
+    "narrative": "{TIME} — package theft reported at {ADDRESS}; porch camera captured an unknown male removing two parcels from the front steps at approximately {TIME}; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "theft",
+    "severity": "med",
+    "narrative": "{TIME} — complainant reported a wallet stolen from an unattended jacket at {ADDRESS}; credit cards used at two locations before cancellation; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "theft",
+    "severity": "low",
+    "narrative": "{TIME} — resident on {STREET} reported a garden hose and extension cord taken from a backyard that was left accessible; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "theft",
+    "severity": "high",
+    "narrative": "{TIME} — employee at {ADDRESS} reported theft of company tools from a work van parked overnight on {STREET}; total loss estimated at $3,400; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_theft",
+    "severity": "high",
+    "narrative": "{TIME} — complainant at {ADDRESS} reported their vehicle stolen from the driveway overnight; 2019 gray Honda Accord, IL plate entered as stolen; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_theft",
+    "severity": "high",
+    "narrative": "{TIME} — owner on {STREET} discovered vehicle missing; last seen parked in front of residence at approximately 2300 hrs; entered into LEADS; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_theft",
+    "severity": "high",
+    "narrative": "{TIME} — complainant returned to {ADDRESS} to find their pickup truck missing from a marked parking space; no witnesses identified; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "recovered_property",
+    "severity": "med",
+    "narrative": "{TIME} — officer on patrol located a vehicle matching a stolen report from a neighboring jurisdiction parked on {STREET}; vehicle recovered intact; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "recovered_property",
+    "severity": "med",
+    "narrative": "{TIME} — a vehicle entered as stolen in a prior report was located unoccupied near {ADDRESS}; interior disturbed but operational; original owner notified; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "recovered_property",
+    "severity": "low",
+    "narrative": "{TIME} — resident on {STREET} contacted police after finding a bicycle matching a recent theft report leaning against their fence; bike held for owner retrieval; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "criminal_damage",
+    "severity": "med",
+    "narrative": "{TIME} — complainant at {ADDRESS} reported front-facing windows shattered; estimated repair cost $600; no motive established; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "criminal_damage",
+    "severity": "low",
+    "narrative": "{TIME} — landscaping, mailbox, and exterior lighting at {ADDRESS} damaged, apparently by a passing vehicle; no suspect information; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "criminal_damage",
+    "severity": "med",
+    "narrative": "{TIME} — business on {STREET} reported keying damage across four vehicles in their lot overnight; damage estimated at $1,200; no suspect on camera; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "criminal_damage",
+    "severity": "low",
+    "narrative": "{TIME} — complainant at {ADDRESS} found rear-yard fence panels kicked in; no property taken; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "criminal_damage",
+    "severity": "high",
+    "narrative": "{TIME} — significant damage reported at {ADDRESS} after fire set to exterior refuse containers spread to the building facade; Fire Dept. extinguished; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vandalism",
+    "severity": "med",
+    "narrative": "{TIME} — graffiti tags in blue spray paint found on the exterior wall of {ADDRESS} and continuing eastbound along {STREET}; Public Works notified; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vandalism",
+    "severity": "low",
+    "narrative": "{TIME} — obscene graffiti discovered on the masonry retaining wall at {ADDRESS}; photos documented; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vandalism",
+    "severity": "med",
+    "narrative": "{TIME} — complainant on {STREET} reported gang-affiliated markings spray-painted on garage doors in the alley; gang unit notified; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vandalism",
+    "severity": "low",
+    "narrative": "{TIME} — park equipment and pavilion benches at {ADDRESS} found tagged with marker; Parks Dept. informed; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "fraud",
+    "severity": "med",
+    "narrative": "{TIME} — resident at {ADDRESS}, {AGE}, reported receiving a call from an individual impersonating a utility company and demanding prepaid card payment; no funds transferred; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "fraud",
+    "severity": "high",
+    "narrative": "{TIME} — complainant at {ADDRESS} reported unauthorized ACH transfers totaling $3,800 from their checking account; bank contacted; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "fraud",
+    "severity": "med",
+    "narrative": "{TIME} — resident on {STREET} reported a grandparent scam in which caller claimed a family member was jailed and demanded $1,500 in gift cards; victim did not comply; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "fraud",
+    "severity": "high",
+    "narrative": "{TIME} — business owner at {ADDRESS} reported forged checks totaling $5,200 presented at two local banks; accounts frozen pending investigation; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "fraud",
+    "severity": "med",
+    "narrative": "{TIME} — complainant at {ADDRESS}, {AGE}, reported a vehicle listing scam; wired $900 for a vehicle that did not exist; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "fraud",
+    "severity": "med",
+    "narrative": "{TIME} — resident on {STREET} reported identity theft; discovered multiple credit accounts opened fraudulently in their name; credit bureaus alerted; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "warrant_arrest",
+    "severity": "med",
+    "narrative": "{TIME} — during a traffic stop at {ADDRESS}, officer identified the operator, {AGE}, as having an active Cook County warrant; subject taken into custody without incident; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "warrant_arrest",
+    "severity": "med",
+    "narrative": "{TIME} — officer conducting a pedestrian check on {STREET} discovered the subject, {AGE}, had an outstanding warrant; arrested and transported; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "warrant_arrest",
+    "severity": "high",
+    "narrative": "{TIME} — suspect wanted on a felony warrant taken into custody near {ADDRESS} following a brief foot pursuit; no injuries; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "narcotics",
+    "severity": "high",
+    "narrative": "{TIME} — during a consent search following a traffic stop at {STREET} and {ADDRESS}, officers recovered a quantity of suspected cannabis and a controlled substance; {AGE}-year-old driver charged; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "narcotics",
+    "severity": "med",
+    "narrative": "{TIME} — officer observed a hand-to-hand transaction near {ADDRESS}; subject, {AGE}, fled and was apprehended; suspected narcotics recovered; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "suspicious_person",
+    "severity": "low",
+    "narrative": "{TIME} — caller on {STREET} reported an unknown male peering into parked vehicles; officer arrived and area check was negative; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "suspicious_person",
+    "severity": "low",
+    "narrative": "{TIME} — resident at {ADDRESS} reported a subject sitting in a running vehicle for over two hours with no apparent purpose; officer conducted a field interview; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "suspicious_person",
+    "severity": "med",
+    "narrative": "{TIME} — complainant on {STREET} reported a subject photographing homes and parked vehicles; officer contacted the individual, who could not explain their activity; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "suspicious_person",
+    "severity": "low",
+    "narrative": "{TIME} — caller reported a male in dark clothing trying door handles on {STREET}; officers canvassed the area but subject not located; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "alarm",
+    "severity": "low",
+    "narrative": "{TIME} — alarm activation at {ADDRESS}; officer arrived, checked exterior and made contact with key holder; alarm determined to be accidental; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "alarm",
+    "severity": "med",
+    "narrative": "{TIME} — burglar alarm at {ADDRESS} activated; officers found rear door ajar on arrival; building cleared and secured; no suspect located; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "disorderly",
+    "severity": "med",
+    "narrative": "{TIME} — officers responded to {ADDRESS} for a disorderly subject, {AGE}, shouting at patrons; subject refused to leave and was arrested for disorderly conduct; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "disorderly",
+    "severity": "low",
+    "narrative": "{TIME} — caller on {STREET} reported a verbal altercation between neighbors spilling into the street; parties separated; no further action taken; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "battery",
+    "severity": "high",
+    "narrative": "{TIME} — victim at {ADDRESS}, {AGE}, reported being struck by an acquaintance following a verbal dispute; minor injury documented; offender fled prior to arrival; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "battery",
+    "severity": "med",
+    "narrative": "{TIME} — officers responded to {ADDRESS} for a battery in progress; two males involved in a physical altercation; both parties detained and interviewed; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "domestic_disturbance",
+    "severity": "high",
+    "narrative": "{TIME} — officers responded to {ADDRESS} for a domestic disturbance; one party, {AGE}, arrested for domestic battery; DVSPA information provided to victim; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "domestic_disturbance",
+    "severity": "med",
+    "narrative": "{TIME} — caller at {ADDRESS} reported a loud domestic argument; parties were separated on arrival; no visible injuries; both parties advised of civil options; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "noise_complaint",
+    "severity": "low",
+    "narrative": "{TIME} — officers responded to {ADDRESS} for a noise complaint regarding amplified music; occupant advised of ordinance; music volume reduced; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "noise_complaint",
+    "severity": "low",
+    "narrative": "{TIME} — caller on {STREET} reported a large outdoor gathering with loud music; officer issued a verbal warning; compliance achieved; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "welfare_check",
+    "severity": "med",
+    "narrative": "{TIME} — officer conducted a welfare check at {ADDRESS} after family member reported no contact for 72 hours with resident, {AGE}; subject located safe inside; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "welfare_check",
+    "severity": "high",
+    "narrative": "{TIME} — caller requested a welfare check at {ADDRESS}; officer found subject unresponsive; Fire/EMS dispatched; subject transported to hospital; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "assist_fire_ems",
+    "severity": "med",
+    "narrative": "{TIME} — officers assisted Fire/EMS at {ADDRESS} with crowd control following a residential structure fire; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "assist_fire_ems",
+    "severity": "low",
+    "narrative": "{TIME} — officer dispatched to {ADDRESS} to assist EMS with a combative patient, {AGE}; patient secured and transported without further incident; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "traffic_stop",
+    "severity": "low",
+    "narrative": "{TIME} — traffic stop conducted on {STREET}; driver, {AGE}, issued a citation for expired registration; vehicle otherwise in order; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "traffic_stop",
+    "severity": "med",
+    "narrative": "{TIME} — vehicle stopped near {ADDRESS} for a broken tail lamp; driver, {AGE}, found to have a suspended license; citation issued and vehicle secured; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mvc",
+    "severity": "med",
+    "narrative": "{TIME} — officers responded to a two-vehicle collision at {ADDRESS} and {STREET}; one occupant, {AGE}, transported by EMS with non-life-threatening injuries; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mvc",
+    "severity": "low",
+    "narrative": "{TIME} — minor rear-end collision reported at {ADDRESS}; no injuries; drivers exchanged information; one vehicle towed; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "ordinance_violation",
+    "severity": "low",
+    "narrative": "{TIME} — officer issued a notice of violation at {ADDRESS} for an inoperable vehicle stored in the public way beyond the permissible period; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "parking",
+    "severity": "low",
+    "narrative": "{TIME} — complainant on {STREET} reported a vehicle blocking the alley for several hours; officer issued a parking citation and vehicle was subsequently moved; {DISPOSITION}; report #{CASE}."
+  }
+]

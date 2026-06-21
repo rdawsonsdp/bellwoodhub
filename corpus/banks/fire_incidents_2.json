@@ -1,0 +1,374 @@
+[
+  {
+    "kind": "fire",
+    "type": "structure_fire",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} responded to residential structure fire at {ADDRESS}; two-story balloon-frame with fire showing second floor; occupants self-evacuated; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "kitchen_fire",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} dispatched to {ADDRESS} for kitchen fire, unattended grease on stove; fire contained to range hood, extinguished with CO2; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "vehicle_fire",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} responded to vehicle fire on {STREET}; engine compartment fully involved on arrival; fire knocked down in eight minutes, no injuries; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "structure_fire",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} plus mutual aid from Maywood dispatched to {ADDRESS}; working garage fire extended to exposure dwelling; defensive operations; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "smoke_alarm",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} investigated activated smoke alarm at {ADDRESS}; source identified as burnt toast, no fire found, unit ventilated; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "co_alarm",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} and Ambulance responded to CO alarm at {ADDRESS}; meter readings elevated at 45 ppm; source a faulty furnace heat exchanger; occupants medically evaluated; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "gas_leak",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} responded to reported gas leak at {ADDRESS}; Nicor notified, block evacuated, source a ruptured service line at meter; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} dispatched to {ADDRESS} for unresponsive adult male; patient conscious on arrival, vitals stable; transported to Loyola; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_cardiac",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} responded to {ADDRESS} for cardiac arrest; CPR in progress by bystanders; AED applied, ROSC achieved prior to transport; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_fall",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} dispatched to {ADDRESS} for elderly female fall; patient alert, possible right hip fracture; immobilized and transported to Loyola ER; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_mvc_injury",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} responded to multi-vehicle collision on {STREET}; three patients; one critical, two minor; extrication required on driver; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_overdose",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} dispatched to {ADDRESS} for suspected opioid overdose; two doses naloxone administered, patient revived; transported for evaluation; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "lift_assist",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} responded to {ADDRESS} for lift assist; patient fallen in bathroom, unable to rise; patient uninjured, returned to chair; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "structure_fire",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} and mutual aid from Melrose Park responded to {ADDRESS}; attic fire in wood-frame bungalow; interior attack, fire under control in 22 minutes; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "wires_down",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} responded to downed energized power lines on {STREET} following storm; scene secured, ComEd notified; traffic rerouted; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "hazmat",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} plus Cook County HAZMAT dispatched to {ADDRESS} for unknown chemical spill in basement; confirmed chlorine compound; area isolated, decontamination completed; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "false_alarm",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} responded to automatic alarm at {ADDRESS}; system activated by steam from shower, no fire or smoke found; alarm reset, building security notified; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "mutual_aid",
+    "severity": "high",
+    "narrative": "{TIME} — Engine 1 dispatched as mutual aid to Maywood for working structure fire on {STREET}; assisted suppression crew; returned to quarters following knockdown; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "brush_fire",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} responded to brush fire along railroad right-of-way on {STREET}; approximately half-acre burned; fire contained with hand lines, no structures threatened; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "dumpster_fire",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} extinguished dumpster fire in alley behind {ADDRESS}; contents fully involved on arrival; knocked down with single hand line, no extension; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "chimney_fire",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} responded to chimney fire at {ADDRESS}; creosote accumulation confirmed; fire extinguished, chimney inspected, homeowner advised; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "electrical_fire",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} dispatched to {ADDRESS} for electrical fire in breaker panel; power isolated at meter, smoldering wiring extinguished, ComEd notified; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "garage_fire",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} responded to detached garage fire at {ADDRESS}; vehicle and stored contents destroyed; fire stopped at property line, dwelling unaffected; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "structure_fire",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} plus mutual aid from Broadview dispatched to {ADDRESS}; occupied two-flat with fire on first floor; search and rescue completed, one occupant with minor smoke inhalation transported; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} responded to {ADDRESS} for difficulty breathing; patient with history of COPD in severe respiratory distress; nebulizer treatment administered, transported code 2; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "water_rescue",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} responded to {ADDRESS} for reported person in flooded basement; victim found on washer; extracted via ladder, evaluated for hypothermia; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "pump_out",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} dispatched to {ADDRESS} for flooded basement following heavy rain; approximately 18 inches of standing water pumped; resident advised to contact utility; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "public_assist",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} responded to {ADDRESS} for welfare check requested by family; elderly resident found safe inside; assisted resident and notified family; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "vehicle_fire",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} dispatched to {STREET} for semi-truck cab fire; driver self-evacuated; tractor destroyed, trailer sustained heat damage; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "co_alarm",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} investigated CO alarm at {ADDRESS}; meter readings at 9 ppm, within acceptable range; alarm reset, occupants advised to service furnace annually; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "kitchen_fire",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} dispatched to {ADDRESS} for kitchen fire; occupant had extinguished microwave fire prior to arrival; unit ventilated, microwave removed; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "mutual_aid",
+    "severity": "med",
+    "narrative": "{TIME} — Truck 1 dispatched as mutual aid to Westchester for a two-story residential fire on {STREET}; provided aerial operations; returned in service after two hours; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "gas_leak",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} responded to natural gas odor at {ADDRESS}; leak located at interior flexible connector on range; Nicor isolated service, resident evacuated; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_fall",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} dispatched to {ADDRESS} for fall down stairs; patient conscious, complaint of back pain; immobilized on long board and transported; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "false_alarm",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} responded to commercial fire alarm at {ADDRESS}; investigation revealed alarm triggered by dust during renovation; contractor notified, work halted; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_cardiac",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} responded to {ADDRESS} for chest pain, 68-year-old male; 12-lead EKG showed ST elevation; aspirin administered, expedited transport to Loyola cath lab; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "smoke_alarm",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} investigated smoke alarm at {ADDRESS}; low battery causing intermittent chirp misidentified as alarm by resident; battery replaced; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "structure_fire",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} plus mutual aid from Melrose Park responded to commercial structure fire at {ADDRESS}; sprinkler system had partially controlled fire prior to arrival; overhaul completed; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_mvc_injury",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} responded to two-vehicle accident at {STREET}; one patient with airbag deployment injuries; cervical collar applied, transported non-emergency; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "electrical_fire",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} dispatched to {ADDRESS} for burning smell; found overloaded extension cord smoldering in bedroom; cord removed, no fire extension; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "hazmat",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} responded to {ADDRESS} for suspected mercury spill from broken thermometer; area secured, HAZMAT protocols followed, material collected and disposed; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "lift_assist",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} dispatched to {ADDRESS} for bariatric lift assist; 375-pound patient fallen bedside; Reeves sleeve deployed, patient returned to bed without injury; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "dumpster_fire",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} responded to commercial dumpster fire at {ADDRESS}; accelerant suspected; fire extinguished, scene preserved for arson investigation; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "wires_down",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} responded to {STREET} for live wires contacting a vehicle following accident; occupant remained inside per protocol until ComEd de-energized line; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "mutual_aid",
+    "severity": "high",
+    "narrative": "{TIME} — Engine 2 and Ambulance 1 dispatched as mutual aid to Melrose Park for apartment building fire on {STREET}; assisted search and rescue, two occupants removed; returned after three hours; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_overdose",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} responded to {ADDRESS} for unconscious male, suspected fentanyl overdose; three doses naloxone required for response; patient transported in custody; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "chimney_fire",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} dispatched to {ADDRESS} for chimney fire; flames visible at cap; fire self-extinguished prior to arrival; chimney inspected and condemned pending cleaning; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "structure_fire",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} responded to {ADDRESS}; abandoned building with fire through roof; defensive attack, no entry; exposure protection on adjoining occupied structures; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} dispatched to {ADDRESS} for sick person; patient with fever and vomiting, vitals within normal limits; transported by request; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "brush_fire",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} extinguished grass fire on vacant lot at {ADDRESS}; fire set by juveniles observed fleeing scene; police notified; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "vehicle_fire",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} dispatched to {STREET} for passenger vehicle fire in parking lot; fire confined to interior from dashboard electrical fault; extinguished, tow requested; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "public_assist",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} responded to {ADDRESS} to assist resident locked out during medical emergency; door forced, patient found ambulatory but disoriented; family contacted; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "garage_fire",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} dispatched to {ADDRESS} for attached garage fire; early detection by resident limited fire to garage walls and ceiling; no extension to living space; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "false_alarm",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} responded to residential alarm at {ADDRESS}; occupant confirmed accidental activation while cooking; no fire conditions; alarm company notified; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "water_rescue",
+    "severity": "med",
+    "narrative": "{TIME} — {UNITS} responded to {ADDRESS} for child reported in standing water in rear yard following heavy rain; child found safe on elevated porch; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "mutual_aid",
+    "severity": "med",
+    "narrative": "{TIME} — Ambulance 2 dispatched as mutual aid to Broadview for mass casualty event on {STREET}; transported one priority patient to Loyola; returned in service after 90 minutes; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_fall",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} dispatched to {ADDRESS} for fall from ladder; construction worker fell approximately 12 feet; suspected spinal injury, full immobilization, air medical requested; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "pump_out",
+    "severity": "low",
+    "narrative": "{TIME} — {UNITS} responded to {ADDRESS} for sump pump failure during storm; crew deployed portable pump; approximately 2,000 gallons removed; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "co_alarm",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} and two Ambulances responded to {ADDRESS} for CO alarm with multiple symptomatic occupants; readings at 200 ppm; all five residents transported, carbon monoxide source a running vehicle in attached garage; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "structure_fire",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} dispatched to {ADDRESS} for kitchen fire that extended to living room; rapid interior attack, fire under control in 14 minutes; one firefighter treated for minor heat exhaustion; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "electrical_fire",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} and mutual aid from Maywood responded to {ADDRESS} for electrical fire originating in utility room; fire extended to adjacent walls before suppression; building evacuated; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_mvc_injury",
+    "severity": "high",
+    "narrative": "{TIME} — {UNITS} responded to rollover crash on {STREET}; vehicle on its side, driver entrapped; hydraulic extrication performed, patient transported code 3 to trauma center; {DISPOSITION}; report #{CASE}."
+  }
+]

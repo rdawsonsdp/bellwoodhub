@@ -1,0 +1,422 @@
+[
+  {
+    "kind": "police",
+    "type": "alarm",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 officers responded to {ADDRESS} for a commercial burglar alarm; premises checked secure, no entry, keyholder notified. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "alarm",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 residential alarm activation at {ADDRESS}; occupant {AGE} stated accidental trip, system reset, no further action. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "alarm",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 alarm at {ADDRESS} found rear door ajar on arrival; building cleared, no suspects located, owner advised to secure premises. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "alarm",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 motion-sensor alarm triggered at {ADDRESS}; responding officers confirmed power-fluctuation false trip, alarm company notified. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "alarm",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 officers cleared a commercial alarm at {ADDRESS} on {STREET}; no signs of intrusion, keyholder on scene confirmed accidental activation. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "assist_fire_ems",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 officers assisted BFD at {ADDRESS} with traffic control during a working structure fire; {STREET} closed westbound until scene clear. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "assist_fire_ems",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 PD assisted EMS at {ADDRESS} for a medical emergency; officers maintained perimeter and directed bystanders until transport complete. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "assist_fire_ems",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 officers responded to {ADDRESS} to assist Fire with a reported gas leak; {STREET} blocked in both directions, residents evacuated, ComEd and Nicor notified. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "assist_fire_ems",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 unit assisted EMS on {STREET} for a lift-assist call; subject {AGE} transported to Loyola for evaluation. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "assist_fire_ems",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 officers secured scene at {ADDRESS} following a vehicle vs. utility pole; Fire cleared, power restored by ComEd approximately 90 minutes later. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "alarm",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 hold-up alarm received from {ADDRESS}; officers arrived, determined accidental activation by employee {AGE}, no emergency. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "assist_fire_ems",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 multiple units assisted BFD at {ADDRESS} with crowd control during vehicle fire in parking lot; one arrest for obstruction. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "recovered_property",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 officers recovered an unlocked bicycle at {ADDRESS} with no identifying markings; property inventoried, owner notification attempted, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "recovered_property",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 found property (wallet) turned in at {ADDRESS}; contents intact, owner {AGE} located and property returned. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "recovered_property",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 officers recovered a reported-stolen vehicle on {STREET}; VIN confirmed via LEADS, owner notified, vehicle towed. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "recovered_property",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 citizen turned in a found cell phone at the front desk; device logged, owner {AGE} contacted and recovered item same day. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "recovered_property",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 officers discovered abandoned power tools at {ADDRESS}; items checked via LEADS and confirmed stolen from {STREET} burglary, logged as recovered evidence. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "animal_complaint",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 animal complaint at {ADDRESS}; unrestrained dog secured by responding officer, owner {AGE} issued ordinance citation, animal released to owner. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "animal_complaint",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 call received for stray dog running loose on {STREET}; Cook County Animal Control contacted, animal transported. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "animal_complaint",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 officers responded to {ADDRESS} for an aggressive dog complaint; animal confined by owner, County AC summoned, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "animal_complaint",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 injured animal (cat) found at {ADDRESS}; Cook County Animal Control responded and transported for veterinary evaluation. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "animal_complaint",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 barking-dog ordinance complaint at {ADDRESS}; officer made contact with owner {AGE}, verbal warning issued, complaint documented. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "parking",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 abandoned vehicle complaint at {ADDRESS}; vehicle found with flat tires and expired plates, tagged for 72-hour notice per Village ordinance. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "parking",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 officers cited an unregistered vehicle parked on {STREET} blocking a fire hydrant; vehicle towed per Village Municipal Code. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "parking",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 abandoned vehicle on {STREET} confirmed registered to an out-of-state owner; second notice applied, tow authorized after 72-hour window expired. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "parking",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 citizen complaint of vehicle blocking alley at {ADDRESS}; owner {AGE} located and moved vehicle, no citation issued. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "traffic_stop",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 traffic stop on {STREET}; driver {AGE} issued citations for expired registration and no proof of insurance, released at scene. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "traffic_stop",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 traffic stop at {ADDRESS}; driver {AGE} found to have a suspended license, vehicle secured, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "traffic_stop",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 school-zone speed enforcement on {STREET}; motorist {AGE} cited for 15+ mph over posted 20 mph limit during active school hours. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "traffic_stop",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 officer conducted traffic stop on {STREET} for failure to obey a stop sign; written warning issued to driver {AGE}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mvc",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 two-vehicle MVC at {ADDRESS}; minor injuries reported, EMS evaluated both drivers on scene, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mvc",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 non-injury MVC on {STREET}; exchange of information completed, roadway cleared within 20 minutes. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mvc",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 serious MVC at {ADDRESS} involving a pedestrian; victim {AGE} transported by BFD paramedics, {STREET} closed pending investigation, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mvc",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 hit-and-run MVC on {STREET}; vehicle fled northbound, area canvass conducted, partial plate obtained, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "welfare_check",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 welfare check at {ADDRESS} requested by family member; subject {AGE} found in good health, no further action required. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "welfare_check",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 welfare check at {ADDRESS}; officers forced entry after no response, subject {AGE} found unresponsive, EMS summoned, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "welfare_check",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 officer responded to {ADDRESS} for a welfare check on an elderly resident {AGE}; subject safe, referral made to Cook County Senior Services. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "welfare_check",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 school resource officer requested welfare check on student {AGE} after multiple absences; contact made with parent, situation resolved. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "noise_complaint",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 noise complaint on {STREET}; amplified music from a rear yard party exceeding ordinance levels, host {AGE} cautioned, volume reduced. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "noise_complaint",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 officer responded to {ADDRESS} for a loud music complaint; warning issued to occupant {AGE}, matter resolved without citation. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "noise_complaint",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 second-response noise complaint at {ADDRESS}; {DISPOSITION}, ordinance citation issued to responsible party {AGE}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "disorderly",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 disorderly subject at {ADDRESS}; individual {AGE} causing disturbance in parking lot, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "disorderly",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 officer responded to {ADDRESS} for a disorderly patron; subject {AGE} escorted from premises, no arrest, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "disorderly",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 large disturbance at {ADDRESS}; multiple subjects involved, crowd dispersed, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "domestic_disturbance",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 domestic disturbance at {ADDRESS}; both parties {AGE} separated and interviewed, no visible injuries, peace restored, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "domestic_disturbance",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 domestic disturbance at {ADDRESS}; subject {AGE} placed under arrest for domestic battery, victim connected with victim services. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "domestic_disturbance",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 officers responded to {ADDRESS} for a reported domestic argument; parties separated, juvenile {AGE} present and unharmed, DCFS notification made. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "suspicious_person",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 suspicious person reported near {ADDRESS}; officer contacted subject {AGE}, identity verified, no criminal activity confirmed, area checks continued. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "suspicious_person",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 citizen reported a suspicious subject trying door handles on {STREET}; officer located individual {AGE}, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "suspicious_person",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 suspicious vehicle complaint near {ADDRESS}; occupants {AGE} questioned and released, no contraband found, vehicle departed area. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "burglary",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 residential burglary at {ADDRESS}; rear window forced, electronics and jewelry reported taken, no suspects on scene, investigation ongoing. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "burglary",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 commercial burglary at {ADDRESS}; overnight entry via roof hatch, safe removed, evidence technician responded, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_burglary",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 vehicle burglary reported at {ADDRESS}; driver-side window smashed, personal items taken, no suspect information, report on file. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_burglary",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 series of vehicle burglaries discovered on {STREET}; three vehicles entered overnight, investigations consolidated under single case. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "theft",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 retail theft at {ADDRESS}; subject {AGE} detained by loss prevention, merchandise recovered, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "theft",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 theft of packages from porch at {ADDRESS}; incident captured on doorbell camera, footage downloaded, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "theft",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 catalytic converter theft reported at {ADDRESS}; vehicle confirmed disabled, evidence collected, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "criminal_damage",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 criminal damage to property at {ADDRESS}; vehicle windows broken, no suspect in custody, evidence photos taken. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "criminal_damage",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 graffiti reported on commercial building at {ADDRESS}; photos taken, owner {AGE} notified, referral made to Village code office. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "criminal_damage",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 criminal damage at {ADDRESS}; vandal damaged multiple vehicles in lot, suspect {AGE} identified via surveillance, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "warrant_arrest",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 subject {AGE} encountered at {ADDRESS} during a routine stop; LEADS check returned active felony warrant, subject taken into custody without incident. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "warrant_arrest",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 officer arrested subject {AGE} on {STREET} on a Cook County misdemeanor warrant; {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "narcotics",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 traffic stop on {STREET} led to narcotics discovery; subject {AGE} placed under arrest, contraband inventoried, vehicle towed. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "narcotics",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 officers responded to {ADDRESS} for a suspicious odor complaint; narcotics found in plain view, subject {AGE} arrested, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "battery",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 battery reported at {ADDRESS}; victim {AGE} sustained visible injuries, offender fled prior to arrival, description broadcast, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "battery",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 battery complaint on {STREET}; complainant {AGE} and offender known to each other, medical evaluation declined, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "weapons",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 officers responded to {ADDRESS} for a report of shots fired; shell casings recovered, no victims located, investigation ongoing. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "weapons",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 traffic stop on {STREET} resulted in recovery of an illegal firearm; subject {AGE} arrested and charged with unlawful use of a weapon. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "ordinance_violation",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 officer issued ordinance citation at {ADDRESS} for inoperable vehicle stored in front yard; owner {AGE} given 30-day compliance notice. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "ordinance_violation",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 tall grass / weed complaint at {ADDRESS}; vegetation confirmed over 8 inches, citation issued, code office notified for follow-up. Report #{CASE}."
+  }
+]

@@ -1,0 +1,422 @@
+[
+  {
+    "kind": "police",
+    "type": "traffic_stop",
+    "severity": "low",
+    "narrative": "{TIME} — officer conducted a traffic stop on {STREET} for a lane violation; driver {AGE} issued citation for improper lane use. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "dui",
+    "severity": "high",
+    "narrative": "{TIME} — officer initiated traffic stop at {ADDRESS} after observing vehicle weaving; driver {AGE} failed field sobriety, arrested for DUI, transported to Cook County Jail. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "speeding",
+    "severity": "low",
+    "narrative": "{TIME} — radar unit clocked vehicle at {DISPOSITION} mph over limit on {STREET}; driver {AGE} issued speeding citation. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mvc",
+    "severity": "med",
+    "narrative": "{TIME} — officers responded to a two-vehicle crash at {ADDRESS}; no injuries reported, both vehicles towed, {DISPOSITION} citation issued to at-fault driver. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "warrant_arrest",
+    "severity": "med",
+    "narrative": "{TIME} — during a traffic stop on {STREET}, subject {AGE} found to have an outstanding Cook County warrant; arrested and transported for processing. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "suspicious_person",
+    "severity": "low",
+    "narrative": "{TIME} — caller reported a suspicious male loitering near {ADDRESS}; officers arrived, identified subject {AGE}, no warrants, no criminal activity found, area checked and cleared. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "welfare_check",
+    "severity": "med",
+    "narrative": "{TIME} — welfare check requested at {ADDRESS} for an unresponsive resident {AGE}; officers and EMS responded, subject conscious, transported by ambulance for evaluation. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "parking",
+    "severity": "low",
+    "narrative": "{TIME} — vehicle ticketed at {ADDRESS} for overnight street parking in violation of Village ordinance; {DISPOSITION} notice placed on windshield. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "noise_complaint",
+    "severity": "low",
+    "narrative": "{TIME} — officers responded to {ADDRESS} for a noise complaint; loud music audible from public way, resident {AGE} advised and volume reduced, no arrest. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "disorderly",
+    "severity": "med",
+    "narrative": "{TIME} — bar check at 540 St. Charles Rd (Route 64 Sports Bar); patron {AGE} creating disturbance, refused to leave, cited for disorderly conduct and escorted from premises. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "noise_complaint",
+    "severity": "low",
+    "narrative": "{TIME} — noise complaint received for 624 St. Charles Rd (The Hideout Lounge); officer confirmed excessive amplified music audible at sidewalk, management warned, {DISPOSITION}. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "disorderly",
+    "severity": "med",
+    "narrative": "{TIME} — officers responded to 612 St. Charles Rd (El Faro Cantina) for a crowd disturbance outside the entrance; {AGE}-year-old subject arrested for disorderly conduct after refusing officer commands. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "ordinance_violation",
+    "severity": "med",
+    "narrative": "{TIME} — capacity check at 624 St. Charles Rd (The Hideout Lounge) revealed {DISPOSITION} patrons above posted limit; management cited for over-capacity violation, venue ordered to reduce occupancy. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "domestic_disturbance",
+    "severity": "high",
+    "narrative": "{TIME} — officers responded to {ADDRESS} for a domestic disturbance; parties separated, subject {AGE} placed under arrest for domestic battery, transported to Cook County Jail. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "battery",
+    "severity": "high",
+    "narrative": "{TIME} — victim reported being struck by unknown male at {ADDRESS}; responding officers canvassed area, offender not located, case under investigation. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "retail_theft",
+    "severity": "med",
+    "narrative": "{TIME} — loss prevention at {ADDRESS} detained suspect {AGE} for concealing merchandise valued at {DISPOSITION}; subject arrested and processed. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "burglary",
+    "severity": "high",
+    "narrative": "{TIME} — resident reported forced entry at {ADDRESS}; rear door damaged, electronics and cash taken, detectives notified, scene processed. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_burglary",
+    "severity": "med",
+    "narrative": "{TIME} — complainant reported vehicle broken into overnight at {ADDRESS}; passenger-side window smashed, bag and electronics removed, no suspect information. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "criminal_damage",
+    "severity": "med",
+    "narrative": "{TIME} — complainant reported vehicle keyed on {STREET}; extensive paint damage to driver-side panels estimated at {DISPOSITION}, no witnesses, case filed. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "narcotics",
+    "severity": "high",
+    "narrative": "{TIME} — during traffic stop on {STREET} officer detected odor of cannabis; consent search yielded {DISPOSITION} of controlled substance, driver {AGE} arrested and transported. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "weapons",
+    "severity": "high",
+    "narrative": "{TIME} — officers stopped vehicle on {STREET} for equipment violation; subject {AGE} found in possession of unlicensed handgun, arrested and charged with UUWF. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "assist_fire_ems",
+    "severity": "med",
+    "narrative": "{TIME} — officers assisted Fire/EMS at {ADDRESS} with crowd control during a medical emergency; scene stabilized, patient transported to Loyola Medical Center. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "alarm",
+    "severity": "low",
+    "narrative": "{TIME} — officers responded to a burglar alarm activation at {ADDRESS}; building checked perimeter and interior found secure, likely false alarm, owner notified. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "recovered_property",
+    "severity": "low",
+    "narrative": "{TIME} — officer recovered a reported-stolen bicycle at {ADDRESS}; VIN run confirmed theft status, item held as evidence, owner notified. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "theft",
+    "severity": "med",
+    "narrative": "{TIME} — complainant reported wallet stolen from unlocked vehicle at {ADDRESS}; credit cards used at area gas station, fraud alert placed, detectives notified. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "traffic_stop",
+    "severity": "low",
+    "narrative": "{TIME} — officer stopped vehicle on {STREET} for expired registration; driver {AGE} issued citation, vehicle released. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "speeding",
+    "severity": "med",
+    "narrative": "{TIME} — school zone speed enforcement on {STREET}; driver {AGE} clocked at {DISPOSITION} mph in 20 mph zone, citation issued, no crash. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mvc",
+    "severity": "high",
+    "narrative": "{TIME} — officers responded to a three-vehicle crash with injury at {ADDRESS}; one occupant {AGE} transported to Loyola Medical Center, crash reconstruction requested, {DISPOSITION} citations issued. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "suspicious_person",
+    "severity": "med",
+    "narrative": "{TIME} — caller reported a male peering into vehicles in the parking area at {ADDRESS}; officer arrived, located subject {AGE}, conducted field interview, no charges, subject left area. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "welfare_check",
+    "severity": "low",
+    "narrative": "{TIME} — officer conducted welfare check at {ADDRESS} at request of family member; resident found safe and coherent, no services required. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "ordinance_violation",
+    "severity": "low",
+    "narrative": "{TIME} — officer cited property owner at {ADDRESS} for inoperable vehicle stored in open view in violation of Village code; {DISPOSITION} compliance notice issued. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "parking",
+    "severity": "low",
+    "narrative": "{TIME} — multiple vehicles ticketed on {STREET} for blocking hydrant access; {DISPOSITION} citations issued, no tows required. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "dui",
+    "severity": "high",
+    "narrative": "{TIME} — officer observed vehicle stationary in travel lane on {STREET}; driver {AGE} found unresponsive, revived, arrested for DUI following field sobriety; vehicle towed. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "domestic_disturbance",
+    "severity": "med",
+    "narrative": "{TIME} — officers responded to {ADDRESS} for a verbal domestic; parties separated and calmed, no injuries reported, referral to domestic violence resources provided. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "battery",
+    "severity": "med",
+    "narrative": "{TIME} — officers responded to {ADDRESS} for a fight in progress; victim {AGE} sustained minor lacerations, offender fled before arrival, description broadcast to units. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "burglary",
+    "severity": "high",
+    "narrative": "{TIME} — business owner reported overnight burglary at {ADDRESS}; front glass door shattered, cash drawer taken, security footage secured for review. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_burglary",
+    "severity": "med",
+    "narrative": "{TIME} — victim reported {DISPOSITION} items missing from vehicle parked on {STREET}; no signs of forced entry, incident under review. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "criminal_damage",
+    "severity": "med",
+    "narrative": "{TIME} — property owner reported graffiti spray-painted on exterior wall at {ADDRESS}; photos collected, no suspects identified, complaint filed. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "warrant_arrest",
+    "severity": "med",
+    "narrative": "{TIME} — officer ran subject {AGE} during a field interview at {ADDRESS}; active felony warrant returned, subject taken into custody without incident. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "narcotics",
+    "severity": "high",
+    "narrative": "{TIME} — officer observed subject {AGE} conducting suspected hand-to-hand transactions on {STREET}; stop and search yielded {DISPOSITION} packaged narcotics, arrested and transported. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "alarm",
+    "severity": "low",
+    "narrative": "{TIME} — fire alarm activation at {ADDRESS}; officers arrived ahead of FD, no smoke or fire detected, panel reset, alarm company notified. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "assist_fire_ems",
+    "severity": "high",
+    "narrative": "{TIME} — officers responded to assist Fire/EMS at {ADDRESS} during a structure fire; established perimeter, evacuated neighboring units, no injuries to officers. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "theft",
+    "severity": "low",
+    "narrative": "{TIME} — complainant reported a package stolen from front porch at {ADDRESS}; delivery confirmed via carrier tracking, no camera footage available, report filed. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "recovered_property",
+    "severity": "med",
+    "narrative": "{TIME} — officer located a vehicle reported stolen from {DISPOSITION} during a patrol check on {STREET}; vehicle recovered, owner notified, forensics requested. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "traffic_stop",
+    "severity": "med",
+    "narrative": "{TIME} — officer stopped vehicle on {STREET} for running a red light; driver {AGE} had suspended license, arrested and vehicle towed per Village policy. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mvc",
+    "severity": "low",
+    "narrative": "{TIME} — minor rear-end collision reported at {ADDRESS}; both parties exchanged information, no injuries, no tow required. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "noise_complaint",
+    "severity": "low",
+    "narrative": "{TIME} — officer responded to {ADDRESS} for complaint about a loud gathering in backyard; host {AGE} advised of ordinance, music lowered, no citation issued. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "suspicious_person",
+    "severity": "low",
+    "narrative": "{TIME} — caller reported unknown male knocking on doors at {ADDRESS}; officer located subject {AGE}, confirmed soliciting without permit, issued ordinance violation notice. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "weapons",
+    "severity": "high",
+    "narrative": "{TIME} — ShotSpotter activation on {STREET}; officers responded and located spent shell casings, no victim, no suspect, evidence packaged and submitted. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "disorderly",
+    "severity": "low",
+    "narrative": "{TIME} — officer responded to 540 St. Charles Rd (Route 64 Sports Bar) for a verbal altercation between patrons; parties separated, no injuries, both asked to leave establishment. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "ordinance_violation",
+    "severity": "low",
+    "narrative": "{TIME} — officer cited driver at {ADDRESS} for failure to comply with residential snow-route parking ban; {DISPOSITION} fine issued. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "welfare_check",
+    "severity": "high",
+    "narrative": "{TIME} — 911 caller reported suicidal subject at {ADDRESS}; officers responded with Crisis Intervention trained personnel, subject {AGE} transported for evaluation under Section 12. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "domestic_disturbance",
+    "severity": "high",
+    "narrative": "{TIME} — 911 call from {ADDRESS} for domestic battery in progress; officers arrived, victim {AGE} had visible injuries, offender arrested, protective order information provided. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "retail_theft",
+    "severity": "low",
+    "narrative": "{TIME} — store personnel at {ADDRESS} reported juvenile suspect concealing candy and beverages; subject {AGE} detained, parents notified, juvenile citation issued. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "narcotics",
+    "severity": "med",
+    "narrative": "{TIME} — officer on routine patrol detected odor of cannabis from vehicle at {ADDRESS}; driver {AGE} found in possession of {DISPOSITION} of cannabis, in excess of legal limit, citation issued. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "dui",
+    "severity": "high",
+    "narrative": "{TIME} — officer responded to a one-vehicle crash at {ADDRESS}; driver {AGE} smelled of alcohol, submitted to breathalyzer at {DISPOSITION} BAC, arrested for aggravated DUI. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "disorderly",
+    "severity": "med",
+    "narrative": "{TIME} — officers responded to 612 St. Charles Rd (El Faro Cantina) for a disturbance involving two patrons; one subject {AGE} arrested for disorderly conduct, second party declined to press charges. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "noise_complaint",
+    "severity": "med",
+    "narrative": "{TIME} — multiple calls received for amplified music at 540 St. Charles Rd (Route 64 Sports Bar); officers confirmed violation, management issued formal warning, second response within 30 minutes may result in citation. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "traffic_stop",
+    "severity": "low",
+    "narrative": "{TIME} — officer stopped vehicle on {STREET} for non-functioning brake lights; driver {AGE} given equipment fix-it notice, released with warning. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "suspicious_person",
+    "severity": "med",
+    "narrative": "{TIME} — resident reported male in dark clothing cutting through rear yards along {STREET}; officers set perimeter and checked area, subject not located. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "mvc",
+    "severity": "med",
+    "narrative": "{TIME} — hit-and-run reported at {ADDRESS}; victim's parked vehicle sustained {DISPOSITION} damage to rear quarter panel, partial plate obtained, BOLO broadcast. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "criminal_damage",
+    "severity": "low",
+    "narrative": "{TIME} — officers responded to {ADDRESS} for a report of shattered front window; brick found at scene, no suspects, case filed pending canvass. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "burglary",
+    "severity": "high",
+    "narrative": "{TIME} — garage burglary reported at {ADDRESS}; side door pried open, power tools and lawn equipment removed, estimated loss {DISPOSITION}, detectives assigned. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "warrant_arrest",
+    "severity": "high",
+    "narrative": "{TIME} — patrol officer recognized subject {AGE} on {STREET} matching description of individual with felony warrant; subject apprehended after brief foot pursuit, transported without injury. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "vehicle_burglary",
+    "severity": "low",
+    "narrative": "{TIME} — complainant at {ADDRESS} discovered unlocked vehicle entered overnight; loose change and sunglasses removed, no structural damage, report filed for insurance. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "parking",
+    "severity": "low",
+    "narrative": "{TIME} — officer issued {DISPOSITION} parking citations in the 2800 block of {STREET} for violation of posted no-parking hours. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "alarm",
+    "severity": "low",
+    "narrative": "{TIME} — intrusion alarm activation at {ADDRESS}; officers checked all points of entry, found secure, confirmed as employee-triggered accidental activation. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "theft",
+    "severity": "med",
+    "narrative": "{TIME} — complainant reported catalytic converter cut from vehicle overnight in driveway at {ADDRESS}; no witnesses, estimated repair cost {DISPOSITION}, area cameras reviewed. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "welfare_check",
+    "severity": "med",
+    "narrative": "{TIME} — neighbor requested welfare check at {ADDRESS} after mail had accumulated for several days; officer made contact with resident {AGE}, found in good health but needed utility assistance, referred to township services. Report #{CASE}."
+  },
+  {
+    "kind": "police",
+    "type": "ordinance_violation",
+    "severity": "low",
+    "narrative": "{TIME} — officers responded to {ADDRESS} for a complaint about open burning; resident {AGE} burning yard waste contrary to Village ordinance, fire extinguished, {DISPOSITION} citation issued. Report #{CASE}."
+  }
+]

@@ -1,0 +1,31 @@
+# ── Secrets — NEVER commit ──
+.env
+.env.local
+.env*.local
+**/.env.local
+**/.env*.local
+
+# ── Python ──
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# ── Node / web build artifacts (web/.gitignore also covers these) ──
+**/node_modules/
+**/.next/
+**/.vercel/
+**/out/
+next-env.d.ts
+
+# ── Working artifacts ──
+*.log
+.DS_Store
+.claude/
+
+# ── Corpus: keep the canonical 20k seed + the authored/bank inputs;
+#    the addl batch and base backup are redundant, so don't bloat the repo. ──
+corpus/seed_addl.json
+corpus/seed_base_backup.json
+!corpus/seed_emails.json
+!.env.example

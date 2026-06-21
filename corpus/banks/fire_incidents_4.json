@@ -1,0 +1,374 @@
+[
+  {
+    "kind": "fire",
+    "type": "pump_out",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Eastern Ave for flooded basement; sump pump failure during heavy rainfall; approximately 18 inches of standing water pumped; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "pump_out",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on 19th Ave for storm-related basement flooding; water entered through window well; pumped approx. 12 inches; resident advised to seal well; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "pump_out",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Bohland Ave; crawl space flooded to joist level following 2.4-inch rain event; portable pump deployed; structural concern noted, building official notified; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "pump_out",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on Marshall Ave for minor basement seepage; water at floor drain level; drain cleared, no pumping required; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "pump_out",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Hirsch Ave; rear yard grading directing storm flow into basement egress well; pumped and sandbagged doorway; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "water_rescue",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {STREET} at the Eastern Ave underpass for a vehicle submerged in standing floodwater; occupant self-extricated prior to arrival; EMS evaluated on scene; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "water_rescue",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on 19th Ave for reported adult male wading through chest-deep floodwater in roadway; patient recovered, hypothermia protocol initiated, transported to Loyola; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "water_rescue",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {STREET} near Bohland Ave for elderly resident trapped on porch surrounded by rapidly rising water; ladder deployed from street; resident removed without injury; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "water_rescue",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} for child reported stranded in backyard with standing water at waist level following flash-flood advisory; child recovered safely; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "wires_down",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on St. Charles Rd for downed power line across roadway following storm; ComEd notified, 200-foot perimeter established; road closed; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "wires_down",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Mannheim Rd; tree limb severed primary line, wire contacting occupied vehicle; occupants held in place until ComEd de-energized; no injuries; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "wires_down",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {STREET} at Harvard Ave for arcing service drop on garage roof following wind damage; power isolated at meter; resident relocated; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "wires_down",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Rice Ave; storm-felled tree pulled service entrance from house; wire lying in standing water in driveway; scene secured; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "structure_fire",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Washington Blvd for working structure fire in first-floor kitchen; fire extended to soffit; knocked down in 14 minutes; two residents displaced; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "structure_fire",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on Bellwood Ave for fire in attached garage; vehicle fully involved; fire extended to residence; mutual aid requested; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "structure_fire",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on 25th Ave for smoke showing from second floor; fire confined to bedroom; origin investigated as lightning strike during storm; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "kitchen_fire",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on Geneva Ave for kitchen fire; unattended grease on stove; extinguished by resident prior to arrival; hood vent and ceiling checked, no extension; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "kitchen_fire",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Monroe St for grease fire that extended to cabinetry; suppressed with hand line; two occupants treated for minor smoke inhalation; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "vehicle_fire",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {STREET} at 50th Ave for fully involved vehicle fire in public parking lot; fire knocked down; no exposures; cause undetermined; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "vehicle_fire",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Mannheim Rd for engine compartment fire on a semi-truck; driver used on-board extinguisher; crew overhauled; no injuries; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "smoke_alarm",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on Morris Ave for activated smoke alarm; investigated\u2014cooking smoke, no fire; alarm reset; smoke cleared with positive-pressure fan; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "smoke_alarm",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Englewood Ave for nuisance alarm activation; humidity from storm moisture triggered detector; no fire or CO; detector replaced; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "co_alarm",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on Madison St for CO alarm activation; meter reading 45 ppm in utility room; furnace flue blocked; occupants evacuated, gas shut off; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "co_alarm",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Granville Ave for CO alarm; three occupants symptomatic; levels measured 120 ppm in basement; generator found running in closed garage following power outage; all three transported; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "co_alarm",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on Bellwood Ave for CO detector alarm; meter readings negative throughout structure; detector end-of-life; no CO source identified; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "gas_leak",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Frederick Ave for natural gas odor following storm; excavation by contractor nicked 2-inch main; block evacuated; Nicor dispatched; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "gas_leak",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on St. Paul Ave for gas odor in basement; service line fitting found loose after flood-related settling; gas shut off at meter; Nicor notified; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "gas_leak",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Harvard Ave for reported gas odor; meter reading negative; odor traced to sewer gas entry through dry floor drain; drain sealed; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on Eastern Ave for adult female with difficulty breathing; assessed, O2 administered; transported to Loyola University Medical Center; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on 25th Ave for adult male with altered mental status; blood glucose 42; dextrose administered; patient stabilized on scene; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on Washington Blvd for unresponsive adult; CPR in progress on arrival by bystanders; AED applied; ROSC achieved; transported code 3 to Loyola; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_cardiac",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Bohland Ave for adult male with chest pain radiating to left arm; 12-lead obtained, STEMI alert called; transported code 3; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_cardiac",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on Monroe St for 68-year-old female with cardiac arrest; two rounds of ACLS drugs; no ROSC; transported; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_fall",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Hirsch Ave for elderly female fall on wet front steps following rain; minor laceration to right knee; patient refused transport; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_fall",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on Rice Ave for 77-year-old male who slipped on flooded driveway; suspected hip fracture; immobilized and transported; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_fall",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Bellwood Ave for slip-and-fall in storm-flooded alley; adult male with soft-tissue ankle injury; treated on scene; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_mvc_injury",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {STREET} at Mannheim Rd and St. Charles Rd for two-vehicle MVC with entrapment; hydraulic rescue tools deployed; one patient extricated in 11 minutes; transported critical; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_mvc_injury",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {STREET} on 25th Ave for single-vehicle crash into utility pole during rain-slick conditions; driver ambulatory; cervical precautions applied; transported; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_mvc_injury",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {STREET} at St. Charles Rd near Eastern Ave for pedestrian struck by hydroplaning vehicle; patient with lower-extremity injury; transported to Loyola trauma; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_mvc_injury",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Mannheim Rd for minor MVC with airbag deployment; two occupants evaluated on scene; both declined transport; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_overdose",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on Granville Ave for unresponsive adult; suspected opioid overdose; Narcan 4mg IN administered with positive response; patient transported for evaluation; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_overdose",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Marshall Ave for adult male found lethargic in vehicle; suspected polysubstance use; monitored, Narcan withheld; transported; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "lift_assist",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on Madison St for assist lifting 290-lb patient who fell from wheelchair; patient uninjured; returned to chair; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "lift_assist",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Geneva Ave for lift assist; elderly male found on bathroom floor, unable to rise; no injuries; patient relocated to bed; home health notified; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "hazmat",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on St. Charles Rd for unknown liquid pooling from overturned drum in commercial parking lot; HazMat team activated; identified as waste oil; contained and collected; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "hazmat",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on 19th Ave for chlorine odor reported from residential pool equipment room flooded by storm; valves closed, area ventilated; no injuries; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "mutual_aid",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} in Maywood for mutual-aid working structure fire; assisted with interior attack and overhaul; returned to service after 2.5 hours; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "mutual_aid",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded mutual aid to Hillside for mass-pump-out operation following regional flash flooding; operated portable pump at {ADDRESS}; returned to quarters; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "public_assist",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on Englewood Ave for citizen unable to access residence; deadbolt malfunctioned; forced entry performed; resident secured inside uninjured; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "public_assist",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Bohland Ave to assist resident with storm-downed tree blocking front door; limbs cleared with hand tools; egress restored; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "public_assist",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on Harvard Ave for water flowing from broken exterior faucet into basement window well; water shut off at meter; resident notified; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "false_alarm",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Avon Ave for reported structure fire; investigation revealed burn barrel in rear yard with no hazard; no action taken; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "false_alarm",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on 50th Ave for automatic alarm activation; panel reset; cause\u2014steam from dishwasher near detector; no fire; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "false_alarm",
+    "severity": "low",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Marshall Ave for reported explosion sound; determined to be transformer vault discharge during storm surge; no fire or injuries; ComEd notified; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "pump_out",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on 19th Ave; basement utility room submerged 24 inches; electrical panel threatened; power shut at main before pumping commenced; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "pump_out",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Bohland Ave for recurring flood complaint; third pump-out in 72 hours at this address; PW drainage crew requested; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "wires_down",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {STREET} on Eastern Ave for multiple lines on roadway after straight-line wind event; closed two-block section; ComEd ETA 90 minutes; standby maintained; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "med",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on St. Paul Ave for weather-related heat exhaustion; patient found in un-air-conditioned residence during post-storm humidity spike; cooled on scene, IV initiated; transported; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_medical",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {ADDRESS} on Avon Ave for elderly male with signs of heat stroke; core temp 104.2\u00b0F per EMS; rapid cooling protocol; transported code 3; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "structure_fire",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {ADDRESS} on Morris Ave for lightning-ignited attic fire; fire through roof on arrival; defensive operations; mutual aid requested; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "water_rescue",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} dispatched to {STREET} underpass at Bohland Ave and Mannheim Rd for vehicle submerged in flash-flood water; two occupants on roof of vehicle; both recovered by rope team; transported for evaluation; {DISPOSITION}; report #{CASE}."
+  },
+  {
+    "kind": "fire",
+    "type": "ems_mvc_injury",
+    "severity": "high",
+    "narrative": "{TIME} \u2014 {UNITS} responded to {STREET} on Mannheim Rd for rollover MVC on rain-slick pavement; vehicle on side in median; two occupants; one extricated with spine precautions; both transported; {DISPOSITION}; report #{CASE}."
+  }
+]

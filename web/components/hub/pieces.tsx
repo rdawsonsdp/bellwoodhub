@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import Link from "next/link";
+import type { ReactNode } from "react";
 import { Ms } from "./ms";
 import {
   C,
@@ -9,7 +10,7 @@ import {
   topicMeta,
 } from "@/lib/design";
 import { fmtDate } from "@/lib/utils";
-import type { EmailDetail, Source } from "@/lib/types";
+import type { Source } from "@/lib/types";
 
 // ── Topic chip ──────────────────────────────────────────────────────────────
 export function TopicChip({ topic }: { topic: string | null }) {
@@ -180,36 +181,13 @@ export function SourceCard({
 }) {
   const hasEntity = !!onOpenEntity;
   const scorePct = Math.round(s.score * 100);
-  const [open, setOpen] = useState(false);
-  const [detail, setDetail] = useState<EmailDetail | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  async function toggleEmail() {
-    if (open) {
-      setOpen(false);
-      return;
-    }
-    setOpen(true);
-    if (detail || loading) return;
-    setLoading(true);
-    setErr(null);
-    try {
-      const res = await fetch(`/api/email?mid=${encodeURIComponent(s.messageId)}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to load");
-      setDetail(data as EmailDetail);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed to load");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const href = `/email?mid=${encodeURIComponent(s.messageId)}`;
 
   return (
     <div
       id={`src-${s.index}`}
       style={{
+        position: "relative",
         background: active ? "#fbfcff" : "#fff",
         border: `1px solid ${active ? C.blue : C.line}`,
         borderRadius: 14,
@@ -219,6 +197,13 @@ export function SourceCard({
         scrollMarginTop: 150,
       }}
     >
+      {/* The whole card is a hyperlink to the full email document (new tab). */}
+      <Link
+        href={href}
+        target="_blank"
+        aria-label={`Open full email: ${s.subject || "email"}`}
+        style={{ position: "absolute", inset: 0, zIndex: 1, borderRadius: 14 }}
+      />
       <div
         style={{
           display: "flex",
@@ -298,11 +283,13 @@ export function SourceCard({
       <button
         onClick={hasEntity ? onOpenEntity : undefined}
         style={{
+          position: "relative",
+          zIndex: hasEntity ? 2 : undefined,
           background: "none",
           border: 0,
           padding: 0,
           fontSize: 12.5,
-          color: C.muted,
+          color: hasEntity ? C.blue : C.muted,
           cursor: hasEntity ? "pointer" : "default",
           textAlign: "left",
         }}
@@ -324,29 +311,16 @@ export function SourceCard({
           flexWrap: "wrap",
         }}
       >
-        <button
-          onClick={toggleEmail}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 4,
-            background: open ? C.blueLightest : "#f2f4f7",
-            color: C.blue,
-            border: 0,
-            borderRadius: 8,
-            padding: "5px 11px",
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          <Ms name={open ? "expand_less" : "mail"} size={15} color={C.blue} />
-          {open ? "Hide email" : "View full email"}
-        </button>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: C.blue }}>
+          <Ms name="open_in_new" size={14} color={C.blue} />
+          Open full email
+        </span>
         {hasEntity && (
           <button
             onClick={onOpenEntity}
             style={{
+              position: "relative",
+              zIndex: 2,
               display: "inline-flex",
               alignItems: "center",
               gap: 3,
@@ -368,59 +342,6 @@ export function SourceCard({
           {s.messageId}
         </span>
       </div>
-
-      {open && (
-        <div style={{ marginTop: 12, borderTop: `1px solid ${C.line}`, paddingTop: 12 }}>
-          {loading ? (
-            <p style={{ fontSize: 12.5, color: C.muted2, margin: 0 }}>Loading the full email…</p>
-          ) : err ? (
-            <p style={{ fontSize: 12.5, color: "#b3261e", margin: 0 }}>{err}</p>
-          ) : detail ? (
-            <div>
-              <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.7, marginBottom: 8 }}>
-                <div>
-                  <strong style={{ color: C.ink }}>From:</strong> {detail.fromName || "Unknown"}
-                  {detail.fromEmail ? ` <${detail.fromEmail}>` : ""}
-                </div>
-                <div>
-                  <strong style={{ color: C.ink }}>To:</strong> {detail.toEmail || "—"}
-                </div>
-                {detail.cc ? (
-                  <div>
-                    <strong style={{ color: C.ink }}>Cc:</strong> {detail.cc}
-                  </div>
-                ) : null}
-                <div>
-                  <strong style={{ color: C.ink }}>Date:</strong> {fmtDate(detail.date)}
-                </div>
-                <div>
-                  <strong style={{ color: C.ink }}>Subject:</strong> {detail.subject || "(no subject)"}
-                </div>
-              </div>
-              <pre
-                className="vkb-scroll"
-                style={{
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                  fontFamily: "inherit",
-                  fontSize: 13.5,
-                  lineHeight: 1.6,
-                  color: C.ink2,
-                  margin: 0,
-                  background: "#f8fafc",
-                  border: `1px solid ${C.line}`,
-                  borderRadius: 10,
-                  padding: "12px 14px",
-                  maxHeight: 380,
-                  overflow: "auto",
-                }}
-              >
-                {detail.bodyClean || "(no body content)"}
-              </pre>
-            </div>
-          ) : null}
-        </div>
-      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import Link from "next/link";
 import { Ms } from "./hub/ms";
 import { AnswerBody, Shim, SourceCard, StreamPill, TopicChip } from "./hub/pieces";
 import {
@@ -817,7 +818,7 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
             <p style={{ fontSize: 12, fontWeight: 700, color: C.blue, textTransform: "uppercase", letterSpacing: ".06em", margin: "0 0 12px" }}>Constituents</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {who.constituents.map((row, i) => {
-                const clickable = isKnownPerson(row.name);
+                const clickable = !!row.name;
                 return (
                   <button
                     key={i}
@@ -841,20 +842,27 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
           <div>
             <p style={{ fontSize: 12, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: ".06em", margin: "0 0 12px" }}>Internal · daily reports</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {who.internal.map((row, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid rgba(6,3,8,.07)", padding: "4px 0 11px" }}>
-                  <span style={{ fontFamily: FONT_HEAD, fontWeight: 600, fontSize: 15, color: C.muted, width: 34, textAlign: "right", flex: "none" }}>{row.count}</span>
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: C.ink }}>{row.name || "Unknown"}</span>
-                    <span style={{ display: "flex", gap: 5, marginTop: 3, flexWrap: "wrap" }}>
-                      {(row.topicsList ?? []).slice(0, 1).map((tk) => (
-                        <span key={tk} style={topicChipStyle(tk)}>{topicMeta(tk).label}</span>
-                      ))}
+              {who.internal.map((row, i) => {
+                const clickable = !!row.name;
+                return (
+                  <button
+                    key={i}
+                    onClick={clickable ? () => openEntity({ type: "person", value: row.name! }) : undefined}
+                    style={{ display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid rgba(6,3,8,.07)", padding: "4px 0 11px", background: "none", border: 0, width: "100%", textAlign: "left", cursor: clickable ? "pointer" : "default" }}
+                  >
+                    <span style={{ fontFamily: FONT_HEAD, fontWeight: 600, fontSize: 15, color: C.muted, width: 34, textAlign: "right", flex: "none" }}>{row.count}</span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: C.ink }}>{row.name || "Unknown"}</span>
+                      <span style={{ display: "flex", gap: 5, marginTop: 3, flexWrap: "wrap" }}>
+                        {(row.topicsList ?? []).slice(0, 1).map((tk) => (
+                          <span key={tk} style={topicChipStyle(tk)}>{topicMeta(tk).label}</span>
+                        ))}
+                      </span>
                     </span>
-                  </span>
-                  <span style={{ width: 9, height: 9, borderRadius: "50%", flex: "none", background: streamMeta(row.stream).color }} />
-                </div>
-              ))}
+                    <span style={{ width: 9, height: 9, borderRadius: "50%", flex: "none", background: streamMeta(row.stream).color }} />
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -1046,7 +1054,11 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
                     <span style={{ width: 13, height: 13, borderRadius: "50%", background: sm.color, border: "3px solid #eef1f5", marginTop: 20, flex: "none", zIndex: 1 }} />
                     <span style={{ flex: 1, width: 2, background: "rgba(6,3,8,.1)" }} />
                   </div>
-                  <div style={{ flex: 1, minWidth: 0, background: "#fff", border: "1px solid rgba(6,3,8,.12)", borderRadius: 14, padding: "16px 18px", marginBottom: 14 }}>
+                  <Link
+                    href={`/email?mid=${encodeURIComponent(m.messageId)}`}
+                    target="_blank"
+                    style={{ flex: 1, minWidth: 0, background: "#fff", border: "1px solid rgba(6,3,8,.12)", borderRadius: 14, padding: "16px 18px", marginBottom: 14, textDecoration: "none", color: "inherit", display: "block", cursor: "pointer" }}
+                  >
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
                       <StreamPill stream={m.stream} />
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, color: dirColor }}>
@@ -1063,7 +1075,7 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
                       {m.fromEmail ? ` <${m.fromEmail}>` : ""}
                     </div>
                     <p style={{ fontSize: 13.5, lineHeight: 1.5, color: C.ink2, margin: 0 }}>{m.snippet}</p>
-                  </div>
+                  </Link>
                 </div>
               );
             })}
@@ -1128,7 +1140,7 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
               {d.who.constituents.map((r, i) => {
-                const clickable = isKnownPerson(r.name);
+                const clickable = !!r.name;
                 return (
                   <button
                     key={i}
@@ -1162,8 +1174,13 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
             <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
               {d.who.internal.map((r, i) => {
                 const color = streamMeta(r.stream).color;
+                const clickable = !!r.name;
                 return (
-                  <div key={i}>
+                  <button
+                    key={i}
+                    onClick={clickable ? () => openEntity({ type: "person", value: r.name! }) : undefined}
+                    style={{ display: "block", background: "none", border: 0, padding: 0, cursor: clickable ? "pointer" : "default", textAlign: "left", width: "100%" }}
+                  >
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
                       <span style={{ width: 9, height: 9, borderRadius: "50%", flex: "none", background: color }} />
                       <span style={{ fontSize: 14, fontWeight: 600, color: C.ink, flex: 1, minWidth: 0 }}>{r.name || "Unknown"}</span>
@@ -1172,7 +1189,7 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
                     <span style={barTrack}>
                       <span style={{ display: "block", height: "100%", width: `${(r.count / maxI) * 100}%`, background: color }} />
                     </span>
-                  </div>
+                  </button>
                 );
               })}
             </div>

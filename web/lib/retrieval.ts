@@ -10,6 +10,7 @@ import type {
   AskResponse,
   Direction,
   DashboardResponse,
+  EmailDetail,
   EntityResponse,
   OpenItem,
   Source,
@@ -501,6 +502,43 @@ export async function getEntity(
       streams,
     },
     messages,
+  };
+}
+
+// ── full email detail (source drill-in) ─────────────────────────────────────
+export async function getEmailByMessageId(mid: string): Promise<EmailDetail | null> {
+  const rows = await query<{
+    subject: string | null;
+    from_name: string | null;
+    from_email: string | null;
+    to_email: string | null;
+    cc: string | null;
+    direction: Direction;
+    topic: string | null;
+    stream: string;
+    date_sent: Date;
+    body_clean: string | null;
+    body_raw: string | null;
+  }>(
+    `SELECT e.subject, e.from_name, e.from_email, e.to_email, e.cc, e.direction,
+            e.topic, ${streamCase("e")} AS stream, e.date_sent, e.body_clean, e.body_raw
+     FROM poc.emails e WHERE e.message_id = $1 LIMIT 1`,
+    [mid],
+  );
+  if (!rows.length) return null;
+  const r = rows[0];
+  return {
+    subject: r.subject,
+    fromName: r.from_name,
+    fromEmail: r.from_email,
+    toEmail: r.to_email,
+    cc: r.cc,
+    direction: r.direction,
+    topic: r.topic,
+    stream: (r.stream as StreamKey) ?? deriveStream(r.topic, r.from_email),
+    date: r.date_sent.toISOString(),
+    bodyClean: r.body_clean ?? "",
+    bodyRaw: r.body_raw ?? "",
   };
 }
 

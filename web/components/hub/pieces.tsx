@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useState, type ReactNode } from "react";
 import { Ms } from "./ms";
 import {
   C,
@@ -7,7 +9,7 @@ import {
   topicMeta,
 } from "@/lib/design";
 import { fmtDate } from "@/lib/utils";
-import type { Source } from "@/lib/types";
+import type { EmailDetail, Source } from "@/lib/types";
 
 // ── Topic chip ──────────────────────────────────────────────────────────────
 export function TopicChip({ topic }: { topic: string | null }) {
@@ -178,6 +180,32 @@ export function SourceCard({
 }) {
   const hasEntity = !!onOpenEntity;
   const scorePct = Math.round(s.score * 100);
+  const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState<EmailDetail | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function toggleEmail() {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    setOpen(true);
+    if (detail || loading) return;
+    setLoading(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/email?mid=${encodeURIComponent(s.messageId)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to load");
+      setDetail(data as EmailDetail);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Failed to load");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div
       id={`src-${s.index}`}
@@ -291,37 +319,108 @@ export function SourceCard({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 8,
-          marginTop: 10,
-          fontSize: 11,
-          color: C.muted3,
+          gap: 10,
+          marginTop: 11,
+          flexWrap: "wrap",
         }}
       >
-        <Ms name="tag" size={13} color={C.muted3} />
-        {s.messageId}
+        <button
+          onClick={toggleEmail}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
+            background: open ? C.blueLightest : "#f2f4f7",
+            color: C.blue,
+            border: 0,
+            borderRadius: 8,
+            padding: "5px 11px",
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          <Ms name={open ? "expand_less" : "mail"} size={15} color={C.blue} />
+          {open ? "Hide email" : "View full email"}
+        </button>
         {hasEntity && (
-          <>
-            <span style={{ flex: 1 }} />
-            <button
-              onClick={onOpenEntity}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 3,
-                background: "none",
-                border: 0,
-                color: C.blue,
-                fontSize: 11.5,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              single pane
-              <Ms name="north_east" size={13} color={C.blue} />
-            </button>
-          </>
+          <button
+            onClick={onOpenEntity}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 3,
+              background: "none",
+              border: 0,
+              color: C.blue,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            single pane
+            <Ms name="north_east" size={13} color={C.blue} />
+          </button>
         )}
+        <span style={{ flex: 1 }} />
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: C.muted3 }}>
+          <Ms name="tag" size={12} color={C.muted3} />
+          {s.messageId}
+        </span>
       </div>
+
+      {open && (
+        <div style={{ marginTop: 12, borderTop: `1px solid ${C.line}`, paddingTop: 12 }}>
+          {loading ? (
+            <p style={{ fontSize: 12.5, color: C.muted2, margin: 0 }}>Loading the full email…</p>
+          ) : err ? (
+            <p style={{ fontSize: 12.5, color: "#b3261e", margin: 0 }}>{err}</p>
+          ) : detail ? (
+            <div>
+              <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.7, marginBottom: 8 }}>
+                <div>
+                  <strong style={{ color: C.ink }}>From:</strong> {detail.fromName || "Unknown"}
+                  {detail.fromEmail ? ` <${detail.fromEmail}>` : ""}
+                </div>
+                <div>
+                  <strong style={{ color: C.ink }}>To:</strong> {detail.toEmail || "—"}
+                </div>
+                {detail.cc ? (
+                  <div>
+                    <strong style={{ color: C.ink }}>Cc:</strong> {detail.cc}
+                  </div>
+                ) : null}
+                <div>
+                  <strong style={{ color: C.ink }}>Date:</strong> {fmtDate(detail.date)}
+                </div>
+                <div>
+                  <strong style={{ color: C.ink }}>Subject:</strong> {detail.subject || "(no subject)"}
+                </div>
+              </div>
+              <pre
+                className="vkb-scroll"
+                style={{
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  fontFamily: "inherit",
+                  fontSize: 13.5,
+                  lineHeight: 1.6,
+                  color: C.ink2,
+                  margin: 0,
+                  background: "#f8fafc",
+                  border: `1px solid ${C.line}`,
+                  borderRadius: 10,
+                  padding: "12px 14px",
+                  maxHeight: 380,
+                  overflow: "auto",
+                }}
+              >
+                {detail.bodyClean || "(no body content)"}
+              </pre>
+            </div>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

@@ -65,6 +65,8 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
   const [entitySummary, setEntitySummary] = useState<AskResponse | null>(null);
   const [entitySummaryLoading, setEntitySummaryLoading] = useState(false);
   const [entitySummaryOpen, setEntitySummaryOpen] = useState(false);
+  const [lookupValue, setLookupValue] = useState("");
+  const [lookupType, setLookupType] = useState<"person" | "address">("person");
 
   const [dash, setDash] = useState<DashboardResponse | null>(null);
   const [dashLoading, setDashLoading] = useState(false);
@@ -699,15 +701,27 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
 
                 {result.mode === "rag" && sources.length > 0 && (
                   <div style={sourcesColStyle}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 13 }}>
-                      <Ms name="inventory_2" size={18} color={C.navy} />
-                      <span style={{ fontFamily: FONT_HEAD, fontWeight: 600, fontSize: 14, color: C.navy }}>Sources</span>
-                      <span style={{ fontSize: 12, color: C.muted2 }}>({sources.length})</span>
-                    </div>
-                    <div style={sourcesGridStyle}>
-                      {sources.map((s) => (
-                        <SourceCard key={s.index} s={s} active={activeCite === s.index} onOpenEntity={sourceEntity(s)} />
-                      ))}
+                    <div
+                      style={{
+                        background: "#e7edf5",
+                        border: "1px solid #d4deea",
+                        borderTop: `3px solid ${C.navy}`,
+                        borderRadius: 16,
+                        padding: "4px 14px 16px",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 2px 12px" }}>
+                        <Ms name="inventory_2" size={18} color={C.navy} />
+                        <span style={{ fontFamily: FONT_HEAD, fontWeight: 600, fontSize: 14, color: C.navy }}>Sources</span>
+                        <span style={{ fontSize: 12, color: C.muted2 }}>({sources.length})</span>
+                        <span style={{ flex: 1 }} />
+                        <span style={{ fontSize: 11, color: C.muted2 }}>cited evidence · expand any card</span>
+                      </div>
+                      <div style={sourcesGridStyle}>
+                        {sources.map((s) => (
+                          <SourceCard key={s.index} s={s} active={activeCite === s.index} onOpenEntity={sourceEntity(s)} />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -724,7 +738,7 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
       <div style={{ background: "#fff", border: "1px solid rgba(6,3,8,.12)", borderTop: `3px solid ${C.blue}`, borderRadius: 16, padding: "26px 28px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 16, flexWrap: "wrap" }}>
           <Ms name="auto_awesome" size={20} color={C.blue} />
-          <span style={{ fontFamily: FONT_HEAD, fontWeight: 600, fontSize: 15, color: C.navy }}>Grounded answer</span>
+          <span style={{ fontFamily: FONT_HEAD, fontWeight: 600, fontSize: 15, color: C.navy }}>AI Answer</span>
           {r.crossSource && (
             <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 999, background: "#f1ebf4", color: "#623279", fontSize: 11, fontWeight: 600 }}>
               <Ms name="hub" size={13} color="#623279" />
@@ -864,6 +878,73 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
           Back to Ask
         </button>
 
+        {/* Look up ANY person or property */}
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+            flexWrap: "wrap",
+            marginBottom: 18,
+            background: "#fff",
+            border: "1px solid rgba(6,3,8,.12)",
+            borderRadius: 12,
+            padding: "10px 12px",
+          }}
+        >
+          <Ms name="search" size={18} color={C.navy} />
+          <div style={{ display: "inline-flex", background: "#eef1f5", borderRadius: 8, padding: 3 }}>
+            <button onClick={() => setLookupType("person")} style={segStyle(lookupType === "person")}>Person</button>
+            <button onClick={() => setLookupType("address")} style={segStyle(lookupType === "address")}>Property</button>
+          </div>
+          <input
+            value={lookupValue}
+            onChange={(e) => setLookupValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && lookupValue.trim())
+                openEntity({ type: lookupType, value: lookupValue.trim() });
+            }}
+            placeholder={
+              lookupType === "person"
+                ? "Search any resident or staff name…"
+                : "Search any address or street…"
+            }
+            style={{
+              flex: 1,
+              minWidth: 200,
+              border: 0,
+              outline: 0,
+              background: "none",
+              fontFamily: FONT_BODY,
+              fontSize: 14.5,
+              color: C.ink,
+              padding: "6px 2px",
+            }}
+          />
+          <button
+            onClick={() => {
+              if (lookupValue.trim()) openEntity({ type: lookupType, value: lookupValue.trim() });
+            }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              background: C.blue,
+              color: "#fff",
+              border: 0,
+              borderRadius: 8,
+              padding: "8px 15px",
+              fontFamily: FONT_BODY,
+              fontWeight: 600,
+              fontSize: 13.5,
+              cursor: "pointer",
+            }}
+          >
+            Look up
+            <Ms name="arrow_forward" size={16} color="#fff" />
+          </button>
+        </div>
+
         <div style={{ background: "#fff", border: "1px solid rgba(6,3,8,.12)", borderRadius: 16, padding: "24px 26px", marginBottom: 22 }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 18, flexWrap: "wrap" }}>
             <span style={{ width: 54, height: 54, borderRadius: 13, background: C.navy, display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
@@ -914,7 +995,7 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
             <div style={{ marginTop: 20, background: "#f5f8ff", border: "1px solid #cee0ff", borderRadius: 13, padding: "20px 22px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 13 }}>
                 <Ms name="auto_awesome" size={19} color={C.blue} />
-                <span style={{ fontFamily: FONT_HEAD, fontWeight: 600, fontSize: 14, color: C.navy }}>Grounded synthesis</span>
+                <span style={{ fontFamily: FONT_HEAD, fontWeight: 600, fontSize: 14, color: C.navy }}>AI Answer</span>
               </div>
               {entitySummaryLoading ? (
                 <div>

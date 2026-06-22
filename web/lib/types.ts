@@ -47,6 +47,20 @@ export interface OpenItem {
   entityPerson?: string; // known sender → single-pane drill-in
 }
 
+export interface EmailDetail {
+  subject: string | null;
+  fromName: string | null;
+  fromEmail: string | null;
+  toEmail: string | null;
+  cc: string | null;
+  direction: Direction;
+  topic: string | null;
+  stream: StreamKey;
+  date: string;
+  bodyClean: string;
+  bodyRaw: string;
+}
+
 export interface AppliedFilters {
   person?: string;
   address?: string;

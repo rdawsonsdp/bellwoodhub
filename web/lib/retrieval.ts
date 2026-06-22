@@ -446,6 +446,56 @@ export async function ask(
   };
 }
 
+// ── retrieval only (for the MCP server: vector search, no LLM synthesis) ─────
+export async function searchSources(
+  question: string,
+  filters: SearchOpts = {},
+): Promise<{ sources: Source[]; crossSource: boolean; applied?: AppliedFilters }> {
+  const crossIntent = CROSS_INTENT.test(question);
+  const af =
+    filters.noAuto || crossIntent
+      ? { person: filters.person, address: filters.address, auto: {} }
+      : autoFilters(question, filters.person, filters.address);
+  const k = filters.k ?? 8;
+  const searchOpts: SearchOpts = { ...filters, person: af.person, address: af.address };
+
+  let rows: ChunkRow[];
+  if (crossIntent) {
+    const qv = toVector(await embed(question));
+    const TARGET = new Set<StreamKey>([
+      "Resident",
+      "Police",
+      "Fire/EMS",
+      "Business",
+      "Interdepartmental",
+    ]);
+    const all = await crossSourceRows(qv, searchOpts, 2);
+    const focused = dedupeByMessage(all.filter((r) => TARGET.has(r.stream as StreamKey)));
+    rows = diversifyByStream(focused, Math.max(k, 10));
+  } else {
+    const pool = dedupeByMessage(
+      await searchRows(question, searchOpts, Math.max(k * 2, 16)),
+    );
+    rows = pool.slice(0, k);
+  }
+
+  const ordered = sortNewestFirst(rows);
+  const sources = toSources(ordered);
+
+  const applied: AppliedFilters = {};
+  if (af.person) applied.person = af.person;
+  if (af.address) applied.address = af.address;
+  if (filters.since) applied.since = filters.since;
+  if (filters.until) applied.until = filters.until;
+  if (filters.topic) applied.topic = filters.topic;
+
+  return {
+    sources,
+    crossSource: new Set(sources.map((s) => s.stream)).size >= 3,
+    applied: Object.keys(applied).length ? applied : undefined,
+  };
+}
+
 // ── entity timeline (single pane of glass) ──────────────────────────────────
 export async function getEntity(
   type: "person" | "address",

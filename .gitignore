@@ -27,6 +27,7 @@ next-env.d.ts
 #    the addl batch and base backup are redundant, so don't bloat the repo. ──
 corpus/seed_addl.json
 corpus/seed_3yr.json
+corpus/seed_now.json
 corpus/seed_base_backup.json
 !corpus/seed_emails.json
 !.env.example

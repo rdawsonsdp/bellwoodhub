@@ -53,7 +53,7 @@ SOURCE_MIX = {
 
 # 3-year window ending shortly before the demo date (2026-06-20).
 CORPUS_START = _dt.date(2023, 6, 20)
-CORPUS_END = _dt.date(2026, 6, 20)
+CORPUS_END = _dt.date(2026, 6, 22)
 
 # The inbox we are searching belongs to the Mayor.
 MAYOR_NAME = "Mayor Daniel R. Okonkwo"

@@ -99,6 +99,8 @@ def _normalize(raw: dict, source: str) -> dict:
         "season": str(raw.get("season") or "any").strip().lower(),
         "year_hint": _as_int(raw.get("year_hint"), 0),
         "month_hint": _as_int(raw.get("month_hint"), 0),
+        "day_hint": _as_int(raw.get("day_hint"), 0),
+        "hour_hint": _as_int(raw.get("hour_hint"), 0),
         "subject": str(raw["subject"]).strip(),
         "body_clean": str(raw["body_clean"]).strip(),
         "openness": str(raw.get("openness") or "info").strip().lower(),

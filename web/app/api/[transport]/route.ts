@@ -8,7 +8,7 @@ export const maxDuration = 60;
 
 const BASE = process.env.PUBLIC_BASE_URL || "https://village-knowledge-hub.vercel.app";
 
-const handler = createMcpHandler(
+const mcpHandler = createMcpHandler(
   (server) => {
     // ── Semantic (vector) RAG search — the core tool ──
     server.tool(
@@ -123,4 +123,32 @@ const handler = createMcpHandler(
   { basePath: "/api", maxDuration: 60, verboseLogs: true },
 );
 
-export { handler as GET, handler as POST, handler as DELETE };
+// ── Shared-secret gate ──
+// If MCP_SECRET is set, every request must present it as ?k=<secret> (in the
+// connector URL) or an `Authorization: Bearer <secret>` header. If it's unset,
+// the endpoint stays open (e.g. for local dev).
+function authorized(req: Request): boolean {
+  const secret = process.env.MCP_SECRET;
+  if (!secret) return true;
+  const url = new URL(req.url);
+  const q = url.searchParams.get("k") || url.searchParams.get("key");
+  if (q && q === secret) return true;
+  if (req.headers.get("authorization") === `Bearer ${secret}`) return true;
+  return false;
+}
+
+async function guarded(req: Request): Promise<Response> {
+  if (!authorized(req)) {
+    return new Response(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: null,
+        error: { code: -32001, message: "Unauthorized: missing or invalid secret." },
+      }),
+      { status: 401, headers: { "content-type": "application/json" } },
+    );
+  }
+  return mcpHandler(req);
+}
+
+export { guarded as GET, guarded as POST, guarded as DELETE };

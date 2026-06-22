@@ -39,6 +39,13 @@ interface EntityRef {
 
 const MAX = 1200;
 
+const DASH_PROMPTS = [
+  "What were the most common police offenses this year?",
+  "Show me recent fire inspections that found violations",
+  "Summarize police and fire activity on St. Charles Rd",
+  "What major fires or incidents happened over the last year?",
+];
+
 export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
   const [screen, setScreen] = useState<Screen>("ask");
   const [layout, setLayout] = useState<Layout>("stacked");
@@ -1092,9 +1099,94 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
         <h2 style={{ fontFamily: FONT_HEAD, fontWeight: 600, fontSize: 26, letterSpacing: "-.02em", color: C.navy, margin: "0 0 4px" }}>
           Archive dashboard
         </h2>
-        <p style={{ fontSize: 14.5, color: C.muted, margin: "0 0 26px" }}>
-          Who&apos;s reaching the village, what&apos;s still open, and how the corpus breaks down.
+        <p style={{ fontSize: 14.5, color: C.muted, margin: "0 0 18px" }}>
+          Search or ask a question about the archive, or scan the breakdowns below.
         </p>
+
+        {/* Ask / search directly from the dashboard */}
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            alignItems: "center",
+            flexWrap: "wrap",
+            background: "#fff",
+            border: "1px solid rgba(6,3,8,.12)",
+            borderRadius: 12,
+            padding: "10px 12px",
+            marginBottom: 14,
+          }}
+        >
+          <Ms name="search" size={20} color={C.navy} />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && query.trim()) runAsk(query);
+            }}
+            placeholder="Search or ask anything — e.g. 'recent fire inspections with violations'"
+            style={{
+              flex: 1,
+              minWidth: 240,
+              border: 0,
+              outline: 0,
+              background: "none",
+              fontFamily: FONT_BODY,
+              fontSize: 15,
+              color: C.ink,
+              padding: "6px 2px",
+            }}
+          />
+          <button
+            onClick={() => {
+              if (query.trim()) runAsk(query);
+            }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              background: C.blue,
+              color: "#fff",
+              border: 0,
+              borderRadius: 8,
+              padding: "9px 16px",
+              fontFamily: FONT_BODY,
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: "pointer",
+            }}
+          >
+            Ask
+            <Ms name="arrow_forward" size={16} color="#fff" />
+          </button>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 26 }}>
+          {DASH_PROMPTS.map((q, i) => (
+            <button
+              key={i}
+              onClick={() => {
+                setQuery(q);
+                runAsk(q);
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                background: "#fff",
+                border: "1px solid rgba(6,3,8,.14)",
+                borderRadius: 999,
+                padding: "7px 13px",
+                fontFamily: FONT_BODY,
+                fontSize: 13,
+                color: C.ink,
+                cursor: "pointer",
+              }}
+            >
+              <Ms name="bolt" size={14} color={C.gold} />
+              {q}
+            </button>
+          ))}
+        </div>
 
         {dashLoading && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(330px,1fr))", gap: 20 }}>
@@ -1118,16 +1210,24 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
   function renderDashboardBody(d: DashboardResponse) {
     const maxC = Math.max(1, ...d.who.constituents.map((r) => r.count));
     const maxI = Math.max(1, ...d.who.internal.map((r) => r.count));
-    const vol = d.volumeByMonth.slice(-6);
-    const maxV = Math.max(1, ...vol.map((b) => b.count));
     const streamTotal = Math.max(1, d.byStream.reduce((a, b) => a + b.count, 0));
     const topicTotal = Math.max(1, d.byTopic.reduce((a, b) => a + b.count, 0));
     const streams = [...d.byStream].sort((a, b) => b.count - a.count).slice(0, 6);
     const topics = [...d.byTopic].sort((a, b) => b.count - a.count).slice(0, 8);
-    const monthLabel = (m: string) => {
-      const [y, mo] = m.split("-").map(Number);
-      return new Date(Date.UTC(y, (mo || 1) - 1, 1)).toLocaleString("en-US", { month: "short" });
-    };
+    // Bucket the full multi-year span into quarters for the volume chart.
+    const qOrder: string[] = [];
+    const qmap = new Map<string, number>();
+    for (const b of d.volumeByMonth) {
+      const [y, mo] = b.month.split("-").map(Number);
+      const key = `${y}-Q${Math.floor(((mo || 1) - 1) / 3) + 1}`;
+      if (!qmap.has(key)) qOrder.push(key);
+      qmap.set(key, (qmap.get(key) || 0) + b.count);
+    }
+    const vol = qOrder.map((key) => ({
+      label: `Q${key.slice(-1)} '${key.slice(2, 4)}`,
+      count: qmap.get(key) || 0,
+    }));
+    const maxV = Math.max(1, ...vol.map((b) => b.count));
 
     return (
       <>
@@ -1229,14 +1329,15 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
           <div style={cardStyle}>
             <div style={cardHead}>
               <Ms name="show_chart" size={19} color={C.blue} />
-              <span style={cardTitle}>Message volume over time</span>
+              <span style={cardTitle}>Message volume by quarter</span>
+              <span style={{ fontSize: 11.5, color: C.muted2, marginLeft: 2 }}>· 3-year span</span>
             </div>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 14, height: 150 }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 150 }}>
               {vol.map((b, i) => (
-                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, height: "100%", justifyContent: "flex-end" }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: C.navy }}>{b.count}</span>
-                  <span style={{ width: "100%", maxWidth: 40, borderRadius: "7px 7px 0 0", background: "linear-gradient(180deg,#0a66ff,#5393ff)", height: `${(b.count / maxV) * 100}%` }} />
-                  <span style={{ fontSize: 11.5, color: C.muted2, fontWeight: 600 }}>{monthLabel(b.month)}</span>
+                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, height: "100%", justifyContent: "flex-end" }}>
+                  <span style={{ fontSize: 9.5, fontWeight: 700, color: C.navy }}>{b.count}</span>
+                  <span style={{ width: "100%", maxWidth: 30, borderRadius: "5px 5px 0 0", background: "linear-gradient(180deg,#0a66ff,#5393ff)", height: `${(b.count / maxV) * 100}%` }} />
+                  <span style={{ fontSize: 9.5, color: C.muted2, fontWeight: 600, whiteSpace: "nowrap" }}>{b.label}</span>
                 </div>
               ))}
             </div>

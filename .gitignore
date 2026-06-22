@@ -26,6 +26,7 @@ next-env.d.ts
 # ── Corpus: keep the canonical 20k seed + the authored/bank inputs;
 #    the addl batch and base backup are redundant, so don't bloat the repo. ──
 corpus/seed_addl.json
+corpus/seed_3yr.json
 corpus/seed_base_backup.json
 !corpus/seed_emails.json
 !.env.example

@@ -95,7 +95,7 @@ def _pick_agency(text: str, rng):
 
 
 def _pick_year_month(rng, season: str):
-    year = rng.choice([2024, 2025, 2025, 2026, 2026])
+    year = rng.choice([2023, 2023, 2024, 2024, 2025, 2025, 2026, 2026])
     if season in MONTHS:
         month = rng.choice(MONTHS[season])
     else:

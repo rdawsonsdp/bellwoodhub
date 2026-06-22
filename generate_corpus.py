@@ -148,7 +148,7 @@ def place_date(unit: dict, rng: random.Random) -> dt.datetime:
     """Pick a datetime honoring year/month/(day) hints, inside the window,
     biased toward weekdays and daytime. An exact day_hint (daily reports) is
     honored precisely with no weekday nudging."""
-    year = unit["year_hint"] if 2024 <= unit["year_hint"] <= 2026 else rng.choice([2024, 2025, 2026])
+    year = unit["year_hint"] if 2023 <= unit["year_hint"] <= 2026 else rng.choice([2023, 2024, 2025, 2026])
     month = unit["month_hint"] if 1 <= unit["month_hint"] <= 12 else None
     if month is None:
         season = unit["season"]

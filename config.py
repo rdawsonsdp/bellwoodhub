@@ -51,8 +51,8 @@ SOURCE_MIX = {
     "civic":        800,   # council/agenda, FOIA, vendors, regional agencies
 }
 
-# 24-month window ending shortly before the demo date (2026-06-20).
-CORPUS_START = _dt.date(2024, 6, 1)
+# 3-year window ending shortly before the demo date (2026-06-20).
+CORPUS_START = _dt.date(2023, 6, 20)
 CORPUS_END = _dt.date(2026, 6, 20)
 
 # The inbox we are searching belongs to the Mayor.

@@ -173,6 +173,46 @@ PERSONAS = {
         "disclaimer": True,
     },
 
+    # ── Police & Fire command staff (records / reports / inspections) ─────
+    "police_chief": {
+        "name": "Chief Gerald Pruitt",
+        "email": "pdchief@bellwood-demo.gov",
+        "role": "staff",
+        "voice": "Bellwood Police Chief. Monthly UCR/CompStat crime stats, major-"
+                 "incident briefings, staffing, mutual aid, policy. Measured, data-forward.",
+        "signature": "Chief Gerald Pruitt\nBellwood Police Department\n(708) 555-0126",
+        "disclaimer": True,
+    },
+    "records_clerk": {
+        "name": "Bellwood PD — Records Bureau",
+        "email": "pdrecords@bellwood-demo.gov",
+        "role": "staff",
+        "voice": "Police Records Bureau. Files offense/incident reports, arrest "
+                 "and booking logs, traffic crash reports, citations, FOIA responses; "
+                 "cites case numbers, IUCR/NIBRS classifications, dispositions.",
+        "signature": "Records Bureau\nBellwood Police Department\n(708) 555-0127",
+        "disclaimer": True,
+    },
+    "fire_chief": {
+        "name": "Chief Lillian Vasquez",
+        "email": "fdchief@bellwood-demo.gov",
+        "role": "staff",
+        "voice": "Bellwood Fire Chief. Monthly NFIRS run statistics, major-incident "
+                 "command summaries, MABAS mutual aid, apparatus and budget. Crisp.",
+        "signature": "Chief Lillian Vasquez\nBellwood Fire Department\n(708) 555-0131",
+        "disclaimer": True,
+    },
+    "fire_inspector": {
+        "name": "Inspector Dale Brackett",
+        "email": "fdprevention@bellwood-demo.gov",
+        "role": "staff",
+        "voice": "Fire Prevention Bureau. Commercial occupancy inspections, code "
+                 "violations and re-inspections, plan reviews, hydrant flow tests, "
+                 "cause-and-origin investigations; cites NFPA/IFC sections.",
+        "signature": "Inspector Dale Brackett\nFire Prevention Bureau\nBellwood Fire Department\n(708) 555-0132",
+        "disclaimer": True,
+    },
+
     # ── Recurring residents ───────────────────────────────────────────────
     "gloria": {  # HERO #2 — the repeat constituent
         "name": "Gloria Bennett",

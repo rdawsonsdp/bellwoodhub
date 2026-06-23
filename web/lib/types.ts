@@ -107,6 +107,11 @@ export interface EntityResponse {
   messages: TimelineMessage[];
 }
 
+export interface ListResponse {
+  count: number; // total matching the filter
+  messages: TimelineMessage[]; // newest-first, capped sample
+}
+
 export interface DashboardResponse {
   who: { constituents: WhoRow[]; internal: WhoRow[] };
   openItems: Source[];

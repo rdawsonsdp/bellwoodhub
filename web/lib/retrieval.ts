@@ -555,6 +555,72 @@ export async function getEntity(
   };
 }
 
+// ── filtered list (dashboard chart drill-in) ────────────────────────────────
+export interface ListOpts {
+  topic?: string;
+  stream?: StreamKey;
+  since?: string;
+  until?: string;
+  inboundOnly?: boolean; // match the inbound-only "by source stream" mix
+  limit?: number;
+}
+
+/** Newest-first list of the actual emails behind a dashboard chart segment. */
+export async function listEmails(
+  opts: ListOpts,
+): Promise<{ count: number; messages: TimelineMessage[] }> {
+  const { clauses, params } = buildFilters(
+    { topic: opts.topic, stream: opts.stream, since: opts.since, until: opts.until },
+    1,
+  );
+  if (opts.inboundOnly) clauses.push(`e.direction = 'inbound'`);
+  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+
+  const countRows = await query<{ n: string }>(
+    `SELECT count(*) AS n FROM poc.emails e ${where}`,
+    params,
+  );
+  const total = Number(countRows[0]?.n ?? 0);
+
+  const limit = Math.min(200, Math.max(1, opts.limit ?? 60));
+  const rows = await query<{
+    id: string;
+    date_sent: Date;
+    direction: Direction;
+    from_name: string | null;
+    from_email: string | null;
+    subject: string | null;
+    topic: string | null;
+    stream: string;
+    body_clean: string | null;
+    message_id: string;
+    thread_id: string | null;
+  }>(
+    `SELECT e.id, e.date_sent, e.direction, e.from_name, e.from_email, e.subject,
+            e.topic, ${streamCase("e")} AS stream, e.body_clean, e.message_id, e.thread_id
+     FROM poc.emails e ${where}
+     ORDER BY e.date_sent DESC
+     LIMIT ${limit}`,
+    params,
+  );
+
+  const messages: TimelineMessage[] = rows.map((r) => ({
+    id: r.id,
+    date: r.date_sent.toISOString(),
+    direction: r.direction,
+    fromName: r.from_name,
+    fromEmail: r.from_email,
+    subject: r.subject,
+    topic: r.topic,
+    stream: (r.stream as StreamKey) ?? deriveStream(r.topic, r.from_email),
+    snippet: snippet(r.body_clean, 240),
+    messageId: r.message_id,
+    threadId: r.thread_id,
+  }));
+
+  return { count: total, messages };
+}
+
 // ── full email detail (source drill-in) ─────────────────────────────────────
 export async function getEmailByMessageId(mid: string): Promise<EmailDetail | null> {
   const rows = await query<{

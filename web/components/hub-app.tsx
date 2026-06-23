@@ -20,6 +20,7 @@ import type {
   AskResponse,
   DashboardResponse,
   EntityResponse,
+  ListResponse,
   Source,
 } from "@/lib/types";
 
@@ -79,6 +80,12 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
   const [dash, setDash] = useState<DashboardResponse | null>(null);
   const [dashLoading, setDashLoading] = useState(false);
   const [dashError, setDashError] = useState<string | null>(null);
+
+  // Drill-in: the actual emails behind a clicked dashboard-chart segment.
+  const [drill, setDrill] = useState<{ title: string } | null>(null);
+  const [drillData, setDrillData] = useState<ListResponse | null>(null);
+  const [drillLoading, setDrillLoading] = useState(false);
+  const [drillError, setDrillError] = useState<string | null>(null);
 
   const hasActive = !!result || loading || !!askError;
 
@@ -190,6 +197,51 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
       setDashLoading(false);
     }
   }
+
+  async function openDrill(params: Record<string, string>, title: string) {
+    setDrill({ title });
+    setDrillData(null);
+    setDrillError(null);
+    setDrillLoading(true);
+    try {
+      const qs = new URLSearchParams(params).toString();
+      const res = await fetch(`/api/list?${qs}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Request failed");
+      setDrillData(data as ListResponse);
+    } catch (e) {
+      setDrillError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setDrillLoading(false);
+    }
+  }
+  function closeDrill() {
+    setDrill(null);
+  }
+
+  // Drill a volume bar: derive the calendar quarter's date range.
+  function openQuarterDrill(quarterKey: string, label: string) {
+    const [yStr, qStr] = quarterKey.split("-Q");
+    const y = Number(yStr);
+    const q = Number(qStr);
+    const firstMonth = q * 3 - 2;
+    const lastMonth = q * 3;
+    const lastDay = new Date(y, lastMonth, 0).getDate();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    openDrill(
+      { since: `${y}-${pad(firstMonth)}-01`, until: `${y}-${pad(lastMonth)}-${pad(lastDay)} 23:59:59` },
+      `Quarter · ${label}`,
+    );
+  }
+
+  useEffect(() => {
+    if (!drill) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeDrill();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [drill]);
 
   function sourceEntity(s: Source): (() => void) | undefined {
     if (s.fromName && isKnownPerson(s.fromName)) {
@@ -1224,6 +1276,7 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
       qmap.set(key, (qmap.get(key) || 0) + b.count);
     }
     const vol = qOrder.map((key) => ({
+      key,
       label: `Q${key.slice(-1)} '${key.slice(2, 4)}`,
       count: qmap.get(key) || 0,
     }));
@@ -1334,11 +1387,16 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
             </div>
             <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 150 }}>
               {vol.map((b, i) => (
-                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, height: "100%", justifyContent: "flex-end" }}>
+                <button
+                  key={i}
+                  onClick={() => openQuarterDrill(b.key, b.label)}
+                  title={`View the ${b.count.toLocaleString()} emails from ${b.label}`}
+                  style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, height: "100%", justifyContent: "flex-end", background: "none", border: 0, padding: 0, cursor: "pointer" }}
+                >
                   <span style={{ fontSize: 9.5, fontWeight: 700, color: C.navy }}>{b.count}</span>
-                  <span style={{ width: "100%", maxWidth: 30, borderRadius: "5px 5px 0 0", background: "linear-gradient(180deg,#0a66ff,#5393ff)", height: `${(b.count / maxV) * 100}%` }} />
+                  <span className="drillbar" style={{ width: "100%", maxWidth: 30, borderRadius: "5px 5px 0 0", background: "linear-gradient(180deg,#0a66ff,#5393ff)", height: `${(b.count / maxV) * 100}%` }} />
                   <span style={{ fontSize: 9.5, color: C.muted2, fontWeight: 600, whiteSpace: "nowrap" }}>{b.label}</span>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -1354,13 +1412,18 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
                 const sm = streamMeta(x.stream);
                 const pct = Math.round((x.count / streamTotal) * 100);
                 return (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 11 }}>
+                  <button
+                    key={i}
+                    onClick={() => openDrill({ stream: x.stream, inbound: "1" }, `Source · ${sm.label}`)}
+                    title={`View the ${x.count.toLocaleString()} ${sm.label} emails`}
+                    style={{ display: "flex", alignItems: "center", gap: 11, background: "none", border: 0, padding: 0, cursor: "pointer", textAlign: "left", width: "100%" }}
+                  >
                     <span style={{ fontSize: 13, color: C.ink, width: 96, flex: "none", fontWeight: 500 }}>{sm.label}</span>
                     <span style={{ flex: 1, height: 13, borderRadius: 7, background: "#eef1f5", overflow: "hidden" }}>
                       <span style={{ display: "block", height: "100%", borderRadius: 7, width: `${pct}%`, background: sm.color }} />
                     </span>
                     <span style={{ fontSize: 12, fontWeight: 700, color: C.muted, width: 34, textAlign: "right" }}>{pct}%</span>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -1377,18 +1440,73 @@ export function HubApp({ initialQuestion }: { initialQuestion?: string }) {
                 const tm = topicMeta(x.topic);
                 const pct = Math.round((x.count / topicTotal) * 100);
                 return (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 11 }}>
+                  <button
+                    key={i}
+                    onClick={() => openDrill({ topic: x.topic }, `Topic · ${tm.label}`)}
+                    title={`View the ${x.count.toLocaleString()} ${tm.label} emails`}
+                    style={{ display: "flex", alignItems: "center", gap: 11, background: "none", border: 0, padding: 0, cursor: "pointer", textAlign: "left", width: "100%" }}
+                  >
                     <span style={{ fontSize: 13, color: C.ink, width: 118, flex: "none", fontWeight: 500 }}>{tm.label}</span>
                     <span style={{ flex: 1, height: 11, borderRadius: 6, background: "#eef1f5", overflow: "hidden" }}>
                       <span style={{ display: "block", height: "100%", borderRadius: 6, width: `${pct}%`, background: tm.fg }} />
                     </span>
                     <span style={{ fontSize: 12, fontWeight: 700, color: C.muted, width: 34, textAlign: "right" }}>{pct}%</span>
-                  </div>
+                  </button>
                 );
               })}
             </div>
           </div>
         </div>
+
+        {drill && (
+          <div
+            onClick={closeDrill}
+            style={{ position: "fixed", inset: 0, background: "rgba(8,12,24,.52)", backdropFilter: "blur(2px)", zIndex: 60, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "8vh 16px 16px" }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{ background: "#fff", borderRadius: 16, width: "min(680px,100%)", maxHeight: "82vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 24px 60px rgba(0,0,0,.34)" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid rgba(6,3,8,.1)" }}>
+                <Ms name="filter_list" size={19} color={C.blue} />
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontFamily: FONT_HEAD, fontWeight: 600, fontSize: 16, color: C.navy }}>{drill.title}</span>
+                  <span style={{ fontSize: 12, color: C.muted }}>
+                    {drillLoading
+                      ? "Loading…"
+                      : drillData
+                        ? `${drillData.count.toLocaleString()} email${drillData.count === 1 ? "" : "s"}${drillData.count > drillData.messages.length ? ` · showing newest ${drillData.messages.length}` : ""}`
+                        : ""}
+                  </span>
+                </span>
+                <button onClick={closeDrill} aria-label="Close" style={{ background: "none", border: 0, cursor: "pointer", color: C.muted, display: "flex", padding: 4 }}>
+                  <Ms name="close" size={22} />
+                </button>
+              </div>
+              <div style={{ overflowY: "auto", padding: "4px 20px 14px" }}>
+                {drillLoading && <Shim />}
+                {drillError && <div style={{ color: "#b4232a", fontSize: 13, padding: "16px 0" }}>{drillError}</div>}
+                {drillData && drillData.messages.length === 0 && !drillLoading && (
+                  <div style={{ color: C.muted, fontSize: 13, padding: "16px 0" }}>No emails matched.</div>
+                )}
+                {drillData?.messages.map((m) => (
+                  <Link
+                    key={m.id}
+                    href={`/email?mid=${encodeURIComponent(m.messageId)}`}
+                    style={{ display: "flex", alignItems: "center", gap: 11, borderBottom: "1px solid rgba(6,3,8,.07)", padding: "10px 0", textDecoration: "none" }}
+                  >
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: C.muted2, width: 46, flex: "none" }}>{fmtDateShort(m.date)}</span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", fontSize: 13.5, fontWeight: 600, color: C.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.subject || "(no subject)"}</span>
+                      <span style={{ fontSize: 12, color: C.muted }}>{m.fromName || "Unknown"}</span>
+                    </span>
+                    <span style={topicChipStyle(m.topic)}>{topicMeta(m.topic).label}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </>
     );
   }

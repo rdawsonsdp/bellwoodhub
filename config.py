@@ -103,6 +103,29 @@ CHUNK_MIN_TOKENS = 20                           # don't emit tiny trailing chunk
 SCHEMA = "poc"
 
 # ──────────────────────────────────────────────────────────────────────────
+# AI Chief of Staff — canonical pipeline (additive; the poc vars above are
+# untouched so the existing OpenAI pipeline keeps working through the cutover).
+# ──────────────────────────────────────────────────────────────────────────
+CANONICAL_SCHEMA = "canonical"
+DEFAULT_TENANT_ID = "00000000-0000-0000-0000-000000000001"
+
+# Voyage embeddings — voyage-4-large @ 1024 (verified current; supersedes voyage-3).
+# Parameterized so the dimension is set in ONE place and never hard-coded downstream.
+VOYAGE_API_KEY = os.environ.get("VOYAGE_API_KEY", "").strip()
+CANONICAL_EMBED_MODEL = os.environ.get("VOYAGE_MODEL", "voyage-4-large").strip()
+CANONICAL_EMBED_DIM = int(os.environ.get("VOYAGE_DIM", "1024"))
+VOYAGE_PRICE_PER_1M_TOKENS = 0.12               # voyage-4-large list price (cost-gate display only)
+# Voyage input_type asymmetry: documents embedded as "document", queries as "query".
+VOYAGE_INPUT_DOCUMENT = "document"
+VOYAGE_INPUT_QUERY = "query"
+
+# Claude routing (graduated autonomy). 70/20/10 Haiku/Sonnet/Opus blended.
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+CLAUDE_HAIKU = os.environ.get("HAIKU_MODEL", "claude-haiku-4-5").strip()
+CLAUDE_SONNET = os.environ.get("SONNET_MODEL", "claude-sonnet-4-6").strip()
+CLAUDE_OPUS = os.environ.get("OPUS_MODEL", "claude-opus-4-8").strip()
+
+# ──────────────────────────────────────────────────────────────────────────
 # Scripted demo questions (query.py --demo). This is the answer key.
 # ──────────────────────────────────────────────────────────────────────────
 DEMO_QUESTIONS = [

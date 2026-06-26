@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ask, type SearchOpts } from "@/lib/retrieval";
+import { ask, type SearchOpts } from "@/lib/backend";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

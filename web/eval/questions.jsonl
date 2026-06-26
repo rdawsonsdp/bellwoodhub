@@ -1,0 +1,5 @@
+{"id":"q-bohland","question":"What's the full history on the drainage and flooding problem at the property on Bohland Ave?","expectAnchorType":"address","minSources":1}
+{"id":"q-bennett","question":"What's our history with Gloria Bennett, and how should I handle her latest email?","expectAnchorType":"name_variant","minSources":1}
+{"id":"q-open","question":"What's still open right now that I haven't resolved?","expectMode":"open_items"}
+{"id":"q-stcharles","question":"Cross-reference the police and fire reports with resident complaints about the St. Charles Road bars — what's the full picture across every source?","expectMode":"rag","expectStreams":["Police","Fire/EMS","Resident"],"beatsFlatBaseline":true}
+{"id":"q-gap","question":"What's the status of the Madison Street sewer reconstruction project?","expectMode":"rag","mustStateGap":true}

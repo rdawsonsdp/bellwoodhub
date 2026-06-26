@@ -1,6 +1,7 @@
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
-import { searchSources, getEntity, getEmailByMessageId } from "@/lib/retrieval";
+import { searchSources, getEntity, getEmailByMessageId } from "@/lib/backend";
+import { needsYouToday, draftReply } from "@/lib/capabilities";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -115,6 +116,54 @@ const mcpHandler = createMcpHandler(
           `Date: ${em.date.slice(0, 10)}\n` +
           `Stream: ${em.stream} · Topic: ${em.topic ?? ""}\n\n` +
           em.bodyClean;
+        return { content: [{ type: "text", text }] };
+      },
+    );
+
+    // ── "Needs You Today" — read-only capability digest (R4 honest-gap) ──
+    server.tool(
+      "needs_you_today",
+      "The Mayor's 'Needs You Today' digest: newest inbound awaiting a reply, open issues (folded from the event log), and new high-sensitivity inbound — each with a citation link. Read-only; empty sections are stated, not hidden.",
+      {},
+      async () => {
+        const b = await needsYouToday();
+        const sec = (
+          title: string,
+          items: { subject: string | null; fromName: string | null; date: string; stream: string; why: string; messageId: string }[],
+        ) =>
+          `${title} (${items.length})\n` +
+          (items.length
+            ? items
+                .map(
+                  (i) =>
+                    `  • ${i.subject ?? "(no subject)"} — ${i.fromName ?? i.stream} · ${i.date.slice(0, 10)} · ${i.why}  ${BASE}/email?mid=${encodeURIComponent(i.messageId)}`,
+                )
+                .join("\n")
+            : "  • none");
+        const text = [
+          `NEEDS YOU TODAY · ${b.generatedAt.slice(0, 10)}`,
+          sec("AWAITING YOUR REPLY", b.awaitingReply),
+          sec("OPEN ISSUES", b.openIssues),
+          sec("NEW HIGH-SENSITIVITY INBOUND", b.highSensitivity),
+          "(Read-only digest. Drafting and sending always require your approval.)",
+        ].join("\n\n");
+        return { content: [{ type: "text", text }] };
+      },
+    );
+
+    // ── Draft a reply (R3: drafts only, never sends) ──
+    server.tool(
+      "draft_reply",
+      "Draft a reply to an email in the Mayor's voice. Returns a DRAFT plus an approval envelope — it NEVER sends. The Mayor reviews and sends. message_id is the id returned by the other tools.",
+      {
+        message_id: z.string().describe("The message id to reply to."),
+        intent: z.string().optional().describe("Optional: the gist of what the reply should convey."),
+      },
+      async ({ message_id, intent }) => {
+        const env = await draftReply(message_id, intent);
+        const text =
+          `DRAFT REPLY  (status: ${env.status} · requires_human: ${env.requiresHuman} — NOT sent)\n` +
+          `To: ${env.recipients ?? "—"}\nSubject: ${env.subject}\n\n${env.draft}\n\n— ${env.rationale}`;
         return { content: [{ type: "text", text }] };
       },
     );

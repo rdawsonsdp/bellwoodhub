@@ -9,14 +9,11 @@ from pgvector.psycopg import register_vector
 import config
 
 
-def connect() -> psycopg.Connection:
-    """Open a connection to the Supabase Postgres, with pgvector registered and
-    a search_path that resolves the `poc` tables and the `vector` type/operators
-    (pgvector lives in the `extensions` schema on Supabase).
-
-    Parses DATABASE_URL into components and connects via keyword args so special
-    characters in the password (e.g. '!') are handled regardless of encoding,
-    and forces SSL (required by Supabase)."""
+def _connect(search_path: str) -> psycopg.Connection:
+    """Open a Supabase Postgres connection with pgvector registered and the given
+    search_path. Parses DATABASE_URL into components and connects via keyword
+    args so special characters in the password (e.g. '!') are handled regardless
+    of encoding, and forces SSL (required by Supabase)."""
     url = config.require("DATABASE_URL", config.DATABASE_URL)
     u = urlparse(url)
     conn = psycopg.connect(
@@ -28,6 +25,18 @@ def connect() -> psycopg.Connection:
         sslmode="require",
         autocommit=False,
     )
-    conn.execute("SET search_path TO poc, extensions, public")
+    conn.execute(f"SET search_path TO {search_path}")
     register_vector(conn)
     return conn
+
+
+def connect() -> psycopg.Connection:
+    """Connection resolving the `poc` tables + the `vector` type (extensions)."""
+    return _connect("poc, extensions, public")
+
+
+def connect_canonical() -> psycopg.Connection:
+    """Connection resolving the `canonical` + `pipeline` schemas (AI Chief of
+    Staff) and the `vector` type. Used by /ingest and /pipeline; never touches
+    `poc` so the strangler-fig cutover keeps the live POC serving."""
+    return _connect("canonical, pipeline, extensions, public")

@@ -77,6 +77,8 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 | 4 | Send capability (R3) | ⚪ pending | approve records decision, doesn't send |
 | 5 | Full Morning Brief | ⚪ pending | `needsYouToday()` is the precursor |
 | 6 | Expand eval harness | ⚪ pending | 5 → meaningful set |
+| FEAT-10 | Agent-driven **Upload Source** ingestion | 🔵 Phase 1 done | **Phase 1 (demo-safe) shipped:** "Upload Source" button on Sources (mobile + desktop) → pick type → drop file → simulated agent draft → R3 review/categorize form → in-memory commit, surfaced as "Agent-ingested this session". Source-type registry: Fire/EMS, Police (restricted→secured store), Permit, General. Maps 1:1 to messages/entity_aliases/message_topics/chunks. **Next:** Phase 2 real OpenAI-vision parse · Phase 3 canonical writes · Phase 4 Voyage embed · Phase 5 FEAT-11 secured S3. |
+| FEAT-11 | **Secured AWS document store** (S3, encrypted) | ⚪ pending | Per-source/sensitivity storage routing: `restricted` originals (e.g. police) go to a secured, access-controlled S3 bucket — `messages.raw_ref` points there; app holds only searchable metadata/RAG, not the file. `public/internal` may use Supabase Storage. Demo: restricted = memory-only. |
 
 **Known demo gaps (optional polish):** Commitments screen still uses static prototype content (not seed-wired); Brief mixes live data + a few hardcoded hero cards; "who emails most" surfaces institutional senders over residents.
 
@@ -131,6 +133,16 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 - **`VIS-1` Direction (2026-06-26)** — This becomes an **agent that connects to other agents**
   (agent-to-agent / MCP). The capability agents + MCP server are the foundation.
+- **`DEC-4` Storage routing by sensitivity (2026-06-27)** — Uploaded source originals are routed by the
+  canonical `sensitivity` field, configured per source type. `restricted` (e.g. police/CJIS) originals are
+  **not** stored in the app or Supabase — they live in a **secured, access-controlled AWS S3 store** (FEAT-11),
+  with `messages.raw_ref` as the pointer; the app ingests only the searchable metadata + RAG chunks. `public`/
+  `internal` may use Supabase Storage. In the demo, `restricted` files are memory-only (nothing persisted).
+  *Decided by RD.* Ties to CJIS §5.4 / audit-trail requirements (ISS-5).
+- **`DEC-5` Upload Source = human-confirmed Connector (2026-06-27)** — The Upload Source form is not a new
+  data path: the Ingestion Agent drafts an `Envelope` from the file; the form is the **R3 human gate** that
+  confirms it before it flows through the existing 5-step pipeline. Field→column mapping is 1:1 with
+  `canonical.messages` / `entity_aliases` / `message_topics` / `chunks`.
 - **`DEC-1` (2026-06-26)** — Kept the JSON demo as default (`DEMO_MODE=1`) over the live DB for demo reliability.
 - **`DEC-2` (2026-06-26)** — Connect via the Supabase **Session Pooler** (IPv4); no IPv4 add-on needed.
 - **`DEC-3` (2026-06-26)** — Fixed the `message_topics` RLS migration bug so the schema applies cleanly.
@@ -143,6 +155,14 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Changelog
 
+- **2026-06-27 (Upload Source · agent ingestion, Phase 1)** — Shipped the agent-driven **Upload
+  Source** flow on the Sources page (mobile + desktop): pick source type → drop file → Ingestion
+  Agent drafts the record → **R3 review/categorize form** → commit. Grounded the form on the real
+  canonical model (Envelope → messages / entity_aliases / message_topics / chunks) after mapping the
+  schema. New: `lib/source-types.ts` (registry + simulated extraction), `lib/ingested-sources.ts`
+  (demo store), `components/chief/UploadSource.tsx`. **Storage routes by sensitivity (DEC-4):**
+  restricted (police/CJIS) → secured AWS store (FEAT-11, pointer-only); else Supabase Storage; demo
+  persists nothing real. Logged FEAT-11 (secured S3) as a project feature. Typecheck + build clean.
 - **2026-06-27 (kickoff + mobile polish)** — PM skill gained a **Project Kickoff** (PMP-certified
   Sr. PM interview → Project Charter in PROJECT.md). Added a **temporary Project Status tab** under
   Admin linking to the live PM dashboard. Mobile: **swipe-down (pull-to-refresh)** on the main

@@ -10,8 +10,11 @@ import { createContext, useContext, useEffect, useRef, useState, type CSSPropert
 import { C, FONT } from "@/lib/cos-design";
 import AdminPanel from "./AdminPanel";
 import AgentsPage from "./AgentsPage";
+import UploadSource from "./UploadSource";
 import { getRecentSearches, addRecentSearch } from "@/lib/recent-searches";
 import { getEnabledTabs } from "@/lib/email-config";
+import { getIngested, type IngestedRecord } from "@/lib/ingested-sources";
+import { SENSITIVITY_META, getSourceType } from "@/lib/source-types";
 
 const CAT_META: Record<string, [string, string]> = {
   urgent: [C.red, "Urgent"], important: [C.gold, "Important"], social: [C.green, "Social"], spam: [C.dim, "Spam"], general: [C.muted, "General"],
@@ -493,9 +496,18 @@ function SourceScreen({ view, setView }: { view: MoreView; setView: (v: MoreView
 function SourcesView() {
   const { data } = useApi<SourcesOverview>("/api/sources");
   const dot: Record<string, string> = { healthy: C.green, syncing: C.blue, degraded: C.orange };
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [ingested, setIngested] = useState<IngestedRecord[]>([]);
+  useEffect(() => { setIngested(getIngested()); }, []);
   if (!data) return <Loading />;
   return (
     <div style={{ padding: "0 16px 24px" }}>
+      <button onClick={() => setUploadOpen(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, width: "100%", padding: "13px", borderRadius: 13, border: "1px solid rgba(231,181,60,.4)", background: "rgba(231,181,60,.08)", color: C.gold, fontSize: 14, fontWeight: 700, fontFamily: FONT.sans, marginBottom: 14, cursor: "pointer" }}>
+        <Svg d="M12 5v14M5 12h14" w={18} sw={2.2} /> Upload source — agent ingest
+      </button>
+
+      {ingested.length > 0 && <IngestedSection records={ingested} />}
+
       <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
         <Stat n={data.totals.messages.toLocaleString()} label="messages" />
         <Stat n={String(data.connectors.length)} label="connectors" />
@@ -532,6 +544,35 @@ function SourcesView() {
             )}
           </div>
         ))}
+      </div>
+      {uploadOpen && <UploadSource onClose={() => setUploadOpen(false)} onCommitted={() => setIngested(getIngested())} />}
+    </div>
+  );
+}
+
+/* Freshly ingested uploads (agent-confirmed) — surfaced as a live activity block. */
+function IngestedSection({ records }: { records: IngestedRecord[] }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".1em", color: C.gold, textTransform: "uppercase", marginBottom: 9 }}>Agent-ingested · this session ({records.length})</div>
+      <div style={{ display: "grid", gap: 9 }}>
+        {records.map((r) => {
+          const t = getSourceType(r.typeKey); const sm = SENSITIVITY_META[r.sensitivity];
+          return (
+            <div key={r.id} style={{ ...cardS, padding: 13 }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.title}</span>
+                <span style={chip(sm.label, sm.color)}>{sm.label}</span>
+              </div>
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.5, maxHeight: 36, overflow: "hidden" }}>{r.summary}</div>
+              <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <span style={chip(t?.label ?? r.typeKey, C.gold)}>{t?.label ?? r.typeKey}</span>
+                <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim }}>{r.entities.length} linked · {r.stream}</span>
+                <span style={{ marginLeft: "auto", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{r.storageLabel}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

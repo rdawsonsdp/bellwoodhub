@@ -18,7 +18,10 @@ import type { NeedsYouToday } from "@/lib/capabilities";
 import type { MemoryDetail, EntityListItem, SourcesOverview, DraftRow } from "@/lib/screens";
 import AdminPanel from "./AdminPanel";
 import AgentsPage from "./AgentsPage";
+import UploadSource from "./UploadSource";
 import { getRecentSearches, addRecentSearch } from "@/lib/recent-searches";
+import { getIngested, type IngestedRecord } from "@/lib/ingested-sources";
+import { SENSITIVITY_META, getSourceType } from "@/lib/source-types";
 
 /** Fetch JSON on mount; returns null on error/empty so screens can fall back to
  *  the prototype's representative content while canonical is still being built. */
@@ -804,12 +807,22 @@ const PRETTY_SOURCE: Record<string, string> = {
 
 function Sources() {
   const { data, reload } = useApi<SourcesOverview>("/api/sources");
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [ingested, setIngested] = useState<IngestedRecord[]>([]);
+  useEffect(() => { setIngested(getIngested()); }, []);
   if (!data || !data.connectors.length) return <SourcesRepresentative />;
   const total = data.connectors.length;
   const dotFor = (st: string) => (st === "degraded" ? C.orange : st === "syncing" ? C.blue : C.green);
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
-      <div style={{ marginBottom: 18 }}><div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Sources</div><div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>An answer is only as complete as what&apos;s connected.</div></div>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, marginBottom: 18, flexWrap: "wrap" }}>
+        <div><div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Sources</div><div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>An answer is only as complete as what&apos;s connected.</div></div>
+        <button onClick={() => setUploadOpen(true)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 11, border: "1px solid rgba(231,181,60,.4)", background: "rgba(231,181,60,.08)", color: C.gold, fontSize: 13.5, fontWeight: 700, fontFamily: FONT.sans, cursor: "pointer" }}>
+          <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg> Upload source — agent ingest
+        </button>
+      </div>
+      {ingested.length > 0 && <DesktopIngested records={ingested} />}
+      {uploadOpen && <UploadSource onClose={() => setUploadOpen(false)} onCommitted={() => setIngested(getIngested())} />}
       <div style={{ background: "linear-gradient(120deg,rgba(52,201,139,.1),rgba(103,173,255,.06))", border: "1px solid rgba(var(--ink),.1)", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 30, marginBottom: 24 }}>
         <div><div style={{ fontFamily: FONT.serif, fontSize: 34, color: C.text, lineHeight: 1 }}>{data.totals.messages.toLocaleString()}</div><div style={{ fontSize: 12.5, color: C.text3, marginTop: 4 }}>messages in the canonical store</div></div>
         <div style={{ width: 1, height: 46, background: "rgba(var(--ink),.1)" }} />
@@ -845,6 +858,34 @@ function Sources() {
             {data.review.length > 4 && <div style={{ fontFamily: FONT.mono, fontSize: 10, color: C.muted, textAlign: "center" }}>{data.review.length - 4} more in queue</div>}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* Agent-ingested uploads (this session) — surfaced above the connectors. */
+function DesktopIngested({ records }: { records: IngestedRecord[] }) {
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ ...eyebrow(C.gold), fontSize: 10.5, marginBottom: 12 }}>Agent-ingested · this session ({records.length})</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))", gap: 12 }}>
+        {records.map((r) => {
+          const t = getSourceType(r.typeKey); const sm = SENSITIVITY_META[r.sensitivity];
+          return (
+            <div key={r.id} style={{ ...card, padding: 15 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 700, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.title}</span>
+                <span style={{ padding: "2px 9px", borderRadius: 99, fontSize: 10.5, fontWeight: 700, color: sm.color, background: "rgba(var(--ink),.08)" }}>{sm.label}</span>
+              </div>
+              <div style={{ fontSize: 12.5, color: C.text3, lineHeight: 1.5, marginBottom: 9, maxHeight: 38, overflow: "hidden" }}>{r.summary}</div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", fontFamily: FONT.mono, fontSize: 10.5, color: C.dim }}>
+                <span style={{ color: C.gold, fontWeight: 700 }}>{t?.label ?? r.typeKey}</span>
+                <span>· {r.entities.length} linked · {r.stream}</span>
+                <span style={{ marginLeft: "auto" }}>{r.storageLabel}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

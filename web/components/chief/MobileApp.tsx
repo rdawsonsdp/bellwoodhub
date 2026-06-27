@@ -82,6 +82,16 @@ const chip = (label: string, color: string): CSSProperties => ({
 });
 const cardS: CSSProperties = { background: "linear-gradient(180deg,rgba(var(--ink),.05),rgba(var(--ink),.018))", border: "1px solid var(--c-cardbd)", borderRadius: 16, padding: 16 };
 
+/** Filename extension for a recorded audio blob — OpenAI infers format from it,
+ *  so it MUST match the real MIME (iOS Safari records audio/mp4, not webm). */
+function audioExt(mime: string): string {
+  if (mime.includes("mp4") || mime.includes("m4a") || mime.includes("aac")) return "mp4";
+  if (mime.includes("mpeg") || mime.includes("mpga")) return "mp3";
+  if (mime.includes("ogg")) return "ogg";
+  if (mime.includes("wav")) return "wav";
+  return "webm";
+}
+
 export default function MobileApp() {
   const [screen, setScreen] = useState<Screen>("emails");
   const [moreView, setMoreView] = useState<MoreView>(null);
@@ -663,12 +673,13 @@ function AskSheet({ onClose }: { onClose: () => void }) {
   const [res, setRes] = useState<AskResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [rec, setRec] = useState<"idle" | "rec" | "busy">("idle");
+  const [err, setErr] = useState<string | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
 
   async function run(question?: string) {
     const Q = (question ?? q).trim(); if (!Q) return;
-    setQ(Q); addRecentSearch(Q); setLoading(true); setRes(null);
+    setQ(Q); setErr(null); addRecentSearch(Q); setLoading(true); setRes(null);
     // include freshly-ingested uploads so the broad search spans them too
     const uploads = getIngested().map((r) => ({
       id: r.id, title: r.title, summary: r.summary, author: r.author, date: r.date,
@@ -680,19 +691,29 @@ function AskSheet({ onClose }: { onClose: () => void }) {
   }
   async function mic() {
     if (rec === "rec") { recRef.current?.stop(); return; }
+    setErr(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mr = new MediaRecorder(stream); chunks.current = [];
       mr.ondataavailable = (e) => e.data.size && chunks.current.push(e.data);
       mr.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop()); setRec("busy");
-        const fd = new FormData(); fd.append("audio", new Blob(chunks.current, { type: mr.mimeType || "audio/webm" }), "s.webm");
-        try { const r = await fetch("/api/transcribe", { method: "POST", body: fd }); const d = await r.json().catch(() => ({})); if (d.text) { setQ(d.text); run(d.text); } } finally { setRec("idle"); }
+        try {
+          const type = mr.mimeType || "audio/webm"; // iOS Safari → audio/mp4, Chrome → audio/webm
+          const fd = new FormData();
+          fd.append("audio", new Blob(chunks.current, { type }), `speech.${audioExt(type)}`);
+          const r = await fetch("/api/transcribe", { method: "POST", body: fd });
+          const d = await r.json().catch(() => ({} as { text?: string; error?: string }));
+          if (r.ok && d.text) { setRec("idle"); setQ(d.text); run(d.text); return; }
+          setErr(d.error || "Couldn't hear that — try again.");
+        } catch { setErr("Voice search failed — check your connection."); }
+        finally { setRec((s) => (s === "busy" ? "idle" : s)); }
       };
       mr.start(); recRef.current = mr; setRec("rec");
-    } catch { setRec("idle"); }
+    } catch { setErr("Microphone access was blocked."); setRec("idle"); }
   }
   const recent = getRecentSearches();
+  const status = rec === "rec" ? "Listening… tap the mic to stop" : rec === "busy" ? "Transcribing your voice…" : loading ? "Searching the record…" : null;
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "var(--c-appbg)", display: "flex", flexDirection: "column", animation: "sheetUp .22s ease-out" }}>
@@ -703,11 +724,24 @@ function AskSheet({ onClose }: { onClose: () => void }) {
       <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
         <form onSubmit={(e) => { e.preventDefault(); run(); }} style={{ display: "flex", gap: 9, alignItems: "center", background: "rgba(var(--ink),.05)", border: "1.5px solid rgba(231,181,60,.4)", borderRadius: 14, padding: "6px 6px 6px 14px" }}>
           <input value={q} onChange={(e) => setQ(e.target.value)} autoFocus placeholder="Ask anything…" style={{ flex: 1, background: "transparent", border: 0, outline: "none", fontSize: 16, color: C.text, fontFamily: FONT.sans }} />
-          <button type="button" onClick={mic} aria-label="Voice" style={{ width: 38, height: 38, borderRadius: 99, border: 0, background: rec === "rec" ? "rgba(255,107,94,.18)" : "rgba(var(--ink),.06)", color: rec === "rec" ? C.red : C.muted, display: "flex", alignItems: "center", justifyContent: "center", animation: rec === "rec" ? "cosPulse 1.1s infinite" : undefined }}>
-            {rec === "busy" ? <Svg d="M21 12a9 9 0 0 0-9-9" w={17} /> : <Svg d={I.mic} w={17} />}
+          <button type="button" onClick={mic} aria-label="Voice" style={{ width: 38, height: 38, borderRadius: 99, border: 0, background: rec === "rec" ? "rgba(255,107,94,.18)" : "rgba(var(--ink),.06)", color: rec === "rec" ? C.red : C.muted, display: "flex", alignItems: "center", justifyContent: "center", animation: rec === "rec" ? "cosPulse 1.1s infinite" : rec === "busy" ? "bwPulse 1s ease-in-out infinite" : undefined }}>
+            {rec === "busy" ? <span style={{ display: "inline-flex", animation: "cosSpin .8s linear infinite" }}><Svg d="M21 12a9 9 0 0 0-9-9" w={17} /></span> : <Svg d={I.mic} w={17} />}
           </button>
-          <button type="submit" style={{ padding: "9px 16px", borderRadius: 10, border: 0, background: C.gold, color: "#081627", fontWeight: 700, fontSize: 14 }}>Ask</button>
+          <button type="submit" disabled={loading || rec !== "idle"} style={{ padding: "9px 16px", borderRadius: 10, border: 0, background: loading ? "rgba(231,181,60,.85)" : C.gold, color: "#081627", fontWeight: 700, fontSize: 14, minWidth: loading ? 96 : undefined, animation: loading ? "bwPulse 1.2s ease-in-out infinite" : undefined }}>{loading ? "Searching…" : "Ask"}</button>
         </form>
+
+        {/* live progress — pulsing status while listening / transcribing / searching */}
+        {status && (
+          <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "12px 16px", borderRadius: 12, fontSize: 13.5, fontWeight: 700, fontFamily: FONT.sans,
+            background: rec === "rec" ? "rgba(255,107,94,.12)" : "rgba(231,181,60,.12)",
+            color: rec === "rec" ? C.red : C.gold,
+            border: `1px solid ${rec === "rec" ? "rgba(255,107,94,.4)" : "rgba(231,181,60,.4)"}`,
+            animation: "bwPulse 1.2s ease-in-out infinite" }}>
+            <span style={{ width: 9, height: 9, borderRadius: 99, background: "currentColor" }} />
+            {status}
+          </div>
+        )}
+        {err && <div style={{ marginTop: 12, padding: "11px 14px", borderRadius: 11, background: "rgba(255,107,94,.1)", border: "1px solid rgba(255,107,94,.35)", color: C.red, fontSize: 13, fontWeight: 600 }}>{err}</div>}
 
         {!res && !loading && (
           <div style={{ marginTop: 22 }}>
@@ -726,7 +760,6 @@ function AskSheet({ onClose }: { onClose: () => void }) {
             )}
           </div>
         )}
-        {loading && <Loading label="Searching the archive…" />}
         {res && <AskResult res={res} />}
       </div>
     </div>

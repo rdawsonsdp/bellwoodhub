@@ -164,6 +164,12 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Changelog
 
+- **2026-06-27 (Voice search fix + searching progress)** — Fixed the **mic not returning**: iOS Safari records
+  `audio/mp4` but the upload was hardcoded `speech.webm`, so OpenAI rejected the format. Now the filename
+  extension is derived from the real MIME (`audioExt`) on mobile + desktop, and failures surface a message
+  instead of silently dying. Added **live progress**: a pulsing status pill (Listening… / Transcribing… /
+  Searching the record…), the mic spins while transcribing, and the **Ask button pulses "Searching…"** while a
+  query runs. `BUG-2` opened+closed.
 - **2026-06-27 (Ask = broad corpus search, not just email)** — AI Search now retrieves across the **whole
   record**, not the inbox: emails **+** non-email documents (fire/EMS reports, police reports, permits, code
   cases, Public Works inspections, board minutes, FOIA) **+** any freshly-ingested uploads (passed from the

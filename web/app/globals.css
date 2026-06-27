@@ -75,6 +75,10 @@ html[data-theme] body { background: var(--c-bgbody); }
 @keyframes cosSpin {
   to { transform: rotate(360deg); }
 }
+@keyframes bwPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
 @keyframes sheetUp {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: none; }

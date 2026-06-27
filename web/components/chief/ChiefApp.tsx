@@ -418,6 +418,16 @@ function Ask({ asked, loading, res, err, q, setQ, runAsk, resetAsk, go }:
   );
 }
 
+/** Filename extension matching the recorded MIME — OpenAI infers format from it
+ *  (iOS Safari records audio/mp4, not webm), so a wrong extension makes it fail. */
+function audioExt(mime: string): string {
+  if (mime.includes("mp4") || mime.includes("m4a") || mime.includes("aac")) return "mp4";
+  if (mime.includes("mpeg") || mime.includes("mpga")) return "mp3";
+  if (mime.includes("ogg")) return "ogg";
+  if (mime.includes("wav")) return "wav";
+  return "webm";
+}
+
 /** Voice search — records mic audio and transcribes via /api/transcribe (OpenAI). */
 function MicButton({ onText, big }: { onText: (t: string) => void; big?: boolean }) {
   const [state, setState] = useState<"idle" | "rec" | "busy">("idle");
@@ -436,12 +446,13 @@ function MicButton({ onText, big }: { onText: (t: string) => void; big?: boolean
         stream.getTracks().forEach((t) => t.stop());
         setState("busy");
         try {
-          const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
+          const type = rec.mimeType || "audio/webm"; // iOS Safari → audio/mp4
+          const blob = new Blob(chunksRef.current, { type });
           const fd = new FormData();
-          fd.append("audio", blob, "speech.webm");
+          fd.append("audio", blob, `speech.${audioExt(type)}`);
           const r = await fetch("/api/transcribe", { method: "POST", body: fd });
           const d = await r.json().catch(() => ({}));
-          if (d.text) onText(d.text);
+          if (r.ok && d.text) onText(d.text);
         } finally { setState("idle"); }
       };
       rec.start();

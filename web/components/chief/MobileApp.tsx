@@ -559,9 +559,8 @@ function SourceScreen({ view, setView }: { view: MoreView; setView: (v: MoreView
   ];
   return (
     <div>
-      <ScreenHead title="Source" sub="Where the record comes from — every connector and source document." />
-      <SourcesView />
-      <div style={{ padding: "4px 16px 0", display: "grid", gap: 10 }}>
+      <ScreenHead title="Source" sub="Staff agents, settings, and where the record comes from." />
+      <div style={{ padding: "0 16px 6px", display: "grid", gap: 10 }}>
         {links.map(([v, d, label]) => (
           <button key={v} onClick={() => setView(v)} style={{ ...cardS, display: "flex", alignItems: "center", gap: 14, textAlign: "left", color: C.text, width: "100%" }}>
             <span style={{ color: C.gold }}><Svg d={d} w={20} /></span>
@@ -570,6 +569,7 @@ function SourceScreen({ view, setView }: { view: MoreView; setView: (v: MoreView
           </button>
         ))}
       </div>
+      <SourcesView />
     </div>
   );
 }

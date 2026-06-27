@@ -68,8 +68,7 @@ function Svg({ d, w = 22, sw = 1.9, fill = "none" }: { d: string; w?: number; sw
   return <svg width={w} height={w} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d.split("M").filter(Boolean).map((p, i) => <path key={i} d={"M" + p} />)}</svg>;
 }
 
-type Screen = "emails" | "events" | "history" | "source";
-type MoreView = null | "admin" | "sources";
+type Screen = "emails" | "events" | "history" | "agents" | "sources" | "admin";
 const THEME_CYCLE = ["midnight", "dim", "daylight", "contrast"];
 
 const streamColor: Record<string, string> = {
@@ -94,7 +93,7 @@ function audioExt(mime: string): string {
 
 export default function MobileApp() {
   const [screen, setScreen] = useState<Screen>("emails");
-  const [moreView, setMoreView] = useState<MoreView>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
   const [emailMid, setEmailMid] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -107,22 +106,80 @@ export default function MobileApp() {
 
   return (
     <EmailCtx.Provider value={setEmailMid}>
-      <div style={{ minHeight: "100dvh", background: "var(--c-appbg)", color: C.text, fontFamily: FONT.sans, paddingBottom: "calc(74px + env(safe-area-inset-bottom))" }}>
-        <Header />
+      <div style={{ minHeight: "100dvh", background: "var(--c-appbg)", color: C.text, fontFamily: FONT.sans, paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}>
+        <Header onMenu={() => setMenuOpen(true)} />
         <PullToRefresh onRefresh={doRefresh}>
           <div key={refreshKey} style={{ padding: "8px 0 20px" }}>
             {screen === "emails" && <EmailsScreen onAsk={() => setAskOpen(true)} />}
             {screen === "events" && <EventsScreen />}
             {screen === "history" && <HistoryScreen />}
-            {screen === "source" && <SourceScreen view={moreView} setView={setMoreView} />}
+            {screen === "agents" && <AgentsPage />}
+            {screen === "sources" && <div><ScreenHead title="Sources" sub="Connectors, mailboxes, and document upload." /><SourcesView /></div>}
+            {screen === "admin" && <AdminPanel />}
           </div>
         </PullToRefresh>
 
-        <BottomNav screen={screen} go={(s) => { setScreen(s); setMoreView(null); }} onAsk={() => setAskOpen(true)} />
+        <AskFab onAsk={() => setAskOpen(true)} />
+        {menuOpen && <NavMenu current={screen} go={(s) => { setScreen(s); setMenuOpen(false); }} onClose={() => setMenuOpen(false)} />}
         {askOpen && <AskSheet onClose={() => setAskOpen(false)} />}
         {emailMid && <EmailSheet mid={emailMid} onClose={() => setEmailMid(null)} />}
       </div>
     </EmailCtx.Provider>
+  );
+}
+
+const NAV_STAR = "M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z";
+const NAV_ITEMS: [Screen, string, string][] = [
+  ["emails", I.emails, "Emails"],
+  ["events", I.events, "Calendar"],
+  ["history", I.history, "History"],
+  ["agents", NAV_STAR, "Staff Agents"],
+  ["sources", I.sources, "Sources"],
+  ["admin", I.admin, "Admin"],
+];
+
+/* Slide-in hamburger menu — holds every destination. */
+function NavMenu({ current, go, onClose }: { current: Screen; go: (s: Screen) => void; onClose: () => void }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 60, display: "flex", animation: "sheetUp .18s ease-out" }}>
+      <div style={{ width: "78%", maxWidth: 320, background: "var(--c-appbg)", borderRight: "1px solid var(--c-cardbd)", display: "flex", flexDirection: "column", boxShadow: "2px 0 24px rgba(0,0,0,.3)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 11, padding: "calc(env(safe-area-inset-top) + 16px) 18px 16px", borderBottom: "1px solid var(--c-cardbd)" }}>
+          <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(135deg,var(--c-goldhi),var(--c-goldlo))", display: "flex", alignItems: "center", justifyContent: "center", color: "#0a1322" }}>
+            <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z" /></svg>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: FONT.serif, fontSize: 16, fontWeight: 600, lineHeight: 1 }}>Chief of Staff</div>
+            <div style={{ fontFamily: FONT.mono, fontSize: 9, letterSpacing: ".12em", color: C.dim, marginTop: 2 }}>INSTITUTIONAL MEMORY</div>
+          </div>
+          <button onClick={onClose} aria-label="Close" style={{ width: 34, height: 34, borderRadius: 99, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, display: "flex", alignItems: "center", justifyContent: "center" }}><Svg d={I.close} w={17} /></button>
+        </div>
+        <div style={{ flex: 1, overflow: "auto", padding: "10px 12px" }}>
+          {NAV_ITEMS.map(([s, d, label]) => {
+            const on = current === s;
+            return (
+              <button key={s} onClick={() => go(s)} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", padding: "14px 14px", borderRadius: 12, marginBottom: 2, border: 0, cursor: "pointer", background: on ? "rgba(231,181,60,.12)" : "transparent", color: on ? C.gold : C.text2 }}>
+                <Svg d={d} w={21} sw={on ? 2.1 : 1.8} />
+                <span style={{ flex: 1, fontSize: 15.5, fontWeight: on ? 700 : 600, fontFamily: FONT.sans }}>{label}</span>
+                {on && <span style={{ width: 7, height: 7, borderRadius: 99, background: C.gold }} />}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ padding: "12px 18px calc(env(safe-area-inset-bottom) + 14px)", borderTop: "1px solid var(--c-cardbd)", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>Tap ✦ Ask anytime to search the record</div>
+      </div>
+      <div onClick={onClose} style={{ flex: 1, background: "rgba(0,0,0,.45)" }} />
+    </div>
+  );
+}
+
+/* The single persistent bottom action — Ask (AI Search). */
+function AskFab({ onAsk }: { onAsk: () => void }) {
+  return (
+    <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 30, display: "flex", justifyContent: "center", pointerEvents: "none", paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}>
+      <button onClick={onAsk} aria-label="Ask — AI Search" style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 10, height: 56, padding: "0 26px 0 22px", borderRadius: 99, border: "3px solid var(--c-appbg)", background: "linear-gradient(135deg,var(--c-goldhi),var(--c-goldlo))", color: "#0a1322", boxShadow: "0 8px 24px rgba(231,181,60,.45)", fontFamily: FONT.sans, fontWeight: 800, fontSize: 16 }}>
+        <Svg d={I.search} w={22} sw={2.2} /> Ask
+      </button>
+    </div>
   );
 }
 
@@ -229,7 +286,7 @@ function Row({ k, v }: { k: string; v: string | null }) {
 }
 
 /* ── header ── */
-function Header() {
+function Header({ onMenu }: { onMenu: () => void }) {
   const [theme, setTheme] = useState("midnight");
   useEffect(() => { try { setTheme(localStorage.getItem("bw-theme") || "midnight"); } catch { /* */ } }, []);
   function cycle() {
@@ -238,8 +295,11 @@ function Header() {
     document.documentElement.setAttribute("data-theme", next); setTheme(next);
   }
   return (
-    <div style={{ position: "sticky", top: 0, zIndex: 10, display: "flex", alignItems: "center", gap: 11, padding: "calc(env(safe-area-inset-top) + 12px) 18px 12px", background: "rgba(var(--ink),.04)", backdropFilter: "blur(14px)", borderBottom: "1px solid var(--c-cardbd)" }}>
-      <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(135deg,var(--c-goldhi),var(--c-goldlo))", display: "flex", alignItems: "center", justifyContent: "center", color: "#0a1322" }}>
+    <div style={{ position: "sticky", top: 0, zIndex: 10, display: "flex", alignItems: "center", gap: 11, padding: "calc(env(safe-area-inset-top) + 12px) 16px 12px", background: "rgba(var(--ink),.04)", backdropFilter: "blur(14px)", borderBottom: "1px solid var(--c-cardbd)" }}>
+      <button onClick={onMenu} aria-label="Menu" style={{ width: 38, height: 38, borderRadius: 11, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+      </button>
+      <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(135deg,var(--c-goldhi),var(--c-goldlo))", display: "flex", alignItems: "center", justifyContent: "center", color: "#0a1322", flexShrink: 0 }}>
         <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z" /></svg>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -549,30 +609,7 @@ function MemoryDetailSheet({ value, onClose }: { value: string; onClose: () => v
   );
 }
 
-/* ── MORE → Sources / Approvals / Admin ── */
-// The 5th tab — leads with the Mayor's Staff Agents; Sources & Admin are secondary.
-function SourceScreen({ view, setView }: { view: MoreView; setView: (v: MoreView) => void }) {
-  if (view === "admin") return <Sheet title="Admin" onClose={() => setView(null)}><div style={{ fontSize: 13 }}><AdminPanel /></div></Sheet>;
-  if (view === "sources") return <Sheet title="Sources" onClose={() => setView(null)}><SourcesView /></Sheet>;
-  const links: [MoreView, string, string][] = [
-    ["sources", I.sources, "Sources — connectors, mailboxes, upload"],
-    ["admin", I.admin, "Admin — models, cost, rules, themes"],
-  ];
-  return (
-    <div>
-      <div style={{ padding: "14px 16px 2px", display: "grid", gap: 10 }}>
-        {links.map(([v, d, label]) => (
-          <button key={v} onClick={() => setView(v)} style={{ ...cardS, padding: 13, display: "flex", alignItems: "center", gap: 13, textAlign: "left", color: C.text, width: "100%" }}>
-            <span style={{ color: C.gold }}><Svg d={d} w={19} /></span>
-            <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{label}</span>
-            <Svg d="M9 6l6 6-6 6" w={15} />
-          </button>
-        ))}
-      </div>
-      <AgentsPage />
-    </div>
-  );
-}
+/* ── Sources (connectors · mailboxes · upload) ── */
 function SourcesView() {
   const { data } = useApi<SourcesOverview>("/api/sources");
   const dot: Record<string, string> = { healthy: C.green, syncing: C.blue, degraded: C.orange };
@@ -875,28 +912,3 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
   );
 }
 
-/* ── bottom nav with center Ask FAB ── */
-function BottomNav({ screen, go, onAsk }: { screen: Screen; go: (s: Screen) => void; onAsk: () => void }) {
-  const Tab = ({ s, d, label }: { s: Screen; d: string; label: string }) => {
-    const on = screen === s;
-    return (
-      <button onClick={() => go(s)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "8px 0", border: 0, background: "transparent", color: on ? C.gold : C.dim }}>
-        <Svg d={d} w={21} sw={on ? 2.1 : 1.8} />
-        <span style={{ fontSize: 10, fontWeight: on ? 700 : 500, fontFamily: FONT.sans }}>{label}</span>
-      </button>
-    );
-  };
-  return (
-    <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 30, display: "flex", alignItems: "flex-start", padding: "6px 8px calc(env(safe-area-inset-bottom) + 6px)", background: "rgba(var(--ink),.05)", backdropFilter: "blur(18px)", borderTop: "1px solid var(--c-cardbd)" }}>
-      <Tab s="emails" d={I.emails} label="Emails" />
-      <Tab s="events" d={I.events} label="Calendar" />
-      <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
-        <button onClick={onAsk} aria-label="Search" style={{ width: 58, height: 58, marginTop: -20, borderRadius: 99, border: "3px solid var(--c-appbg)", background: "linear-gradient(135deg,var(--c-goldhi),var(--c-goldlo))", color: "#0a1322", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 18px rgba(231,181,60,.4)" }}>
-          <Svg d={I.search} w={24} sw={2.2} />
-        </button>
-      </div>
-      <Tab s="history" d={I.history} label="History" />
-      <Tab s="source" d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z" label="Agents" />
-    </div>
-  );
-}

@@ -69,7 +69,7 @@ function Svg({ d, w = 22, sw = 1.9, fill = "none" }: { d: string; w?: number; sw
 }
 
 type Screen = "emails" | "events" | "history" | "source";
-type MoreView = null | "admin" | "agents";
+type MoreView = null | "admin" | "sources";
 const THEME_CYCLE = ["midnight", "dim", "daylight", "contrast"];
 
 const streamColor: Record<string, string> = {
@@ -550,26 +550,26 @@ function MemoryDetailSheet({ value, onClose }: { value: string; onClose: () => v
 }
 
 /* ── MORE → Sources / Approvals / Admin ── */
+// The 5th tab — leads with the Mayor's Staff Agents; Sources & Admin are secondary.
 function SourceScreen({ view, setView }: { view: MoreView; setView: (v: MoreView) => void }) {
   if (view === "admin") return <Sheet title="Admin" onClose={() => setView(null)}><div style={{ fontSize: 13 }}><AdminPanel /></div></Sheet>;
-  if (view === "agents") return <Sheet title="Staff Agents" onClose={() => setView(null)}><AgentsPage /></Sheet>;
+  if (view === "sources") return <Sheet title="Sources" onClose={() => setView(null)}><SourcesView /></Sheet>;
   const links: [MoreView, string, string][] = [
-    ["agents", "M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z", "Staff Agents — track their work"],
+    ["sources", I.sources, "Sources — connectors, mailboxes, upload"],
     ["admin", I.admin, "Admin — models, cost, rules, themes"],
   ];
   return (
     <div>
-      <ScreenHead title="Source" sub="Staff agents, settings, and where the record comes from." />
-      <div style={{ padding: "0 16px 6px", display: "grid", gap: 10 }}>
+      <div style={{ padding: "14px 16px 2px", display: "grid", gap: 10 }}>
         {links.map(([v, d, label]) => (
-          <button key={v} onClick={() => setView(v)} style={{ ...cardS, display: "flex", alignItems: "center", gap: 14, textAlign: "left", color: C.text, width: "100%" }}>
-            <span style={{ color: C.gold }}><Svg d={d} w={20} /></span>
-            <span style={{ flex: 1, fontSize: 14.5, fontWeight: 600 }}>{label}</span>
-            <Svg d="M9 6l6 6-6 6" w={16} />
+          <button key={v} onClick={() => setView(v)} style={{ ...cardS, padding: 13, display: "flex", alignItems: "center", gap: 13, textAlign: "left", color: C.text, width: "100%" }}>
+            <span style={{ color: C.gold }}><Svg d={d} w={19} /></span>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{label}</span>
+            <Svg d="M9 6l6 6-6 6" w={15} />
           </button>
         ))}
       </div>
-      <SourcesView />
+      <AgentsPage />
     </div>
   );
 }
@@ -896,7 +896,7 @@ function BottomNav({ screen, go, onAsk }: { screen: Screen; go: (s: Screen) => v
         </button>
       </div>
       <Tab s="history" d={I.history} label="History" />
-      <Tab s="source" d={I.source} label="Source" />
+      <Tab s="source" d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z" label="Agents" />
     </div>
   );
 }

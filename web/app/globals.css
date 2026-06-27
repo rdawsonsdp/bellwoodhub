@@ -2,6 +2,84 @@
   color-scheme: light;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Chief-of-Staff theme system. The active theme is set on
+   <html data-theme="…"> (Admin → Appearance). Tokens are consumed
+   via lib/cos-design.ts. --ink is the overlay channel (light text
+   on dark themes; dark on light) so glassy surfaces invert correctly.
+   Schemes tuned for WCAG-AA body-text contrast.
+   ───────────────────────────────────────────────────────────── */
+:root,
+[data-theme="midnight"] {
+  --ink: 255, 255, 255;
+  --c-bgbody: #05080e;
+  --c-appbg: radial-gradient(130% 100% at 18% -8%, #102139 0%, #0a1322 42%, #070b12 100%);
+  --c-text: #eaf1fa; --c-text2: #a9bdd4; --c-text3: #93a8c2; --c-muted: #7d8ea3; --c-dim: #5e748f; --c-dim2: #46586f;
+  --c-gold: #e7b53c; --c-goldhi: #f4cb63; --c-goldlo: #d7991c;
+  --c-blue: #67adff; --c-green: #34c98b; --c-greentext: #74dcb4;
+  --c-orange: #f0a33c; --c-orangetext: #cf9a52; --c-red: #ff6b5e; --c-redtext: #ff9084;
+  --c-purple: #9d8bff; --c-purpletext: #b0a2ff; --c-cardbd: rgba(255, 255, 255, 0.08);
+}
+
+/* Dim — softer, brighter text; the "less dark / easy on the eyes" default. */
+[data-theme="dim"] {
+  --ink: 255, 255, 255;
+  --c-bgbody: #141a24;
+  --c-appbg: radial-gradient(130% 100% at 18% -8%, #27384f 0%, #1b2533 45%, #141a24 100%);
+  --c-text: #f3f7fc; --c-text2: #c8d6e6; --c-text3: #b2c2d4; --c-muted: #93a3b6; --c-dim: #7589a0; --c-dim2: #5d7188;
+  --c-gold: #ecbe4c; --c-goldhi: #f6cd6a; --c-goldlo: #dca42a;
+  --c-blue: #7cb8ff; --c-green: #44d397; --c-greentext: #88e4c0;
+  --c-orange: #f4ad52; --c-orangetext: #e0aa6a; --c-red: #ff7b6f; --c-redtext: #ffa097;
+  --c-purple: #ab9bff; --c-purpletext: #c3b8ff; --c-cardbd: rgba(255, 255, 255, 0.11);
+}
+
+/* Daylight — light scheme, dark text, accents darkened for AA contrast. */
+[data-theme="daylight"] {
+  --ink: 24, 33, 49;
+  --c-bgbody: #f4f6fa;
+  --c-appbg: radial-gradient(130% 100% at 18% -8%, #ffffff 0%, #eef2f8 45%, #e6ecf4 100%);
+  --c-text: #18212f; --c-text2: #38465a; --c-text3: #4e5d73; --c-muted: #64748a; --c-dim: #8090a4; --c-dim2: #9aa8ba;
+  --c-gold: #a9750c; --c-goldhi: #8c6107; --c-goldlo: #c19a2e;
+  --c-blue: #1f6ed6; --c-green: #0c9760; --c-greentext: #0a8453;
+  --c-orange: #b96f14; --c-orangetext: #9c5f15; --c-red: #d23a2d; --c-redtext: #b83228;
+  --c-purple: #5d46d8; --c-purpletext: #4d3ac0; --c-cardbd: rgba(24, 33, 49, 0.14);
+}
+
+/* High contrast — maximum legibility (near-AAA). */
+[data-theme="contrast"] {
+  --ink: 255, 255, 255;
+  --c-bgbody: #000000;
+  --c-appbg: #000000;
+  --c-text: #ffffff; --c-text2: #e9f0fc; --c-text3: #d6e1f2; --c-muted: #bcc9de; --c-dim: #a3b3cb; --c-dim2: #8a9bb3;
+  --c-gold: #ffcb47; --c-goldhi: #ffd96b; --c-goldlo: #e6a91f;
+  --c-blue: #82c2ff; --c-green: #4fe3a6; --c-greentext: #93efc9;
+  --c-orange: #ffb454; --c-orangetext: #ffc680; --c-red: #ff857b; --c-redtext: #ffa9a0;
+  --c-purple: #b8a8ff; --c-purpletext: #ccc1ff; --c-cardbd: rgba(255, 255, 255, 0.24);
+}
+
+/* Themed pages paint their background even before the app container mounts. */
+html[data-theme] body { background: var(--c-bgbody); }
+
+/* Mobile / readability pass (≈80% of usage). Scales chrome down so dense
+   desktop panels stay legible on phones; tables scroll instead of squashing. */
+@media (max-width: 760px) {
+  .fu { padding: 18px 14px 40px !important; }
+  .board { display: block; overflow-x: auto; }
+}
+
+/* Voice-search mic states (ChiefApp MicButton) */
+@keyframes cosPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 94, 0.5); }
+  50% { box-shadow: 0 0 0 7px rgba(255, 107, 94, 0); }
+}
+@keyframes cosSpin {
+  to { transform: rotate(360deg); }
+}
+@keyframes sheetUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
 * {
   box-sizing: border-box;
 }

@@ -288,9 +288,12 @@ FROM canonical.issues i;
 DO $$
 DECLARE t TEXT;
 BEGIN
+  -- NB: message_topics is intentionally excluded — it is a child of messages
+  -- keyed by message_id with no tenant_id column, so a tenant_passthrough
+  -- policy can't reference tenant_id (it would error: column does not exist).
   FOREACH t IN ARRAY ARRAY[
     'tenants','entities','entity_aliases','issues','threads','messages',
-    'message_topics','edges','commitments','events','chunks'
+    'edges','commitments','events','chunks'
   ] LOOP
     EXECUTE format('ALTER TABLE canonical.%I ENABLE ROW LEVEL SECURITY', t);
     EXECUTE format($p$

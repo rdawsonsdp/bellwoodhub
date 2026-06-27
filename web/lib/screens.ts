@@ -77,6 +77,7 @@ export async function memoryDetail(value: string): Promise<MemoryDetail | null> 
 export interface ConnectorHealth {
   source: string; total: number; canonical: number; dead: number; pct: number;
   lastSynced: string | null; status: "healthy" | "degraded" | "syncing";
+  kind?: string; activity?: string[];
 }
 export interface ReviewItem {
   reviewId: string; aliasValue: string; existingName: string | null; incomingName: string | null; confidence: number; kind: string;

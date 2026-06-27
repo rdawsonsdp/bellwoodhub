@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <clipPath id="round"><rect x="2" y="5" width="28" height="22" rx="3.5"/></clipPath>
+  </defs>
+  <g clip-path="url(#round)">
+    <rect x="2" y="5" width="28" height="22" fill="#ffffff"/>
+    <g fill="#b22234">
+      <rect x="2" y="5" width="28" height="1.692"/>
+      <rect x="2" y="8.385" width="28" height="1.692"/>
+      <rect x="2" y="11.769" width="28" height="1.692"/>
+      <rect x="2" y="15.154" width="28" height="1.692"/>
+      <rect x="2" y="18.538" width="28" height="1.692"/>
+      <rect x="2" y="21.923" width="28" height="1.692"/>
+      <rect x="2" y="25.308" width="28" height="1.692"/>
+    </g>
+    <rect x="2" y="5" width="13" height="11.85" fill="#3c3b6e"/>
+    <g fill="#ffffff">
+      <circle cx="4.6" cy="7.6" r="0.85"/><circle cx="8.5" cy="7.6" r="0.85"/><circle cx="12.4" cy="7.6" r="0.85"/>
+      <circle cx="6.55" cy="10.9" r="0.85"/><circle cx="10.45" cy="10.9" r="0.85"/>
+      <circle cx="4.6" cy="14.2" r="0.85"/><circle cx="8.5" cy="14.2" r="0.85"/><circle cx="12.4" cy="14.2" r="0.85"/>
+    </g>
+  </g>
+  <rect x="2" y="5" width="28" height="22" rx="3.5" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="0.8"/>
+</svg>

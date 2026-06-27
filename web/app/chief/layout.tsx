@@ -11,6 +11,12 @@ export const metadata = {
 export default function ChiefLayout({ children }: { children: ReactNode }) {
   return (
     <>
+      {/* Apply the saved theme before paint (no flash). Default: midnight. */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `(function(){try{var t=localStorage.getItem('bw-theme')||'midnight';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','midnight');}})();`,
+        }}
+      />
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link

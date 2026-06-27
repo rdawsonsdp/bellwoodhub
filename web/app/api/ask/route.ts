@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ask, type SearchOpts } from "@/lib/backend";
+import { DEMO, demoAsk } from "@/lib/demo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,6 +18,10 @@ export async function POST(req: NextRequest) {
     const question = clean(body.question);
     if (!question) {
       return NextResponse.json({ error: "Missing question." }, { status: 400 });
+    }
+    if (DEMO) {
+      const k = typeof body.k === "number" && Number.isFinite(body.k) ? body.k : 8;
+      return NextResponse.json(await demoAsk(question, k));
     }
     const filters: SearchOpts = {
       person: clean(body.person),

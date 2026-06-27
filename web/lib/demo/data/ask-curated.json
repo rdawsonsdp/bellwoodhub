@@ -1,0 +1,26 @@
+[
+  {
+    "match": ["bohland"],
+    "answer": "2218 Bohland Ave is the village's longest-running flooding case — a 14-month arc of resident complaints, an area-wide storm-sewer inspection, and a recent escalation [1][2]. The thread also collides with public-safety records: a working structure fire was logged at the same address on June 22, 2026 [3]. The drainage remediation was promised but the most recent inbound shows it still unresolved — the regrade and storm-sewer work have not closed out. Recommended next step: confirm with Public Works whether the Bohland storm-sewer televising led to a scheduled repair, and reply to the resident with a date."
+  },
+  {
+    "match": ["gloria bennett", "gloria"],
+    "answer": "You have a two-year history with Gloria Bennett — seven contacts spanning a streetlight outage on 25th Ave, a June water-bill question you answered, and a thank-you note [2][3]. Her most recent and still-open item is a storm drain flooding the crosswalk at her corner (June 20, 2026) [1], which has not been answered. Next best action: route the storm-drain report to Public Works for a catch-basin check and send Gloria a short acknowledgment today — she is a consistently civil, repeat constituent and the last email is awaiting your reply."
+  },
+  {
+    "match": ["st. charles", "st charles", "bar noise", "noise complaint"],
+    "answer": "Noise on St. Charles Rd has a clear precedent. The same operating-hours remedy was applied before — first at the Route 64 bar, then The Hideout, then El Faro — each resolved by Code Enforcement tightening permitted hours rather than citations [2][3]. The current live complaint is Diane Pawlak's '2am bar noise AGAIN — 511 St. Charles' (June 21) [1]. Handle it the way the precedent worked: have Code Enforcement review the establishment's permitted operating hours and respond to Ms. Pawlak referencing the prior resolutions."
+  },
+  {
+    "match": ["frederick", "eleanor meyer", "eleanor", "basement flood"],
+    "answer": "Eleanor Meyer at 1733 Frederick Ave has a five-thread basement-flooding saga running Sep 2025 → Jun 2026, and it is currently unresolved [1]. Her latest (June 22) — 'Basement flooded AGAIN after Saturday's storm — where is the regrade?' — points to a promised regrade that hasn't happened [1][2]. Frank DiMeo replied on the engineering side but no completion date has been confirmed. Next step: get a firm regrade/drainage date from Public Works and reply to Mrs. Meyer directly; this is exactly the kind of repeat constituent issue that escalates if it goes another storm cycle."
+  },
+  {
+    "match": ["flooding", "drainage", "spring", "storm"],
+    "answer": "Flooding and drainage cluster heavily in spring 2026 across several streets — Bohland Ave, Frederick Ave, and multiple storm-drain/crosswalk reports [1][2][3]. Several share a root cause (storm-sewer capacity and regrades promised but not completed) and at least two are repeat constituents (Eleanor Meyer, Gloria Bennett). The common thread is that engineering acknowledged the issues but completion dates are missing — the accountability gap, not the diagnosis, is what's open."
+  },
+  {
+    "match": ["cross-reference", "cross reference", "police & fire", "police and fire", "blotter"],
+    "answer": "The St. Charles Rd bar issue resolves across three independent sources at once — the resident complaints (Diane Pawlak and neighbors) [1], the police overnight blotter logging the late-hour calls [2], and Code Enforcement's operating-hours resolution [3]. This is the cross-source view the system is built for: one question surfaces the constituent mail, the public-safety record, and the departmental fix together, so you can see the complaint, the evidence, and the remedy in a single timeline."
+  }
+]

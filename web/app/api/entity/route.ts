@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEntity } from "@/lib/retrieval";
+import { DEMO, demoEntity } from "@/lib/demo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
         { status: 400 },
       );
     }
-    const result = await getEntity(type, value);
+    const result = DEMO ? demoEntity(type, value) : await getEntity(type, value);
     return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sourcesOverview, resolveReview } from "@/lib/screens";
+import { DEMO, demoSources } from "@/lib/demo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -7,6 +8,7 @@ export const maxDuration = 60;
 
 export async function GET() {
   try {
+    if (DEMO) return NextResponse.json(demoSources());
     return NextResponse.json(await sourcesOverview());
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";
@@ -23,6 +25,7 @@ export async function POST(req: NextRequest) {
     if (!reviewId || !action) {
       return NextResponse.json({ error: "reviewId and action (merge|reject) required" }, { status: 400 });
     }
+    if (DEMO) return NextResponse.json(demoSources()); // review actions are no-ops in the demo
     await resolveReview(reviewId, action);
     return NextResponse.json(await sourcesOverview());
   } catch (err) {

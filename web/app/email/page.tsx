@@ -10,8 +10,23 @@ import {
 } from "@/lib/design";
 import { fmtDate } from "@/lib/utils";
 import { getEmailByMessageId } from "@/lib/retrieval";
+import { DEMO, demoEmail } from "@/lib/demo";
 
 export const dynamic = "force-dynamic";
+
+// Full source document: prefer the DB body, fall back to the seed snippet so the
+// drill-in always resolves even in keyless demo mode.
+async function loadEmail(mid: string) {
+  if (process.env.DATABASE_URL) {
+    try {
+      const full = await getEmailByMessageId(mid);
+      if (full) return full;
+    } catch {
+      /* fall back */
+    }
+  }
+  return DEMO ? demoEmail(mid) : null;
+}
 
 export default async function EmailPage({
   searchParams,
@@ -19,7 +34,7 @@ export default async function EmailPage({
   searchParams: { mid?: string };
 }) {
   const mid = searchParams.mid;
-  const email = mid ? await getEmailByMessageId(mid) : null;
+  const email = mid ? await loadEmail(mid) : null;
   const inbound = email?.direction === "inbound";
 
   return (

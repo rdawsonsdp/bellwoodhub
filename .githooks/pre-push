@@ -1,0 +1,19 @@
+#!/bin/sh
+# Project Manager — refresh + publish the shared status page on every push.
+# 1) regenerate the page from status.json + git activity (fast, deterministic)
+# 2) redeploy to Vercel in the BACKGROUND so a slow/failed deploy never blocks the push
+# Always exits 0 — publishing problems must never stop you from pushing.
+ROOT="$(git rev-parse --show-toplevel)"
+
+if command -v node >/dev/null 2>&1; then
+  node "$ROOT/project-status/build-status.mjs" >/tmp/bw-pm.log 2>&1 || true
+fi
+
+if command -v vercel >/dev/null 2>&1; then
+  ( cd "$ROOT/project-status" && vercel deploy --prod --yes >>/tmp/bw-pm.log 2>&1 & ) >/dev/null 2>&1
+  echo "[pm] status page refreshed; publishing to Vercel in the background (log: /tmp/bw-pm.log)"
+else
+  echo "[pm] status page refreshed (vercel CLI not found — skipping publish)"
+fi
+
+exit 0

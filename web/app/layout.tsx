@@ -1,11 +1,22 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Village Knowledge AI Hub — Bellwood, IL",
+  title: "Bellwood Hub — Mayor's AI Chief of Staff",
   description:
     "Ask the Village of Bellwood's entire email and daily-report archive in plain English — grounded, cited answers over a Supabase pgvector store.",
+  manifest: "/manifest.webmanifest",
+  // Standalone PWA + American-flag home-screen icon (app/apple-icon.png) on iOS.
+  appleWebApp: {
+    capable: true,
+    title: "Bellwood Hub",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a1322",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

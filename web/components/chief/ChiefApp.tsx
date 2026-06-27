@@ -11,11 +11,14 @@
  * "send/approve" is a human gate. R4 is visible: answers cite sources, order
  * events in time, and state what's missing.
  */
-import { useState, useEffect, type CSSProperties, type ReactNode } from "react";
+import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { C, FONT, APP_BG, card, eyebrow, cite } from "@/lib/cos-design";
 import type { AskResponse } from "@/lib/types";
 import type { NeedsYouToday } from "@/lib/capabilities";
 import type { MemoryDetail, EntityListItem, SourcesOverview, DraftRow } from "@/lib/screens";
+import AdminPanel from "./AdminPanel";
+import AgentsPage from "./AgentsPage";
+import { getRecentSearches, addRecentSearch } from "@/lib/recent-searches";
 
 /** Fetch JSON on mount; returns null on error/empty so screens can fall back to
  *  the prototype's representative content while canonical is still being built. */
@@ -44,7 +47,7 @@ async function postJson<T>(url: string, body: unknown): Promise<T | null> {
   } catch { return null; }
 }
 
-type Screen = "brief" | "ask" | "track" | "memory" | "sources" | "settings";
+type Screen = "brief" | "ask" | "track" | "memory" | "sources" | "settings" | "admin" | "agents";
 type Filter = "all" | "open" | "late" | "broken" | "kept";
 
 /* ── tiny SVG helpers (stroke icons, 24×24) ── */
@@ -77,6 +80,9 @@ const ICON = {
   grant: ["M12 2v4M12 18v4M2 12h4M18 12h4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M19.1 4.9l-2.8 2.8M7.7 16.3l-2.8 2.8"],
   warn: ["M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z", "M12 9v4M12 17h.01"],
   info: ["M12 12m-10 0a10 10 0 1 0 20 0a10 10 0 1 0 -20 0", "M12 16v-4M12 8h.01"],
+  mail: ["M3 7l9 6 9-6", "M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"],
+  events: ["M7 3v3M17 3v3M4 9h16", "M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"],
+  admin: ["M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"],
 };
 
 export default function ChiefApp() {
@@ -96,6 +102,7 @@ export default function ChiefApp() {
     setAsked(true);
     if (!text) return;            // idle → focus the field
     setQ(text);
+    addRecentSearch(text);
     setLoading(true); setErr(null); setRes(null);
     try {
       const r = await fetch("/api/ask", {
@@ -128,6 +135,8 @@ export default function ChiefApp() {
           {screen === "memory" && <Memory />}
           {screen === "sources" && <Sources />}
           {screen === "settings" && <Approvals />}
+          {screen === "admin" && <AdminPanel />}
+          {screen === "agents" && <AgentsPage />}
         </div>
       </div>
     </div>
@@ -153,7 +162,7 @@ function Sidebar({ screen, go }: { screen: Screen; go: (s: Screen) => () => void
   return (
     <div style={{ width: 268, flexShrink: 0, display: "flex", flexDirection: "column", background: "rgba(6,13,24,.66)", borderRight: `1px solid ${C.line}`, backdropFilter: "blur(12px)" }}>
       <div style={{ padding: "22px 22px 18px", display: "flex", alignItems: "center", gap: 12, borderBottom: `1px solid ${C.line2}` }}>
-        <span style={{ width: 42, height: 42, borderRadius: 13, background: "linear-gradient(150deg,#F4CB63,#D7991C)", boxShadow: "0 6px 18px rgba(231,181,60,.35),inset 0 1.5px 0 rgba(255,255,255,.5)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <span style={{ width: 42, height: 42, borderRadius: 13, background: "linear-gradient(150deg,#F4CB63,#D7991C)", boxShadow: "0 6px 18px rgba(231,181,60,.35),inset 0 1.5px 0 rgba(var(--ink),.5)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="#0a1322"><path d="M12 1.5l2 6.5 6.5 2-6.5 2-2 6.5-2-6.5L3.5 10l6.5-2z" /></svg>
         </span>
         <div style={{ lineHeight: 1.15 }}>
@@ -164,16 +173,18 @@ function Sidebar({ screen, go }: { screen: Screen; go: (s: Screen) => () => void
 
       <div className="scrl" style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 3 }}>
         <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".16em", padding: "4px 10px 8px" }}>Workspace</div>
-        {item("brief", "Brief", <Ico d={ICON.brief} />, <span style={{ width: 7, height: 7, borderRadius: 99, background: C.red }} />)}
+        {item("brief", "Emails", <Ico d={ICON.mail} />, <span style={{ width: 7, height: 7, borderRadius: 99, background: C.red }} />)}
         {item("ask", "Ask", <Star w={19} c="currentColor" />, <Kbd>⌘K</Kbd>)}
-        {item("track", "Commitments", <Ico d={ICON.track} />, <Badge color={C.orange} bg="rgba(240,163,60,.14)">8</Badge>)}
-        {item("memory", "Memory", <Ico d={ICON.memory} />)}
+        {item("track", "Calendar", <Ico d={ICON.events ?? ICON.track} />, <Badge color={C.orange} bg="rgba(240,163,60,.14)">8</Badge>)}
+        {item("memory", "History", <Ico d={ICON.memory} />)}
         {item("sources", "Sources", <Ico d={ICON.sources} />, <Badge color={C.orange} bg="rgba(240,163,60,.14)">!</Badge>)}
         {item("settings", "Approvals", <Ico d={ICON.approvals} />, <Badge color={C.purpleText} bg="rgba(157,139,255,.16)">3</Badge>)}
+        {item("agents", "Staff Agents", <Star w={18} c="currentColor" />)}
+        {item("admin", "Admin", <Ico d={ICON.admin} />)}
 
         <div style={{ marginTop: "auto", padding: "14px 12px 4px" }}>
-          <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".14em", marginBottom: 9 }}>Memory store</div>
-          <div style={{ background: "rgba(255,255,255,.035)", border: `1px solid ${C.line}`, borderRadius: 13, padding: 12 }}>
+          <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".14em", marginBottom: 9 }}>History store</div>
+          <div style={{ background: "rgba(var(--ink),.035)", border: `1px solid ${C.line}`, borderRadius: 13, padding: 12 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
               <span style={{ fontFamily: FONT.serif, fontSize: 22, color: C.text, lineHeight: 1 }}>70,431</span>
               <span style={{ fontSize: 11, color: C.muted }}>messages</span>
@@ -199,15 +210,39 @@ function Sidebar({ screen, go }: { screen: Screen; go: (s: Screen) => () => void
 }
 
 /* ════════════════════════ TOPBAR ════════════════════════ */
+const THEME_CYCLE = ["midnight", "dim", "daylight", "contrast"];
+function ThemeToggle() {
+  const [theme, setTheme] = useState("midnight");
+  useEffect(() => { try { setTheme(localStorage.getItem("bw-theme") || "midnight"); } catch { /* */ } }, []);
+  function cycle() {
+    const next = THEME_CYCLE[(THEME_CYCLE.indexOf(theme) + 1) % THEME_CYCLE.length];
+    try { localStorage.setItem("bw-theme", next); } catch { /* */ }
+    document.documentElement.setAttribute("data-theme", next);
+    setTheme(next);
+  }
+  const light = theme === "daylight";
+  return (
+    <button onClick={cycle} aria-label="Switch color scheme" title={`Theme: ${theme} — tap to change`}
+      style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 99, border: `1px solid ${C.line}`, background: "rgba(var(--ink),.05)", color: C.text2 }}>
+      {light ? (
+        <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="4.2" /><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8" /></svg>
+      ) : (
+        <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>
+      )}
+    </button>
+  );
+}
+
 function Topbar({ onAsk }: { onAsk: () => void }) {
   return (
-    <div style={{ flexShrink: 0, height: 66, display: "flex", alignItems: "center", gap: 16, padding: "0 28px", borderBottom: `1px solid ${C.line2}`, background: "rgba(8,18,33,.5)", backdropFilter: "blur(14px)" }}>
-      <button onClick={onAsk} style={{ flex: 1, maxWidth: 560, cursor: "text", textAlign: "left", display: "flex", alignItems: "center", gap: 11, background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 12, padding: "11px 15px" }}>
+    <div style={{ flexShrink: 0, height: 66, display: "flex", alignItems: "center", gap: 16, padding: "0 28px", borderBottom: `1px solid ${C.line2}`, background: "rgba(var(--ink),.035)", backdropFilter: "blur(14px)" }}>
+      <button onClick={onAsk} style={{ flex: 1, maxWidth: 560, cursor: "text", textAlign: "left", display: "flex", alignItems: "center", gap: 11, background: "rgba(var(--ink),.045)", border: "1px solid rgba(var(--ink),.1)", borderRadius: 12, padding: "11px 15px" }}>
         <Ico d={ICON.search} w={17} sw={2} stroke={C.muted} />
         <span style={{ flex: 1, fontSize: 13.5, color: C.muted }}>Ask your institutional memory anything…</span>
         <Kbd>⌘K</Kbd>
       </button>
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+        <ThemeToggle />
         <span style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "7px 13px", borderRadius: 99, background: "rgba(52,201,139,.1)", border: "1px solid rgba(52,201,139,.24)" }}>
           <span style={{ width: 6, height: 6, borderRadius: 99, background: C.green, animation: "pulseDot 2.4s infinite" }} />
           <span style={{ fontFamily: FONT.mono, fontSize: 11, color: C.greenText }}>synced 4m ago</span>
@@ -218,82 +253,85 @@ function Topbar({ onAsk }: { onAsk: () => void }) {
 }
 
 /* ════════════════════════ BRIEF ════════════════════════ */
+interface InboxItem { messageId: string; fromName: string | null; subject: string | null; snippet: string; date: string; stream: string; topic: string | null; }
+const fmtD = (iso: string) => { try { return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" }); } catch { return iso.slice(5, 10); } };
+const STREAMC: Record<string, string> = { Police: C.blue, "Fire/EMS": C.red, Business: C.purpleText, Interdepartmental: C.gold, "Civic/FOIA": C.orange, Regional: C.greenText, Resident: C.green };
+
+function DInboxRow({ href, from, time, subject, snippet, dot, tag, tagColor, border }:
+  { href: string; from: string; time: string; subject: string; snippet: string; dot?: string; tag?: string; tagColor?: string; border?: boolean }) {
+  return (
+    <a href={href} style={{ textDecoration: "none", display: "flex", gap: 14, padding: "13px 18px", borderBottom: border ? `1px solid ${C.line2}` : undefined, alignItems: "flex-start" }}>
+      <span style={{ width: 8, height: 8, borderRadius: 99, background: dot || "transparent", flexShrink: 0, marginTop: 6 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
+          <span style={{ flex: 1, minWidth: 0, fontWeight: dot ? 700 : 600, fontSize: 14.5, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{from || "—"}</span>
+          <span style={{ fontFamily: FONT.mono, fontSize: 11, color: C.dim, flexShrink: 0 }}>{time}</span>
+        </div>
+        <div style={{ fontSize: 14, color: C.text2, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{subject || "(no subject)"}</div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 3 }}>
+          {tag && <span style={{ padding: "3px 10px", borderRadius: 99, fontSize: 11.5, fontWeight: 700, fontFamily: FONT.sans, color: tagColor || C.text2, background: "rgba(var(--ink),.1)", flexShrink: 0, letterSpacing: ".01em" }}>{tag}</span>}
+          <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: C.muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{snippet}</span>
+        </div>
+      </div>
+    </a>
+  );
+}
+
 function Brief({ go, onAsk }: { go: (s: Screen) => () => void; onAsk: () => void }) {
   const { data: brief } = useApi<NeedsYouToday>("/api/brief");
-  const due = [...(brief?.awaitingReply ?? []), ...(brief?.openIssues ?? [])].slice(0, 4);
-  const needCount = brief ? brief.awaitingReply.length + brief.openIssues.length + brief.highSensitivity.length : 0;
+  const { data: appr, reload } = useApi<{ drafts: DraftRow[] }>("/api/approvals");
+  const { data: inbox } = useApi<{ count: number; emails: InboxItem[] }>("/api/inbox");
+  const [tab, setTab] = useState<"focus" | "all" | "queued">("focus");
+  const queued = appr?.drafts ?? [];
+  const seen = new Set<string>();
+  const needs = [...(brief?.awaitingReply ?? []), ...(brief?.highSensitivity ?? [])].filter((b) => (seen.has(b.messageId) ? false : (seen.add(b.messageId), true)));
+  const sensitive = new Set((brief?.highSensitivity ?? []).map((b) => b.messageId));
+  const mid = (m: string) => `/email?mid=${encodeURIComponent(m)}`;
+  const tabs: [typeof tab, string, number][] = [["focus", "Urgent", needs.length], ["all", "Inbox", inbox?.count ?? 0], ["queued", "Agent Answered", queued.length]];
+  const tabBtn = (k: typeof tab, label: string, n: number) => {
+    const on = tab === k;
+    return <button key={k} onClick={() => setTab(k)} style={{ cursor: "pointer", padding: "8px 16px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans, background: on ? C.gold : "transparent", color: on ? "#081627" : C.text3, border: `1px solid ${on ? C.gold : "rgba(var(--ink),.14)"}` }}>{label}{n > 0 ? ` ${n}` : ""}</button>;
+  };
+
   return (
-    <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1320 }}>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 24 }}>
+    <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1040 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 18 }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <span style={{ width: 6, height: 6, borderRadius: 999, background: C.gold }} />
-            <span style={{ ...eyebrow(C.gold), fontSize: 11, letterSpacing: ".13em" }}>Tue · Jun 24 · 2026</span>
-          </div>
-          <div style={{ fontFamily: FONT.serif, fontSize: 38, fontWeight: 500, color: C.text, letterSpacing: "-.015em", lineHeight: 1 }}>Good morning, Mayor.</div>
-          <div style={{ marginTop: 11, fontSize: 15, color: C.text3 }}>{needCount > 0 ? (<>{needCount} item{needCount === 1 ? "" : "s"} need you — <span style={{ color: C.text, fontWeight: 600 }}>{brief?.highSensitivity.length ?? 0} high-sensitivity.</span></>) : (<>3 things need you this morning — <span style={{ color: C.text, fontWeight: 600 }}>2 are time-sensitive.</span></>)}</div>
+          <div style={{ fontFamily: FONT.serif, fontSize: 34, fontWeight: 500, color: C.text, letterSpacing: "-.015em", lineHeight: 1 }}>Emails</div>
+          <div style={{ marginTop: 9, fontSize: 14.5, color: C.text3 }}>{needs.length} need you · {(inbox?.count ?? 0).toLocaleString()} in the inbox · {queued.length} queued.</div>
         </div>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: 99, background: "rgba(52,201,139,.1)", border: "1px solid rgba(52,201,139,.25)" }}>
-          <span style={{ width: 6, height: 6, borderRadius: 999, background: C.green, animation: "pulseDot 2.4s infinite" }} />
-          <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: C.greenText }}>The brief · 4 sources · 2 gaps</span>
-        </span>
+        <button onClick={onAsk} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "rgba(var(--ink),.05)", border: "1px solid rgba(var(--ink),.1)", color: C.muted, fontSize: 13.5, fontFamily: FONT.sans }}>
+          <Ico d={ICON.search} w={16} sw={2} stroke={C.muted} /> Search every email…
+        </button>
       </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{tabs.map(([k, l, n]) => tabBtn(k, l, n))}</div>
 
-      {/* reopened banner — the out-of-order re-fold made visible */}
-      <button onClick={onAsk} style={{ textAlign: "left", cursor: "pointer", width: "100%", background: "linear-gradient(110deg,rgba(255,107,94,.16),rgba(255,107,94,.04) 60%)", border: "1px solid rgba(255,107,94,.32)", borderRadius: 20, padding: "20px 22px", display: "flex", alignItems: "center", gap: 20, marginBottom: 26 }}>
-        <span style={{ width: 46, height: 46, borderRadius: 13, background: "rgba(255,107,94,.16)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Ico d={ICON.reopen} w={22} stroke={C.redText} /></span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 5 }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 999, background: "rgba(255,107,94,.16)", color: C.redText, fontFamily: FONT.mono, fontSize: 9.5, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600 }}>↻ Issue reopened</span>
-            <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.muted }}>6:11 AM · via Forwarded mailbox</span>
-          </div>
-          <div style={{ fontFamily: FONT.serif, fontSize: 21, color: "#FCEDEB", fontWeight: 500, lineHeight: 1.2 }}>Greenwood Ave flooding is back open.</div>
-          <div style={{ fontSize: 13, color: "#C7A9a4", lineHeight: 1.5, marginTop: 5, maxWidth: 760 }}>A resident email this morning re-folded an issue you marked <span style={{ color: "#fff", fontWeight: 600 }}>resolved in March</span>. Out-of-order events keep the record honest.</div>
-        </div>
-        <span style={{ flexShrink: 0, color: C.redText, fontWeight: 700, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 7 }}>View timeline <Ico d={ICON.arrow} w={15} sw={2.2} stroke={C.redText} /></span>
-      </button>
+      <div style={{ ...card, overflow: "hidden" }}>
+        {tab === "focus" && (needs.length ? needs.map((b, i) => (
+          <DInboxRow key={b.messageId} href={mid(b.messageId)} from={b.fromName || "—"} time={fmtD(b.date)} subject={b.subject || ""} snippet={b.why}
+            dot={sensitive.has(b.messageId) ? C.red : C.blue} tag={sensitive.has(b.messageId) ? "⚑ sensitive" : "↩ needs reply"} tagColor={sensitive.has(b.messageId) ? C.redText : C.blue} border={i < needs.length - 1} />
+        )) : <div style={{ padding: 40, textAlign: "center", color: C.dim, fontSize: 13 }}>{brief ? "Nothing needs you right now." : "Loading…"}</div>)}
 
-      <div style={{ display: "flex", gap: 26, alignItems: "flex-start" }}>
-        <div style={{ flex: 1.7, minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ ...eyebrow(C.dim) }}>The brief · what changed overnight</div>
-          <BriefCard icon={ICON.file} iconColor={C.blue} iconBg="rgba(77,155,255,.16)" title="Water-main bid closes today" right="4:30 PM" rightColor={C.gold} tag="PUBLIC WORKS · CONTRACTS" body="Two of your commitments depend on this award, and no competing bid has cleared legal review." chips={[["[3] thread"], ["[7] clerk packet"]]} note="condensed from 11 msgs" />
-          <BriefCard icon={ICON.chat} iconColor={C.gold} iconBg="rgba(231,181,60,.16)" title="Ald. Reyes is still waiting on you" right="4 days" rightColor={C.orange} tag="CONSTITUENT · 3RD WARD" body="She asked twice about the 19th Ave rezoning hearing date. A reply is drafted and waiting for your approval." chips={[["[12] email"]]} draftReady go={go} />
-          <BriefCard icon={ICON.grant} iconColor={C.purpleText} iconBg="rgba(157,139,255,.16)" title="IEPA stormwater grant — 9 days left" right="$1.4M" rightColor={C.purpleText} tag="GRANT RADAR · MATCHED AUTOMATICALLY" body="Directly funds the Greenwood Ave fix. Grant Radar matched it to 3 prior flooding threads automatically." chips={[["[4] IEPA notice"]]} note="matched to 3 threads" />
-        </div>
+        {tab === "all" && ((inbox?.emails ?? []).map((e, i) => (
+          <DInboxRow key={e.messageId} href={mid(e.messageId)} from={e.fromName || "—"} time={fmtD(e.date)} subject={e.subject || ""} snippet={e.snippet}
+            tag={e.stream} tagColor={STREAMC[e.stream] || C.muted} border={i < (inbox?.emails.length ?? 0) - 1} />
+        )))}
+        {tab === "all" && !inbox && <div style={{ padding: 40, textAlign: "center", color: C.dim, fontSize: 13 }}>Loading inbox…</div>}
 
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 22 }}>
-          <div>
-            <RailHead label="Due today" action="All →" onAction={go("track")} />
-            <div style={{ ...card, overflow: "hidden" }}>
-              {due.length ? (
-                due.map((it, i) => (
-                  <DueRow key={it.messageId + i} dot={i === 0 ? C.orange : C.blue} title={it.subject ?? "(no subject)"} sub={`${it.why}${it.fromName ? " · " + it.fromName : ""}`} onClick={go("track")} border={i < due.length - 1} />
-                ))
-              ) : (
-                <>
-                  <DueRow dot={C.orange} title="Sign the water-main award letter" sub="you promised Public Works · due 5 PM" onClick={go("track")} border />
-                  <DueRow dot={C.blue} title="Call back the Lincoln St. residents" sub="you promised J. Okafor · due today" onClick={go("track")} />
-                </>
-              )}
+        {tab === "queued" && (queued.length ? queued.map((d, i) => (
+          <div key={d.draftId} style={{ padding: "14px 18px", borderBottom: i < queued.length - 1 ? `1px solid ${C.line2}` : undefined }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
+              <span style={{ flex: 1, fontWeight: 700, fontSize: 14.5, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>To · {d.recipients}</span>
+              <span style={{ padding: "2px 8px", borderRadius: 99, fontSize: 10, fontFamily: FONT.mono, color: C.purpleText, background: "rgba(157,139,255,.16)" }}>DRAFTING AGENT · R3</span>
+            </div>
+            <div style={{ fontSize: 14, color: C.text2, marginTop: 3 }}>{d.subject}</div>
+            <div style={{ fontSize: 12.5, color: C.muted, marginTop: 4, lineHeight: 1.5, maxHeight: 44, overflow: "hidden" }}>{d.body}</div>
+            <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+              <button onClick={async () => { await postJson("/api/approvals", { action: "discard", draftId: d.draftId }); reload(); }} style={{ cursor: "pointer", padding: "8px 16px", borderRadius: 9, border: "1px solid rgba(var(--ink),.12)", background: "rgba(var(--ink),.05)", color: C.text2, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans }}>Discard</button>
+              <button onClick={async () => { await postJson("/api/approvals", { action: "approve", draftId: d.draftId }); reload(); }} style={{ cursor: "pointer", padding: "8px 16px", borderRadius: 9, border: 0, background: C.green, color: "#062418", fontSize: 12.5, fontWeight: 700, fontFamily: FONT.sans }}>Approve &amp; send</button>
             </div>
           </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <span style={{ ...eyebrow(C.dim) }}>Awaiting your approval</span>
-              <Badge color={C.purpleText} bg="rgba(157,139,255,.16)">3</Badge>
-            </div>
-            <div style={{ background: "linear-gradient(180deg,rgba(157,139,255,.1),rgba(157,139,255,.02))", border: "1px solid rgba(157,139,255,.24)", borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ padding: "3px 8px", borderRadius: 6, background: "rgba(157,139,255,.16)", color: C.purpleText, fontFamily: FONT.mono, fontSize: 9, fontWeight: 600, letterSpacing: ".05em" }}>DRAFTING AGENT</span>
-                <span style={{ marginLeft: "auto", fontFamily: FONT.mono, fontSize: 9.5, color: C.muted }}>drafted · not sent</span>
-              </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: C.text, lineHeight: 1.3 }}>Reply to Ald. Reyes — rezoning date</div>
-              <div style={{ fontSize: 12, color: C.text2, lineHeight: 1.45, fontFamily: FONT.serif, fontStyle: "italic", borderLeft: "2px solid rgba(157,139,255,.4)", paddingLeft: 10 }}>&quot;Maria — the 19th Ave hearing is set for July 9 at 6:30 PM…&quot;</div>
-              <button onClick={go("settings")} style={{ cursor: "pointer", width: "100%", padding: 9, borderRadius: 10, background: C.green, border: 0, color: "#062418", fontSize: 12.5, fontWeight: 700, fontFamily: FONT.sans }}>Approve &amp; send</button>
-              <button onClick={go("settings")} style={{ cursor: "pointer", background: "none", border: 0, color: C.purpleText, fontSize: 12, fontWeight: 600, fontFamily: FONT.sans }}>2 more awaiting →</button>
-            </div>
-          </div>
-        </div>
+        )) : <div style={{ padding: 40, textAlign: "center", color: C.dim, fontSize: 13 }}>Nothing queued to send.</div>)}
       </div>
     </div>
   );
@@ -325,26 +363,28 @@ function BriefCard({ icon, iconColor, iconBg, title, right, rightColor, tag, bod
 /* ════════════════════════ ASK ════════════════════════ */
 function Ask({ asked, loading, res, err, q, setQ, runAsk, resetAsk, go }:
   { asked: boolean; loading: boolean; res: AskResponse | null; err: string | null; q: string; setQ: (s: string) => void; runAsk: (s?: string) => void; resetAsk: () => void; go: (s: Screen) => () => void }) {
-  const EXAMPLES = [
-    "What's the full history on the drainage and flooding problem at the property on Bohland Ave?",
-    "Cross-reference the police and fire reports with resident complaints about the St. Charles Road bars.",
-    "What's still open right now that I haven't resolved?",
-  ];
+  const [recent, setRecent] = useState<string[]>([]);
+  useEffect(() => { if (!asked) setRecent(getRecentSearches()); }, [asked]);
   if (!asked) {
     return (
-      <div className="fu" style={{ padding: "48px 36px", maxWidth: 920, margin: "0 auto", display: "flex", flexDirection: "column", gap: 26 }}>
+      <div className="fu" style={{ padding: "48px 36px", maxWidth: 920, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Star /><span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim, letterSpacing: ".04em" }}>70,431 messages indexed · every answer cites its sources</span></div>
-        <div style={{ fontFamily: FONT.serif, fontSize: 40, fontWeight: 400, color: C.text, lineHeight: 1.18, letterSpacing: "-.01em" }}>Ask your institutional memory <span style={{ color: C.muted, fontStyle: "italic" }}>anything.</span></div>
+        <div style={{ fontFamily: FONT.serif, fontSize: 40, fontWeight: 400, color: C.text, lineHeight: 1.18, letterSpacing: "-.01em" }}>AI Search</div>
         <AskInput q={q} setQ={setQ} runAsk={runAsk} big />
-        <div style={{ ...eyebrow(C.dim) }}>Try asking</div>
-        <div style={{ display: "flex", gap: 13 }}>
-          {EXAMPLES.map((ex, i) => (
-            <button key={i} onClick={() => runAsk(ex)} style={{ flex: 1, cursor: "pointer", textAlign: "left", ...card, borderRadius: 14, padding: 16, display: "flex", flexDirection: "column", gap: 14, minHeight: 150 }}>
-              <span style={{ fontSize: 15, color: C.text, lineHeight: 1.4, flex: 1 }}>&quot;{ex}&quot;</span>
-              <Ico d={ICON.arrow} w={17} sw={2} stroke={C.blue} />
-            </button>
-          ))}
-        </div>
+        <div style={{ ...eyebrow(C.dim) }}>Recent searches</div>
+        {recent.length ? (
+          <div style={{ ...card, overflow: "hidden" }}>
+            {recent.map((s, i) => (
+              <button key={i} onClick={() => runAsk(s)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", padding: "13px 16px", background: "transparent", border: 0, borderBottom: i < recent.length - 1 ? `1px solid ${C.line2}` : undefined, cursor: "pointer", color: C.text }}>
+                <Ico d={ICON.search} w={15} sw={2} stroke={C.dim} />
+                <span style={{ flex: 1, fontSize: 14.5, color: C.text2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s}</span>
+                <Ico d={ICON.arrow} w={15} sw={2} stroke={C.dim} />
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div style={{ fontSize: 13.5, color: C.dim, padding: "2px 2px 6px" }}>Your recent searches will appear here.</div>
+        )}
         <div style={{ display: "flex", alignItems: "center", gap: 11, padding: "15px 16px", background: "rgba(157,139,255,.08)", border: "1px solid rgba(157,139,255,.2)", borderRadius: 14 }}>
           <Ico d={ICON.info} w={18} sw={1.8} stroke={C.purpleText} />
           <span style={{ fontSize: 13, color: "#B9B1E8", lineHeight: 1.45 }}>Every answer cites its sources, orders events in time, and <span style={{ color: C.text, fontWeight: 600 }}>tells you what&apos;s missing.</span></span>
@@ -357,7 +397,7 @@ function Ask({ asked, loading, res, err, q, setQ, runAsk, resetAsk, go }:
       <div style={{ display: "flex", alignItems: "center", gap: 12, ...card, borderRadius: 14, padding: "14px 16px", marginBottom: 22 }}>
         <Star w={19} />
         <span style={{ flex: 1, fontSize: 14.5, color: C.text, lineHeight: 1.35 }}>{q || "…"}</span>
-        <button onClick={resetAsk} style={{ flexShrink: 0, background: "rgba(255,255,255,.07)", border: 0, borderRadius: 9, padding: "6px 13px", cursor: "pointer", color: C.text3, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans }}>New question</button>
+        <button onClick={resetAsk} style={{ flexShrink: 0, background: "rgba(var(--ink),.07)", border: 0, borderRadius: 9, padding: "6px 13px", cursor: "pointer", color: C.text3, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans }}>New question</button>
       </div>
 
       <div style={{ display: "flex", gap: 28, alignItems: "flex-start" }}>
@@ -375,12 +415,72 @@ function Ask({ asked, loading, res, err, q, setQ, runAsk, resetAsk, go }:
   );
 }
 
+/** Voice search — records mic audio and transcribes via /api/transcribe (OpenAI). */
+function MicButton({ onText, big }: { onText: (t: string) => void; big?: boolean }) {
+  const [state, setState] = useState<"idle" | "rec" | "busy">("idle");
+  const recRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const w = big ? 22 : 18;
+
+  async function start() {
+    if (!navigator.mediaDevices?.getUserMedia) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(stream);
+      chunksRef.current = [];
+      rec.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data); };
+      rec.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setState("busy");
+        try {
+          const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
+          const fd = new FormData();
+          fd.append("audio", blob, "speech.webm");
+          const r = await fetch("/api/transcribe", { method: "POST", body: fd });
+          const d = await r.json().catch(() => ({}));
+          if (d.text) onText(d.text);
+        } finally { setState("idle"); }
+      };
+      rec.start();
+      recRef.current = rec;
+      setState("rec");
+    } catch { setState("idle"); /* permission denied / no mic */ }
+  }
+  const toggle = () => { if (state === "rec") recRef.current?.stop(); else if (state === "idle") start(); };
+
+  const recording = state === "rec";
+  const busy = state === "busy";
+  return (
+    <button type="button" onClick={toggle} aria-label={recording ? "Stop recording" : "Voice search"}
+      title={recording ? "Stop & transcribe" : busy ? "Transcribing…" : "Voice search"}
+      style={{
+        cursor: busy ? "default" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center",
+        width: w + 16, height: w + 16, borderRadius: 99, border: 0,
+        background: recording ? "rgba(255,107,94,.18)" : "rgba(var(--ink),.06)",
+        animation: recording ? "cosPulse 1.1s ease-in-out infinite" : undefined,
+      }}>
+      {busy ? (
+        <svg width={w} height={w} viewBox="0 0 24 24" style={{ animation: "cosSpin 0.8s linear infinite" }}>
+          <circle cx="12" cy="12" r="9" fill="none" stroke="rgba(var(--ink),.25)" strokeWidth="2.5" />
+          <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke={C.gold} strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+      ) : (
+        <svg width={w} height={w} viewBox="0 0 24 24" fill="none" stroke={recording ? C.red : C.muted} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="9" y="2" width="6" height="12" rx="3" />
+          <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 function AskInput({ q, setQ, runAsk, big }: { q: string; setQ: (s: string) => void; runAsk: (s?: string) => void; big?: boolean }) {
   return (
-    <form onSubmit={(e) => { e.preventDefault(); runAsk(); }} style={{ display: "flex", alignItems: "center", gap: 13, background: "rgba(255,255,255,.05)", border: "1.5px solid rgba(231,181,60,.4)", borderRadius: 16, padding: big ? "18px 20px" : "12px 16px" }}>
+    <form onSubmit={(e) => { e.preventDefault(); runAsk(); }} style={{ display: "flex", alignItems: "center", gap: 13, background: "rgba(var(--ink),.05)", border: "1.5px solid rgba(231,181,60,.4)", borderRadius: 16, padding: big ? "18px 20px" : "12px 16px" }}>
       <Star w={big ? 22 : 18} />
-      <input value={q} onChange={(e) => setQ(e.target.value)} autoFocus placeholder="Ask anything across the archive…"
+      <input value={q} onChange={(e) => setQ(e.target.value)} autoFocus placeholder="Ask anything across the archive — or tap the mic…"
         style={{ flex: 1, background: "transparent", border: 0, outline: "none", fontSize: big ? 16 : 14, color: C.text, fontFamily: FONT.sans }} />
+      <MicButton big={big} onText={(t) => { setQ(t); runAsk(t); }} />
       <button type="submit" style={{ cursor: "pointer", background: C.gold, color: "#081627", border: 0, borderRadius: 10, padding: "8px 14px", fontWeight: 700, fontSize: 13, fontFamily: FONT.sans }}>Ask</button>
     </form>
   );
@@ -405,18 +505,19 @@ function AnswerBody({ res }: { res: AskResponse }) {
       <div style={{ ...eyebrow(C.dim), marginBottom: 12 }}>Sources · newest first</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {sources.map((s) => (
-          <div key={s.index} id={`src-${s.index}`} style={{ ...card, padding: "14px 16px", display: "flex", gap: 14 }}>
+          <a key={s.index} id={`src-${s.index}`} href={`/email?mid=${encodeURIComponent(s.messageId)}`} style={{ textDecoration: "none", ...card, padding: "14px 16px", display: "flex", gap: 14 }}>
             <span style={{ ...cite, height: "fit-content", fontWeight: 700 }}>[{s.index}]</span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 13.5, fontWeight: 700, color: C.text }}>{s.subject || "(no subject)"}</span>
                 <span style={{ ...streamPill(s.stream) }}>{s.stream}</span>
                 <span style={{ marginLeft: "auto", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{s.date?.slice(0, 10)}</span>
+                <Ico d={["M7 17L17 7M9 7h8v8"]} w={13} sw={2} stroke={C.dim} />
               </div>
               <div style={{ fontSize: 11.5, color: C.muted, marginTop: 2 }}>{s.fromName || s.fromEmail} · {s.direction}</div>
               <div style={{ fontSize: 12.5, color: C.text2, lineHeight: 1.5, marginTop: 7 }}>{s.snippet}</div>
             </div>
-          </div>
+          </a>
         ))}
         {res.openItems?.map((o, i) => (
           <div key={i} style={{ ...card, padding: "14px 16px" }}>
@@ -463,7 +564,7 @@ function RetrievalPlan({ res, loading }: { res: AskResponse | null; loading: boo
           <span style={{ fontSize: 12, color: C.text2 }}>{recovered} sources recovered</span>
           <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.muted }}>RRF fused</span>
         </div>
-        <div style={{ height: 6, borderRadius: 999, background: "rgba(255,255,255,.08)", overflow: "hidden" }}>
+        <div style={{ height: 6, borderRadius: 999, background: "rgba(var(--ink),.08)", overflow: "hidden" }}>
           <div style={{ height: "100%", width: recovered ? "92%" : "0%", borderRadius: 999, background: "linear-gradient(90deg,#9D8BFF,#34C98B)", transformOrigin: "left", animation: "barGrow .9s cubic-bezier(.22,.61,.36,1) both" }} />
         </div>
       </div>
@@ -497,36 +598,59 @@ function GapsPanel({ res, go }: { res: AskResponse | null; go: (s: Screen) => ()
 }
 
 /* ════════════════════════ COMMITMENTS ════════════════════════ */
+interface EventItem {
+  id: string; title: string; who: string | null; role: string; dueLabel: string;
+  status: "open" | "late" | "done"; messageId: string; why: string; date: string;
+}
+const EVDOT: Record<string, string> = { open: C.blue, late: C.orange, done: C.greenText };
+const dayLabelD = (iso: string) => { try { return new Date(iso).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }); } catch { return iso.slice(0, 10); } };
 function Track({ filter, setFilter }: { filter: Filter; setFilter: (f: Filter) => void }) {
-  const show = (st: Filter) => filter === "all" || filter === st;
+  const { data } = useApi<{ events: EventItem[]; stats: { open: number; late: number; done: number } }>("/api/events");
+  const semOf = (s: string): "open" | "late" | "kept" => (s === "done" ? "kept" : s === "late" ? "late" : "open");
+  const match = (s: string) => filter === "all" || filter === semOf(s);
   const chip = (f: Filter, label: string) => {
     const on = filter === f;
-    return <button key={f} onClick={() => setFilter(f)} style={{ cursor: "pointer", padding: "8px 16px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans, background: on ? C.gold : "transparent", color: on ? "#081627" : C.text3, border: `1px solid ${on ? C.gold : "rgba(255,255,255,.14)"}` }}>{label}</button>;
+    return <button key={f} onClick={() => setFilter(f)} style={{ cursor: "pointer", padding: "8px 16px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans, background: on ? C.gold : "transparent", color: on ? "#081627" : C.text3, border: `1px solid ${on ? C.gold : "rgba(var(--ink),.14)"}` }}>{label}</button>;
   };
+  const evs = (data?.events ?? []).filter((e) => match(e.status));
+  const byDay = new Map<string, EventItem[]>();
+  for (const e of evs) { const d = e.date.slice(0, 10); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d)!.push(e); }
+  const days = [...byDay.keys()].sort((a, b) => b.localeCompare(a));
   return (
-    <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 20, flexWrap: "wrap", marginBottom: 20 }}>
+    <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 980 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 20, flexWrap: "wrap", marginBottom: 18 }}>
         <div>
-          <div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Commitments</div>
-          <div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>Who promised what — and whether it happened.</div>
+          <div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Calendar</div>
+          <div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>Your days and what&rsquo;s on them — synced from Outlook.</div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <Stat n="47" label="open" color={C.text} />
-          <Stat n="8" label="overdue" color={C.orange} bg="rgba(240,163,60,.08)" bd="rgba(240,163,60,.22)" />
-          <Stat n="91%" label="kept · 12mo" color={C.green} bg="rgba(52,201,139,.08)" bd="rgba(52,201,139,.22)" />
+          <Stat n={String(data?.stats.open ?? "—")} label="open" color={C.text} />
+          <Stat n={String(data?.stats.late ?? "—")} label="overdue" color={C.orange} bg="rgba(240,163,60,.08)" bd="rgba(240,163,60,.22)" />
+          <Stat n={String(data?.stats.done ?? "—")} label="done" color={C.green} bg="rgba(52,201,139,.08)" bd="rgba(52,201,139,.22)" />
         </div>
       </div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        {chip("all", "All")}{chip("open", "Open")}{chip("late", "Late")}{chip("broken", "Broken")}{chip("kept", "Kept")}
+      <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+        {chip("all", "All")}{chip("open", "Open")}{chip("late", "Overdue")}{chip("kept", "Done")}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 14 }}>
-        {show("open") && <>
-          <CommitCard sem="open" right="due today · 5 PM" rightColor={C.orange} title="Award the water-main reconstruction bid" who="You promised" whoName="Public Works" foot="last event: bid review cleared · 2d ago" n="[3]" />
-          <CommitCard sem="open" right="due Jul 2" title="Call back the Lincoln St. resident group" who="You promised" whoName="J. Okafor" foot="last event: petition received · 5d ago" n="[9]" />
-        </>}
-        {show("late") && <CommitCard sem="late" semLabel="⚠ LATE · 7 MO" right="was due spring '24" rightColor={C.orangeText} title="Greenwood Ave pump-station repair" whoName="Dir. Halpern" who="promised you · Public Works" foot="re-flagged: flooding reopened today" footColor={C.orangeText} n="[44]" />}
-        {show("broken") && <CommitCard sem="broken" right="lapsed Feb '25" title="Quarterly newsletter to the 4th Ward" who="You promised" whoName="residents" foot="no issue activity in 16 months" footColor="#bf8079" n="[2]" />}
-        {show("kept") && <CommitCard sem="kept" right="done Sep '22" title="Commission the storm-sewer survey" who="You promised the" whoName="Greenwood block club" foot="closed on time · survey filed" n="[31]" dim />}
+      {!data && <div style={{ color: C.dim, fontSize: 13 }}>Loading calendar…</div>}
+      <div style={{ ...card, overflow: "hidden" }}>
+        {days.map((d) => (
+          <div key={d}>
+            <div style={{ padding: "9px 18px", background: "rgba(var(--ink),.05)", borderBottom: `1px solid ${C.line2}`, fontFamily: FONT.mono, fontSize: 11, letterSpacing: ".06em", color: C.text2, textTransform: "uppercase" }}>{dayLabelD(d)} · {byDay.get(d)!.length}</div>
+            {byDay.get(d)!.map((e) => (
+              <a key={e.id} href={`/email?mid=${encodeURIComponent(e.messageId)}`} style={{ textDecoration: "none", display: "flex", gap: 13, padding: "13px 18px", borderBottom: `1px solid ${C.line2}`, alignItems: "flex-start" }}>
+                <span style={{ width: 9, height: 9, borderRadius: 99, background: EVDOT[e.status] || C.muted, flexShrink: 0, marginTop: 6 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.title}</span>
+                    <span style={{ fontFamily: FONT.mono, fontSize: 11, color: e.status === "late" ? C.orange : C.dim, flexShrink: 0 }}>{e.dueLabel}</span>
+                  </div>
+                  <div style={{ fontSize: 12.5, color: C.text3, marginTop: 2 }}>{e.role} · {e.who}</div>
+                </div>
+              </a>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -565,7 +689,7 @@ function Memory() {
 
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
-      <div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1, marginBottom: 18 }}>Memory</div>
+      <div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1, marginBottom: 18 }}>History</div>
       <div style={{ display: "flex", gap: 26, alignItems: "flex-start" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ ...eyebrow(C.dim), fontSize: 10.5, marginBottom: 10 }}>Resolved entities · {entities.length}</div>
@@ -574,8 +698,8 @@ function Memory() {
               const on = selected === e.name;
               const parcel = e.kind === "parcel";
               return (
-                <button key={e.entityId} onClick={() => setSelected(e.name)} style={{ textAlign: "left", cursor: "pointer", background: on ? "rgba(231,181,60,.08)" : "rgba(255,255,255,.03)", border: `1px solid ${on ? "rgba(231,181,60,.3)" : "rgba(255,255,255,.07)"}`, borderRadius: 13, padding: "12px 13px", display: "flex", alignItems: "center", gap: 11 }}>
-                  <span style={{ width: 36, height: 36, borderRadius: parcel ? 10 : 99, background: parcel ? "rgba(103,173,255,.14)" : "linear-gradient(135deg,#1d3f6b,#0e2440)", border: "1px solid rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 14, color: on ? C.text : C.text2, flexShrink: 0 }}>{parcel ? <Ico d={ICON.brief} w={18} sw={1.8} stroke={C.blue} /> : initialsOf(e.name)}</span>
+                <button key={e.entityId} onClick={() => setSelected(e.name)} style={{ textAlign: "left", cursor: "pointer", background: on ? "rgba(231,181,60,.08)" : "rgba(var(--ink),.03)", border: `1px solid ${on ? "rgba(231,181,60,.3)" : "rgba(var(--ink),.07)"}`, borderRadius: 13, padding: "12px 13px", display: "flex", alignItems: "center", gap: 11 }}>
+                  <span style={{ width: 36, height: 36, borderRadius: parcel ? 10 : 99, background: parcel ? "rgba(103,173,255,.14)" : "linear-gradient(135deg,#1d3f6b,#0e2440)", border: "1px solid rgba(var(--ink),.1)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 14, color: on ? C.text : C.text2, flexShrink: 0 }}>{parcel ? <Ico d={ICON.brief} w={18} sw={1.8} stroke={C.blue} /> : initialsOf(e.name)}</span>
                   <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13.5, fontWeight: on ? 700 : 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.name}</div><div style={{ fontSize: 11, color: C.text3 }}>{e.kind}</div></div>
                   <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.gold }}>{e.count}</span>
                 </button>
@@ -586,9 +710,9 @@ function Memory() {
         <div style={{ flex: 1.5, minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}>
           {detail ? (
             <>
-              <div style={{ background: "linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02))", border: "1px solid rgba(255,255,255,.1)", borderRadius: 20, padding: 20, display: "flex", flexDirection: "column", gap: 15 }}>
+              <div style={{ background: "linear-gradient(180deg,rgba(var(--ink),.06),rgba(var(--ink),.02))", border: "1px solid rgba(var(--ink),.1)", borderRadius: 20, padding: 20, display: "flex", flexDirection: "column", gap: 15 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
-                  <span style={{ width: 58, height: 58, borderRadius: 999, background: "linear-gradient(135deg,#2a5183,#13294a)", border: "1px solid rgba(255,255,255,.14)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 24, color: C.text, flexShrink: 0 }}>{initialsOf(detail.value)}</span>
+                  <span style={{ width: 58, height: 58, borderRadius: 999, background: "linear-gradient(135deg,#2a5183,#13294a)", border: "1px solid rgba(var(--ink),.14)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 24, color: C.text, flexShrink: 0 }}>{initialsOf(detail.value)}</span>
                   <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontFamily: FONT.serif, fontSize: 24, color: C.text, fontWeight: 500, lineHeight: 1.1 }}>{detail.value}</div><div style={{ fontSize: 13, color: C.text3, marginTop: 2 }}>{detail.kind}</div></div>
                   <div style={{ display: "flex" }}>
                     <MStat n={String(detail.stats.count)} l="messages" />
@@ -600,7 +724,7 @@ function Memory() {
                   <div style={{ background: "rgba(157,139,255,.09)", border: "1px solid rgba(157,139,255,.22)", borderRadius: 13, padding: "13px 14px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 9 }}><Ico d={["M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"]} w={13} sw={2} stroke={C.purpleText} /><span style={{ ...eyebrow(C.purpleText), fontSize: 9.5, letterSpacing: ".08em", fontWeight: 600 }}>{detail.aliases.length} alias{detail.aliases.length > 1 ? "es" : ""} → 1 identity · reversible</span></div>
                     <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-                      {detail.aliases.map((a, i) => <span key={i} title={`${a.type} · ${a.source} · conf ${a.confidence}`} style={{ padding: "4px 10px", borderRadius: 7, background: "rgba(255,255,255,.06)", fontFamily: FONT.mono, fontSize: 10.5, color: C.text2 }}>{a.value}</span>)}
+                      {detail.aliases.map((a, i) => <span key={i} title={`${a.type} · ${a.source} · conf ${a.confidence}`} style={{ padding: "4px 10px", borderRadius: 7, background: "rgba(var(--ink),.06)", fontFamily: FONT.mono, fontSize: 10.5, color: C.text2 }}>{a.value}</span>)}
                     </div>
                   </div>
                 )}
@@ -608,7 +732,7 @@ function Memory() {
               <div style={{ ...eyebrow(C.dim), fontSize: 10.5, padding: "4px 2px 0" }}>Recent interactions</div>
               <div style={{ ...card, overflow: "hidden" }}>
                 {detail.timeline.slice(0, 10).map((m, i, arr) => (
-                  <Interaction key={m.id} date={new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "2-digit" }).toUpperCase()} title={m.subject ?? "(no subject)"} tags={[[m.topic ?? m.stream, C.gold, "rgba(231,181,60,.12)"], [m.direction, "#9fb2c8", "rgba(255,255,255,.06)"]]} border={i < Math.min(10, arr.length) - 1} />
+                  <Interaction key={m.id} date={new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "2-digit" }).toUpperCase()} title={m.subject ?? "(no subject)"} tags={[[m.topic ?? m.stream, C.gold, "rgba(231,181,60,.12)"], [m.direction, "#9fb2c8", "rgba(var(--ink),.06)"]]} border={i < Math.min(10, arr.length) - 1} />
                 ))}
               </div>
             </>
@@ -625,10 +749,10 @@ function Memory() {
 function MemoryRepresentative() {
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
-      <div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1, marginBottom: 18 }}>Memory</div>
+      <div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1, marginBottom: 18 }}>History</div>
       <div style={{ display: "flex", gap: 26, alignItems: "flex-start" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 13, padding: "11px 14px", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(var(--ink),.05)", border: "1px solid rgba(var(--ink),.1)", borderRadius: 13, padding: "11px 14px", marginBottom: 16 }}>
             <Ico d={ICON.search} w={17} sw={2} stroke={C.muted} /><span style={{ fontSize: 13, color: C.muted }}>A person, property, or issue…</span>
           </div>
           <div style={{ ...eyebrow(C.dim), fontSize: 10.5, marginBottom: 10 }}>Resolved entities</div>
@@ -639,9 +763,9 @@ function MemoryRepresentative() {
           </div>
         </div>
         <div style={{ flex: 1.5, minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ background: "linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02))", border: "1px solid rgba(255,255,255,.1)", borderRadius: 20, padding: 20, display: "flex", flexDirection: "column", gap: 15 }}>
+          <div style={{ background: "linear-gradient(180deg,rgba(var(--ink),.06),rgba(var(--ink),.02))", border: "1px solid rgba(var(--ink),.1)", borderRadius: 20, padding: 20, display: "flex", flexDirection: "column", gap: 15 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
-              <span style={{ width: 58, height: 58, borderRadius: 999, background: "linear-gradient(135deg,#2a5183,#13294a)", border: "1px solid rgba(255,255,255,.14)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 24, color: C.text, flexShrink: 0 }}>MR</span>
+              <span style={{ width: 58, height: 58, borderRadius: 999, background: "linear-gradient(135deg,#2a5183,#13294a)", border: "1px solid rgba(var(--ink),.14)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 24, color: C.text, flexShrink: 0 }}>MR</span>
               <div style={{ flex: 1 }}><div style={{ fontFamily: FONT.serif, fontSize: 24, color: C.text, fontWeight: 500, lineHeight: 1.1 }}>Maria Reyes</div><div style={{ fontSize: 13, color: C.text3, marginTop: 2 }}>Alderman · 3rd Ward</div></div>
               <div style={{ display: "flex" }}>
                 <MStat n="142" l="messages" /><MStat n="9" l="issues" border /><MStat n="5" l="commitments" color={C.gold} border />
@@ -651,7 +775,7 @@ function MemoryRepresentative() {
             <div style={{ background: "rgba(157,139,255,.09)", border: "1px solid rgba(157,139,255,.22)", borderRadius: 13, padding: "13px 14px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 9 }}><Ico d={["M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"]} w={13} sw={2} stroke={C.purpleText} /><span style={{ ...eyebrow(C.purpleText), fontSize: 9.5, letterSpacing: ".08em", fontWeight: 600 }}>3 aliases → 1 identity · reversible</span></div>
               <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-                {["mreyes@village.gov", "m.reyes@gmail.com", "\"Maria R.\""].map((a) => <span key={a} style={{ padding: "4px 10px", borderRadius: 7, background: "rgba(255,255,255,.06)", fontFamily: FONT.mono, fontSize: 10.5, color: C.text2 }}>{a}</span>)}
+                {["mreyes@village.gov", "m.reyes@gmail.com", "\"Maria R.\""].map((a) => <span key={a} style={{ padding: "4px 10px", borderRadius: 7, background: "rgba(var(--ink),.06)", fontFamily: FONT.mono, fontSize: 10.5, color: C.text2 }}>{a}</span>)}
               </div>
             </div>
           </div>
@@ -662,7 +786,7 @@ function MemoryRepresentative() {
           </div>
           <div style={{ ...eyebrow(C.dim), fontSize: 10.5, padding: "4px 2px 0" }}>Recent interactions</div>
           <div style={{ ...card, overflow: "hidden" }}>
-            <Interaction date="JUN 20" title="Asked about 19th Ave rezoning hearing" tags={[["rezoning", C.gold, "rgba(231,181,60,.12)"], ["awaiting reply", "#9fb2c8", "rgba(255,255,255,.06)"]]} border />
+            <Interaction date="JUN 20" title="Asked about 19th Ave rezoning hearing" tags={[["rezoning", C.gold, "rgba(231,181,60,.12)"], ["awaiting reply", "#9fb2c8", "rgba(var(--ink),.06)"]]} border />
             <Interaction date="MAY 14" title="Co-sponsored the stormwater motion" tags={[["flooding", C.gold, "rgba(231,181,60,.12)"]]} border />
             <Interaction date="MAR 02" title="Flagged catch-basin backups on Greenwood" tags={[["flooding", C.gold, "rgba(231,181,60,.12)"]]} />
           </div>
@@ -686,9 +810,9 @@ function Sources() {
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
       <div style={{ marginBottom: 18 }}><div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Sources</div><div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>An answer is only as complete as what&apos;s connected.</div></div>
-      <div style={{ background: "linear-gradient(120deg,rgba(52,201,139,.1),rgba(103,173,255,.06))", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 30, marginBottom: 24 }}>
+      <div style={{ background: "linear-gradient(120deg,rgba(52,201,139,.1),rgba(103,173,255,.06))", border: "1px solid rgba(var(--ink),.1)", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 30, marginBottom: 24 }}>
         <div><div style={{ fontFamily: FONT.serif, fontSize: 34, color: C.text, lineHeight: 1 }}>{data.totals.messages.toLocaleString()}</div><div style={{ fontSize: 12.5, color: C.text3, marginTop: 4 }}>messages in the canonical store</div></div>
-        <div style={{ width: 1, height: 46, background: "rgba(255,255,255,.1)" }} />
+        <div style={{ width: 1, height: 46, background: "rgba(var(--ink),.1)" }} />
         <div><div style={{ fontFamily: FONT.serif, fontSize: 28, color: C.green, lineHeight: 1 }}>{data.healthy}<span style={{ color: C.dim, fontSize: 18 }}>/{total}</span></div><div style={{ fontSize: 11.5, color: C.muted, marginTop: 4 }}>streams healthy</div></div>
         <div style={{ marginLeft: "auto" }}><div style={{ fontFamily: FONT.serif, fontSize: 28, color: C.purpleText, lineHeight: 1 }}>{data.review.length}</div><div style={{ fontSize: 11.5, color: C.muted, marginTop: 4 }}>awaiting review</div></div>
       </div>
@@ -709,11 +833,11 @@ function Sources() {
             <div style={{ display: "flex", alignItems: "center", gap: 11 }}><span style={{ width: 38, height: 38, borderRadius: 11, background: "rgba(157,139,255,.16)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Ico d={["M16 3a4 4 0 0 1 0 8M8 3a4 4 0 0 0 0 8M12 13c-4 0-7 2-7 5v3h14v-3c0-3-3-5-7-5z"]} w={20} sw={1.8} stroke={C.purpleText} /></span><div style={{ flex: 1 }}><div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{data.review.length} ambiguous merge{data.review.length === 1 ? "" : "s"}</div><div style={{ fontSize: 11.5, color: "#B9B1E8", marginTop: 1 }}>every mapping reversible</div></div></div>
             {data.review.length === 0 && <div style={{ fontFamily: FONT.mono, fontSize: 11, color: C.greenText, textAlign: "center", padding: "6px 0" }}>✓ queue clear — no ambiguous merges</div>}
             {data.review.slice(0, 4).map((r) => (
-              <div key={r.reviewId} style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 13, padding: 14 }}>
+              <div key={r.reviewId} style={{ background: "rgba(var(--ink),.04)", border: "1px solid rgba(var(--ink),.09)", borderRadius: 13, padding: 14 }}>
                 <div style={{ fontSize: 13, color: C.text, lineHeight: 1.45, marginBottom: 11 }}>Is <span style={{ fontFamily: FONT.mono, color: C.purpleText }}>{r.aliasValue}</span> the same as <span style={{ fontWeight: 600 }}>{r.existingName ?? "the existing identity"}</span>?</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                   <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.muted, flex: 1 }}>confidence {r.confidence.toFixed(2)}</span>
-                  <button onClick={async () => { await postJson("/api/sources", { reviewId: r.reviewId, action: "reject" }); reload(); }} style={{ cursor: "pointer", padding: "7px 15px", borderRadius: 9, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.12)", color: C.text2, fontSize: 12, fontWeight: 600, fontFamily: FONT.sans }}>Reject</button>
+                  <button onClick={async () => { await postJson("/api/sources", { reviewId: r.reviewId, action: "reject" }); reload(); }} style={{ cursor: "pointer", padding: "7px 15px", borderRadius: 9, background: "rgba(var(--ink),.06)", border: "1px solid rgba(var(--ink),.12)", color: C.text2, fontSize: 12, fontWeight: 600, fontFamily: FONT.sans }}>Reject</button>
                   <button onClick={async () => { await postJson("/api/sources", { reviewId: r.reviewId, action: "merge" }); reload(); }} style={{ cursor: "pointer", padding: "7px 15px", borderRadius: 9, background: C.green, border: 0, color: "#062418", fontSize: 12, fontWeight: 700, fontFamily: FONT.sans }}>Merge</button>
                 </div>
               </div>
@@ -731,9 +855,9 @@ function SourcesRepresentative() {
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
       <div style={{ marginBottom: 18 }}><div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Sources</div><div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>An answer is only as complete as what&apos;s connected.</div></div>
-      <div style={{ background: "linear-gradient(120deg,rgba(52,201,139,.1),rgba(103,173,255,.06))", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 30, marginBottom: 24 }}>
+      <div style={{ background: "linear-gradient(120deg,rgba(52,201,139,.1),rgba(103,173,255,.06))", border: "1px solid rgba(var(--ink),.1)", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 30, marginBottom: 24 }}>
         <div><div style={{ fontFamily: FONT.serif, fontSize: 34, color: C.text, lineHeight: 1 }}>70,431</div><div style={{ fontSize: 12.5, color: C.text3, marginTop: 4 }}>messages in the canonical store</div></div>
-        <div style={{ width: 1, height: 46, background: "rgba(255,255,255,.1)" }} />
+        <div style={{ width: 1, height: 46, background: "rgba(var(--ink),.1)" }} />
         <div><div style={{ fontFamily: FONT.serif, fontSize: 28, color: C.green, lineHeight: 1 }}>4<span style={{ color: C.dim, fontSize: 18 }}>/6</span></div><div style={{ fontSize: 11.5, color: C.muted, marginTop: 4 }}>connectors healthy</div></div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 13px", borderRadius: 99, background: "rgba(240,163,60,.1)", border: "1px solid rgba(240,163,60,.24)", fontFamily: FONT.mono, fontSize: 11, color: C.orange }}><span style={{ width: 6, height: 6, borderRadius: 99, background: C.orange }} />1 degraded</span>
@@ -749,7 +873,7 @@ function SourcesRepresentative() {
             <Connector name="Public Works nightly CSV" kind="CSV" dot={C.orange} pct={78} meta="2 columns unmapped · 78%" count="2,890 rows" degraded />
             <Connector name="Permit & inspection PDFs" kind="PDF" dot={C.green} meta="synced 1h ago · OCR parsed" count="197 docs" />
             <Connector name="311 legacy portal scrape" kind="SCRAPE" dot={C.blue} meta="syncing… 1,204 of ~3,500" syncing />
-            <div style={{ border: "1px dashed rgba(255,255,255,.16)", borderRadius: 15, padding: 14, display: "flex", flexDirection: "column", gap: 11 }}>
+            <div style={{ border: "1px dashed rgba(var(--ink),.16)", borderRadius: 15, padding: 14, display: "flex", flexDirection: "column", gap: 11 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 9 }}><span style={{ width: 8, height: 8, borderRadius: 999, background: C.dim, flexShrink: 0 }} /><div style={{ flex: 1 }}><div style={{ fontSize: 13.5, fontWeight: 700, color: C.text2 }}>Clerk / Open Meetings</div><div style={{ fontFamily: FONT.mono, fontSize: 9.5, color: C.dim, marginTop: 2 }}>not connected</div></div></div>
               <button style={{ cursor: "pointer", padding: 7, borderRadius: 9, background: "rgba(103,173,255,.16)", border: "1px solid rgba(103,173,255,.32)", color: C.blue, fontSize: 12, fontWeight: 700, fontFamily: FONT.sans, marginTop: "auto" }}>Connect</button>
             </div>
@@ -759,11 +883,11 @@ function SourcesRepresentative() {
           <div style={{ ...eyebrow(C.dim), fontSize: 10.5, marginBottom: 12 }}>Review queue · the moat</div>
           <div style={{ background: "linear-gradient(180deg,rgba(157,139,255,.1),rgba(157,139,255,.02))", border: "1px solid rgba(157,139,255,.26)", borderRadius: 18, padding: 18, display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 11 }}><span style={{ width: 38, height: 38, borderRadius: 11, background: "rgba(157,139,255,.16)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Ico d={["M16 3a4 4 0 0 1 0 8M8 3a4 4 0 0 0 0 8M12 13c-4 0-7 2-7 5v3h14v-3c0-3-3-5-7-5z"]} w={20} sw={1.8} stroke={C.purpleText} /></span><div style={{ flex: 1 }}><div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>12 ambiguous merges</div><div style={{ fontSize: 11.5, color: "#B9B1E8", marginTop: 1 }}>every mapping reversible</div></div></div>
-            <div style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 13, padding: 14 }}>
+            <div style={{ background: "rgba(var(--ink),.04)", border: "1px solid rgba(var(--ink),.09)", borderRadius: 13, padding: 14 }}>
               <div style={{ fontSize: 13, color: C.text, lineHeight: 1.45, marginBottom: 11 }}>Is <span style={{ fontFamily: FONT.mono, color: C.purpleText }}>m.reyes@gmail.com</span> the same person as <span style={{ fontWeight: 600 }}>Ald. Maria Reyes</span>?</div>
               <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                 <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.muted, flex: 1 }}>confidence 0.81</span>
-                <button style={{ cursor: "pointer", padding: "7px 15px", borderRadius: 9, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.12)", color: C.text2, fontSize: 12, fontWeight: 600, fontFamily: FONT.sans }}>Reject</button>
+                <button style={{ cursor: "pointer", padding: "7px 15px", borderRadius: 9, background: "rgba(var(--ink),.06)", border: "1px solid rgba(var(--ink),.12)", color: C.text2, fontSize: 12, fontWeight: 600, fontFamily: FONT.sans }}>Reject</button>
                 <button style={{ cursor: "pointer", padding: "7px 15px", borderRadius: 9, background: C.green, border: 0, color: "#062418", fontSize: 12, fontWeight: 700, fontFamily: FONT.sans }}>Merge</button>
               </div>
             </div>
@@ -785,7 +909,7 @@ function Approvals() {
   };
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
-      <div style={{ marginBottom: 20 }}><div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Approvals</div><div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>Agents draft. You decide.</div></div>
+      <div style={{ marginBottom: 20 }}><div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Approvals</div><div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>Staff Agents draft. You decide.</div></div>
       <div style={{ display: "flex", gap: 28, alignItems: "flex-start" }}>
         <div style={{ flex: 1.5, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}><span style={{ ...eyebrow(C.dim), fontSize: 10.5 }}>Awaiting you</span><Badge color={C.purpleText} bg="rgba(157,139,255,.16)">{drafts.length || 3} draft{(drafts.length || 3) === 1 ? "" : "s"}</Badge></div>
@@ -831,7 +955,7 @@ function Approvals() {
 }
 
 /* ════════════════════════ small shared bits ════════════════════════ */
-const Kbd = ({ children }: { children: ReactNode }) => <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim2, border: "1px solid rgba(255,255,255,.12)", borderRadius: 5, padding: "1px 5px" }}>{children}</span>;
+const Kbd = ({ children }: { children: ReactNode }) => <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim2, border: "1px solid rgba(var(--ink),.12)", borderRadius: 5, padding: "1px 5px" }}>{children}</span>;
 const Badge = ({ children, color, bg }: { children: ReactNode; color: string; bg: string }) => <span style={{ fontFamily: FONT.mono, fontSize: 10, color, background: bg, borderRadius: 6, padding: "1px 6px", fontWeight: 600 }}>{children}</span>;
 function RailHead({ label, action, onAction }: { label: string; action: string; onAction: () => void }) {
   return <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}><span style={eyebrow(C.dim)}>{label}</span><button onClick={onAction} style={{ background: "none", border: 0, color: C.blue, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT.sans }}>{action}</button></div>;
@@ -839,17 +963,17 @@ function RailHead({ label, action, onAction }: { label: string; action: string; 
 function DueRow({ dot, title, sub, onClick, border }: { dot: string; title: string; sub: string; onClick: () => void; border?: boolean }) {
   return <button onClick={onClick} style={{ width: "100%", textAlign: "left", cursor: "pointer", background: "none", border: 0, borderBottom: border ? `1px solid ${C.line2}` : 0, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}><span style={{ width: 8, height: 8, borderRadius: 999, background: dot, flexShrink: 0 }} /><div style={{ flex: 1 }}><div style={{ fontSize: 13.5, color: C.text, fontWeight: 600 }}>{title}</div><div style={{ fontSize: 11.5, color: C.muted, marginTop: 1 }}>{sub}</div></div></button>;
 }
-function Stat({ n, label, color, bg = "rgba(255,255,255,.04)", bd = C.cardBd }: { n: string; label: string; color: string; bg?: string; bd?: string }) {
+function Stat({ n, label, color, bg = "rgba(var(--ink),.04)", bd = C.cardBd }: { n: string; label: string; color: string; bg?: string; bd?: string }) {
   return <div style={{ background: bg, border: `1px solid ${bd}`, borderRadius: 14, padding: "12px 18px" }}><div style={{ fontFamily: FONT.serif, fontSize: 26, color, lineHeight: 1 }}>{n}</div><div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>{label}</div></div>;
 }
 function MStat({ n, l, color = C.text, border }: { n: string; l: string; color?: string; border?: boolean }) {
-  return <div style={{ textAlign: "center", padding: "0 16px", borderLeft: border ? "1px solid rgba(255,255,255,.08)" : 0 }}><div style={{ fontFamily: FONT.serif, fontSize: 22, color }}>{n}</div><div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>{l}</div></div>;
+  return <div style={{ textAlign: "center", padding: "0 16px", borderLeft: border ? "1px solid rgba(var(--ink),.08)" : 0 }}><div style={{ fontFamily: FONT.serif, fontSize: 22, color }}>{n}</div><div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>{l}</div></div>;
 }
 function EntityRow({ initials, icon, name, sub, right, rightColor = C.gold, active }: { initials?: string; icon?: boolean; name: string; sub: string; right: string; rightColor?: string; active?: boolean }) {
   return (
-    <div style={{ background: active ? "rgba(231,181,60,.08)" : "rgba(255,255,255,.03)", border: `1px solid ${active ? "rgba(231,181,60,.3)" : "rgba(255,255,255,.07)"}`, borderRadius: 13, padding: "12px 13px", display: "flex", alignItems: "center", gap: 11 }}>
+    <div style={{ background: active ? "rgba(231,181,60,.08)" : "rgba(var(--ink),.03)", border: `1px solid ${active ? "rgba(231,181,60,.3)" : "rgba(var(--ink),.07)"}`, borderRadius: 13, padding: "12px 13px", display: "flex", alignItems: "center", gap: 11 }}>
       {icon ? <span style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(103,173,255,.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Ico d={ICON.brief} w={18} sw={1.8} stroke={C.blue} /></span>
-        : <span style={{ width: 36, height: 36, borderRadius: 99, background: "linear-gradient(135deg,#1d3f6b,#0e2440)", border: "1px solid rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 14, color: active ? C.text : C.text2, flexShrink: 0 }}>{initials}</span>}
+        : <span style={{ width: 36, height: 36, borderRadius: 99, background: "linear-gradient(135deg,#1d3f6b,#0e2440)", border: "1px solid rgba(var(--ink),.1)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 14, color: active ? C.text : C.text2, flexShrink: 0 }}>{initials}</span>}
       <div style={{ flex: 1 }}><div style={{ fontSize: 13.5, fontWeight: active ? 700 : 600, color: C.text }}>{name}</div><div style={{ fontSize: 11, color: C.text3 }}>{sub}</div></div>
       <span style={{ fontFamily: FONT.mono, fontSize: right === "REOPEN" ? 9 : 10, color: rightColor }}>{right}</span>
     </div>
@@ -861,8 +985,8 @@ function Interaction({ date, title, tags, border }: { date: string; title: strin
 function Connector({ name, kind, dot, pct, meta, count, degraded, syncing }: { name: string; kind: string; dot: string; pct?: number; meta: string; count?: string; degraded?: boolean; syncing?: boolean }) {
   return (
     <div style={{ ...card, ...(degraded ? { background: "linear-gradient(180deg,rgba(240,163,60,.08),rgba(240,163,60,.02))", border: "1px solid rgba(240,163,60,.28)" } : syncing ? { background: "linear-gradient(180deg,rgba(103,173,255,.07),rgba(103,173,255,.01))", border: "1px solid rgba(103,173,255,.24)" } : {}), borderRadius: 15, padding: 14, display: "flex", flexDirection: "column", gap: 9 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 9 }}><span style={{ width: 8, height: 8, borderRadius: 999, background: dot, flexShrink: 0, animation: syncing ? "pulseDot 1s infinite" : degraded ? "pulseDot 1.8s infinite" : "none" }} /><span style={{ fontSize: 13.5, fontWeight: 700, color: C.text, flex: 1 }}>{name}</span><span style={{ padding: "2px 7px", borderRadius: 6, background: "rgba(255,255,255,.07)", fontFamily: FONT.mono, fontSize: 9, color: "#9fb2c8" }}>{kind}</span></div>
-      {pct != null && <div style={{ height: 5, borderRadius: 999, background: "rgba(255,255,255,.08)", overflow: "hidden" }}><div style={{ height: "100%", width: `${pct}%`, background: dot, borderRadius: 999 }} /></div>}
+      <div style={{ display: "flex", alignItems: "center", gap: 9 }}><span style={{ width: 8, height: 8, borderRadius: 999, background: dot, flexShrink: 0, animation: syncing ? "pulseDot 1s infinite" : degraded ? "pulseDot 1.8s infinite" : "none" }} /><span style={{ fontSize: 13.5, fontWeight: 700, color: C.text, flex: 1 }}>{name}</span><span style={{ padding: "2px 7px", borderRadius: 6, background: "rgba(var(--ink),.07)", fontFamily: FONT.mono, fontSize: 9, color: "#9fb2c8" }}>{kind}</span></div>
+      {pct != null && <div style={{ height: 5, borderRadius: 999, background: "rgba(var(--ink),.08)", overflow: "hidden" }}><div style={{ height: "100%", width: `${pct}%`, background: dot, borderRadius: 999 }} /></div>}
       <div style={{ display: "flex", justifyContent: "space-between", fontFamily: FONT.mono, fontSize: 9.5, color: degraded ? C.orangeText : syncing ? C.blue : C.muted, marginTop: pct == null ? "auto" : 0 }}><span>{meta}</span>{count && <span>{count}</span>}</div>
     </div>
   );
@@ -900,17 +1024,17 @@ function AutonomyRow({ name, sub, level, levelColor, locked, last }: { name: str
   );
 }
 
-const btnGhost: CSSProperties = { flex: 1, cursor: "pointer", padding: 10, borderRadius: 10, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.12)", color: C.text, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans };
+const btnGhost: CSSProperties = { flex: 1, cursor: "pointer", padding: 10, borderRadius: 10, background: "rgba(var(--ink),.06)", border: "1px solid rgba(var(--ink),.12)", color: C.text, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans };
 const btnGreen: CSSProperties = { cursor: "pointer", padding: 10, borderRadius: 10, background: C.green, border: 0, color: "#062418", fontSize: 12.5, fontWeight: 700, fontFamily: FONT.sans };
 
 function streamPill(stream: string): CSSProperties {
   const map: Record<string, [string, string]> = {
     Police: [C.blue, "rgba(103,173,255,.14)"], "Fire/EMS": [C.red, "rgba(255,107,94,.14)"],
     Resident: [C.gold, "rgba(231,181,60,.12)"], Business: [C.green, "rgba(52,201,139,.12)"],
-    Interdepartmental: [C.purpleText, "rgba(157,139,255,.14)"], "Civic/FOIA": [C.text2, "rgba(255,255,255,.06)"],
-    Regional: [C.text2, "rgba(255,255,255,.06)"],
+    Interdepartmental: [C.purpleText, "rgba(157,139,255,.14)"], "Civic/FOIA": [C.text2, "rgba(var(--ink),.06)"],
+    Regional: [C.text2, "rgba(var(--ink),.06)"],
   };
-  const [c, bg] = map[stream] || [C.text2, "rgba(255,255,255,.06)"];
+  const [c, bg] = map[stream] || [C.text2, "rgba(var(--ink),.06)"];
   return { padding: "2px 8px", borderRadius: 999, background: bg, color: c, fontFamily: FONT.mono, fontSize: 9 };
 }
 
@@ -921,6 +1045,6 @@ const KEYFRAMES = `
 .fu{animation:scrnIn .34s cubic-bezier(.22,.61,.36,1)}
 .scrl::-webkit-scrollbar{width:9px;height:9px}
 .scrl::-webkit-scrollbar-track{background:transparent}
-.scrl::-webkit-scrollbar-thumb{background:rgba(255,255,255,.09);border-radius:99px}
-.scrl::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.16)}
+.scrl::-webkit-scrollbar-thumb{background:rgba(var(--ink),.09);border-radius:99px}
+.scrl::-webkit-scrollbar-thumb:hover{background:rgba(var(--ink),.16)}
 `;

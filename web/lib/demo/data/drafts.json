@@ -1,0 +1,38 @@
+[
+  {
+    "draftId": "demo-draft-1",
+    "agent": "drafting",
+    "kind": "reply",
+    "toMessageId": "<now-4719fd94f5ae0394@mail.bellwood-demo.gov>",
+    "recipients": "eleanor.meyer@comcast.net",
+    "subject": "Re: Basement flooded AGAIN after Saturday's storm — where is the regrade?",
+    "body": "Dear Mrs. Meyer,\n\nThank you for writing again, and I'm sorry you're dealing with water in the basement after this weekend's storm — especially after we discussed the regrade. That's not where this should still be.\n\nI've asked Public Works for a firm date on the Frederick Ave regrade and the storm-drain work tied to your property, and I've flagged your address as a repeat issue so it isn't treated as a new ticket. You should hear a specific date from my office by the end of the week; if you don't, reply to this email and it comes straight back to me.\n\nThank you for your patience.\n\n— Mayor Daniel R. Okonkwo",
+    "rationale": "Repeat constituent (5-thread saga since Sep 2025); the regrade was promised and is overdue. Draft acknowledges the prior commitment, routes to Public Works, and sets a concrete expectation without over-promising a completion date.",
+    "status": "pending",
+    "createdAt": "2026-06-22T08:10:00.000Z"
+  },
+  {
+    "draftId": "demo-draft-2",
+    "agent": "drafting",
+    "kind": "reply",
+    "toMessageId": "<3f209918174003cb@mail.bellwood-demo.gov>",
+    "recipients": "gloria.bennett7@gmail.com",
+    "subject": "Re: Storm drain flooding the crosswalk at my corner",
+    "body": "Dear Ms. Bennett,\n\nThank you for flagging the storm drain at your corner — a flooded crosswalk is a safety issue, not just an inconvenience, and I appreciate you reporting it.\n\nI've routed this to Public Works for a catch-basin inspection at your intersection. Given our past few exchanges (and thank you again for the kind note on the water bill), I'll personally check that this one doesn't sit. Expect an update on the inspection within several business days.\n\nWarm regards,\n\n— Mayor Daniel R. Okonkwo",
+    "rationale": "Seven-contact history; consistently civil repeat constituent whose latest message is unanswered. Draft routes the storm-drain report to Public Works, references the prior rapport, and commits to a follow-up without a hard deadline.",
+    "status": "pending",
+    "createdAt": "2026-06-20T16:42:00.000Z"
+  },
+  {
+    "draftId": "demo-draft-3",
+    "agent": "drafting",
+    "kind": "reply",
+    "toMessageId": "<now-e5f25a1e000e75d5@mail.bellwood-demo.gov>",
+    "recipients": "dpawlak.bw@comcast.net",
+    "subject": "Re: Bar noise until 2am AGAIN this weekend — 511 St. Charles",
+    "body": "Dear Ms. Pawlak,\n\nThank you for letting me know, and I'm sorry the late-night noise is back. You shouldn't have to lose sleep over this.\n\nWe've resolved very similar complaints on St. Charles Rd before by having Code Enforcement review the establishment's permitted operating hours, and I've asked them to do the same here for 511 St. Charles. I'll have someone follow up with you on what they find. If it happens again before then, note the date and time and send it to me — a log helps Code Enforcement act.\n\nThank you,\n\n— Mayor Daniel R. Okonkwo",
+    "rationale": "Live noise complaint with a clear precedent (Route 64 → The Hideout → El Faro, each resolved via operating-hours review). Draft applies the known remedy, routes to Code Enforcement, and asks the resident to log recurrences as evidence.",
+    "status": "pending",
+    "createdAt": "2026-06-21T09:05:00.000Z"
+  }
+]

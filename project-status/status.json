@@ -1,0 +1,92 @@
+{
+  "project": "Bellwood Hub — Mayor's AI Chief of Staff",
+  "tagline": "Graph-augmented, entity-resolved institutional-memory platform over the Village of Bellwood's ~70,000 municipal emails — a queryable chief of staff, not just search.",
+  "headline": "🟢 <b>Live & deployed</b> — the full Chief-of-Staff demo is on Vercel at <a href=\"https://web-seven-tawny-20.vercel.app\" style=\"color:var(--accent)\">web-seven-tawny-20.vercel.app</a> (public, keyless, 30k-email seed) plus an Admin console, themes, and voice search. No blockers for Monday.",
+  "glance": [
+    { "k": "Demo (default, keyless)", "v": "All 6 screens + Admin live", "s": "done", "d": "Runs on JSON fixtures derived from the 30k seed — no DB or API dependency for the screens (DEMO_MODE=1). The bulletproof path for a live mayor demo; Ask still calls OpenAI for synthesis, and email drill-down hits Postgres." },
+    { "k": "Web app", "v": "Deployed · opens into /chief", "s": "done", "d": "Deployed to Vercel (public) and running locally. / redirects to /chief. Desktop ChiefApp + a dedicated mobile UI (bottom nav) switch at 768px. Public URL: web-seven-tawny-20.vercel.app." },
+    { "k": "Live database (toggle)", "v": "30,641 emails · 30,831 embedded", "s": "done", "d": "Postgres (poc.*) fully loaded with OpenAI embeddings. Powers the click-through-to-source-email drill-down and the optional live semantic path (flip DEMO_MODE=0)." },
+    { "k": "Entities extracted", "v": "151,109 (addr/person/phone/biz)", "s": "done", "d": "86,744 address · 43,370 person · 19,052 phone · 1,943 business rows across the corpus — the basis for the History (entity timeline) screen." },
+    { "k": "Isolated Supabase project", "v": "BellwoodHub · 19 tables", "s": "done", "d": "Project wwqebbqbnetkjibqmhlj (us-west-2, PG17). 19 tables across poc / canonical / pipeline / app schemas. Isolated from other projects for client-data separation; connects via the IPv4 session pooler." },
+    { "k": "Architecture conformance", "v": "All 6 ADs implemented", "s": "done", "d": "Verified against the CTO brief: AD-1 ingestion decoupled from capability, AD-2 one Postgres / three access patterns, AD-3 resolved-conversation unit, AD-4 topics + RRF planner, AD-5 event-sourced issues, AD-6 assertion-ledger identity." }
+  ],
+  "corpus": [
+    { "k": "Full mailbox (institutional memory)", "v": "~70,000 emails", "d": "The institutional-memory asset — what the village actually buys. Matches the design prototype's 70,431 and the brief's ~70k reference corpus." },
+    { "k": "Active inbox (seed we have)", "v": "30,641 emails", "d": "The seed corpus with full content (corpus/seed_emails.json) — what the demo runs on, loaded into Postgres with embeddings + entities." },
+    { "k": "Recovered from deleted", "v": "~39,790 emails", "d": "Emails with no seed content yet — the heart of the pitch: deleted mail is dead storage that walks out at every election; recovering it into queryable memory is the product's reason to exist." }
+  ],
+  "boards": [
+    {
+      "title": "Demo build — Monday",
+      "rows": [
+        { "t": "Local setup & boot", "s": "done" },
+        { "t": "Provision + seed BellwoodHub", "s": "done" },
+        { "t": "Demo fixtures from 30k seed", "s": "done" },
+        { "t": "Demo provider + wire routes", "s": "done" },
+        { "t": "Hybrid Ask (keyword + OpenAI)", "s": "done" },
+        { "t": "Voice search (mic → Whisper)", "s": "done" },
+        { "t": "Admin console (5 sections)", "s": "done" }
+      ]
+    },
+    {
+      "title": "Post-demo product work",
+      "rows": [
+        { "t": "TASK-1 · Capture Outlook data for the Mayor's mailbox (Exchange/Graph)", "s": "pending", "detail": "Build a real Outlook/Exchange connector via Microsoft Graph API (Mail.Read) to ingest the Mayor's actual mailbox into the pipeline — implementing the 5-step contract in ingest/base.py (pull → normalize → resolve → classify → index+emit), replacing synthetic_email.py. Captures inbox + recovered/deleted items toward the ~70k corpus. Needs Azure app registration + admin consent. Concrete version of product task #3. Outlook is also the source for the Calendar (TASK-11)." },
+        { "t": "TASK-11 · Calendar view from MS Outlook calendar", "s": "pending", "detail": "The Calendar screen (renamed from Events) should be a true calendar view loading from the Mayor's MS Outlook calendar via Microsoft Graph (Calendars.Read) — events, times, locations, attendees — with a day/week/agenda UI, reconciled with the email-derived action items. Pairs with TASK-1 (Outlook is the source for both mail and calendar)." }
+        { "t": "Backfill + cut over to canonical", "s": "pending" },
+        { "t": "First real email connector (IMAP)", "s": "pending" },
+        { "t": "Send capability (R3)", "s": "pending" },
+        { "t": "Full Morning Brief", "s": "pending" },
+        { "t": "Expand eval harness", "s": "pending" },
+        { "t": "Wire Commitments to seed data", "s": "pending" }
+      ]
+    },
+    {
+      "title": "Action items (PM sweep · Jun 26)",
+      "rows": [
+        { "t": "TASK-2 · Ship search index to Vercel (BUG-1)", "s": "done", "detail": "Resolved via next.config outputFileTracingIncludes (no trimming needed) — the 31 MB index ships with the /api/ask function and compresses to ~6 MB, within limits. Verified: live Ask returns the curated Gloria Bennett answer with sources." },
+        { "t": "TASK-3 · Deploy the app to Vercel (resilient URL)", "s": "done", "detail": "Deployed. Public URL: https://web-seven-tawny-20.vercel.app (also bellwoodhub.vercel.app, gated by Deployment Protection). Runs in keyless demo mode (no DATABASE_URL); OpenAI key set for live Ask + voice. American-flag favicon shipped. Mitigates RSK-2." },
+        { "t": "TASK-4 · Verify live DB path (DEMO_MODE=0)", "s": "pending", "detail": "Flip DEMO_MODE=0 in a throwaway env and verify semantic Ask, Memory drill-ins, Sources, and Brief against Postgres. Acceptance: parity with the JSON demo, no 500s. Mitigates RSK-3." },
+        { "t": "TASK-5 · Wire Events to seed data", "s": "done", "detail": "DONE. Built an events extractor (web/scripts/build-demo.mjs) that folds actionable corpus threads into events (responded→done, stale inbound→overdue, recent→open) → events.json + /api/events. Mobile + desktop Events screens render 40 real items with drill-to-source. Closes ISS-1." },
+        { "t": "TASK-6 · Clean Brief's static hero cards", "s": "pending", "detail": "Replace the Brief screen's hardcoded BriefCards (Water-main bid, etc.) with seed-derived items. Acceptance: nothing on the Brief is invented. Closes ISS-2." },
+        { "t": "TASK-7 · Rotate API keys after demo", "s": "pending", "detail": "Rotate OpenAI, Voyage, Supabase service-role, and the DB password (all shared in plaintext in chat). Move to Vercel env / a secret manager. Acceptance: old keys revoked, app still works. Mitigates RSK-1." },
+        { "t": "TASK-8 · Mobile-responsive layout (sidebar → bottom nav)", "s": "pending", "detail": "80% of usage is mobile but /chief is desktop-first (fixed inline-styled sidebar, multi-column grids). The new theme switcher makes all schemes mobile-legible and a CSS pass scales padding/fonts, but the layout needs a real refactor: collapse the sidebar to a bottom tab bar / hamburger and single-column the workspaces on narrow screens." },
+        { "t": "TASK-9 · Update application color options", "s": "pending", "detail": "Iterate on the color-scheme system just shipped (Midnight / Dim / Daylight / High-contrast + top-bar toggle + Admin → Appearance). Likely scope: add/refine palette options (more schemes or an accent-colour picker), polish the Daylight theme where glassy overlays read flat, verify WCAG-AA contrast across all schemes, and confirm mobile legibility. Awaiting RD's specific direction on which options to add/change." },
+        { "t": "TASK-10 · Security audit before going live", "s": "pending", "detail": "Full pre-production security audit / penetration test before any real mailbox data goes live — a go-live gate. Scope: adversarial threat model (brief §9 — a sitting official's email: FOIA, opposition research, breach exposure); enforce row-level RBAC via Postgres RLS (currently stubbed — ISS-4); PII detection + tagging at ingestion; encryption in transit + at rest; least-privilege DB roles per pipeline stage; secrets management + key rotation (RSK-1 / TASK-7); the immutable audit trail (ISS-5); NIST 800-53 + CJIS §5.4 control review for the police CJI data; dependency/SCA scan; auth review. Engage municipal counsel on FOIA / Open Meetings / records-retention. Pairs with ISS-5 (audit) and ISS-4 (RLS) — all post-demo." }
+      ]
+    }
+  ],
+  "blocker": {
+    "class": "ok",
+    "text": "<b>None for the Monday demo.</b> It runs keyless on the JSON path. Full DB-backed semantic search is one env flip away (<code>DEMO_MODE=0</code>) — the database is loaded and ready; kept on JSON for reliability."
+  },
+  "issues": [
+    { "id": "ISS-5", "kind": "issue", "sev": "critical", "title": "No audit trail — must meet NIST 800-53 AU + CJIS §5.4 government auditing standards", "status": "open", "detail": "⏳ SCHEDULED POST-DEMO (RD, Jun 26) — deferred until after Monday; required before any real mailbox data. CRITICAL go-live blocker (not a demo blocker). STANDARDS: NIST SP 800-53 Rev 5 'AU' (Audit & Accountability) family is the federal baseline; CJIS Security Policy §5.4 applies because police blotter/incident data is Criminal Justice Information; add HIPAA §164.312(b) audit controls if fire/EMS PHI is indexed; retention per the Illinois Local Records Act. REQUIREMENTS — (1) LOG EVERY EVENT [AU-2/AU-12, CJIS 5.4.1.1]: searches/retrievals (/api/ask), record & document accesses (/api/email = CJI access), agent drafts, approvals/decisions, exports, logins (success+fail), permission and config changes. (2) RECORD CONTENT [AU-3, AU-8, CJIS 5.4.1.1.1]: synchronized timestamp, event type, system component, source (session/IP), actor identity, target (message_id/entity), outcome (success/fail), plus query text + result count. (3) PROTECTION [AU-9, AU-10]: append-only, tamper-evident (hash-chained), immutable — not modifiable or deletable by application roles; non-repudiation. (4) RETENTION [AU-11, CJIS]: at least 365 days, then per the local records schedule. (5) REVIEW & REPORTING [AU-6/AU-7, CJIS 5.4.3]: at-least-weekly review, searchable, exportable reports. IMPLEMENTATION: an append-only audit table + write-through middleware on every API action, written under a protected DB role, with a review/export surface." },
+    { "id": "ISS-1", "kind": "issue", "sev": "med", "title": "Events (was Commitments) screen on static content", "status": "closed", "detail": "CLOSED via TASK-5. The Events screen (mobile + desktop) now runs on real seed-derived data via /api/events — 40 actionable items (264 open / 656 overdue / 551 done) folded from the corpus threads, each clickable to its source email." },
+    { "id": "BUG-1", "kind": "bug", "sev": "med", "title": "search-index.json (31 MB) vs Vercel serverless bundle limit", "status": "closed", "detail": "CLOSED — solved via next.config outputFileTracingIncludes rather than trimming. The index ships with the Ask function (compresses to ~6 MB) and live Ask works on Vercel." },
+    { "id": "ISS-2", "kind": "issue", "sev": "low", "title": "Brief had hardcoded hero cards", "status": "closed", "detail": "CLOSED via TASK-6. Both the mobile Emails screen and the desktop Brief are now a clean, dense inbox list (Needs you / Inbox / Queued) on real seed data — the full inbox feed (/api/inbox, 21,169 inbound) plus needs-attention + queued drafts. No hardcoded cards. Scales to volume; every row drills to its source email." },
+    { "id": "ISS-3", "kind": "issue", "sev": "low", "title": "\"Who emails me most\" surfaces institutional senders (Cook County DOT) over residents", "status": "open", "detail": "The aggregate ranks by raw inbound count, so institutions (Cook County DOT, IDOT, Metra) outrank residents. Consider biasing to external persons for a more constituent-centric demo." },
+    { "id": "ISS-4", "kind": "issue", "sev": "med", "title": "Supabase advisor: 9 tables have RLS disabled (anon-key exposure) — fine for synthetic, must enforce before real mailbox data", "status": "open", "detail": "Supabase's advisor flags 9 RLS-disabled tables; the anon/publishable key could read them. Acceptable now (synthetic data, app uses the owner role which bypasses RLS anyway). Before real mailbox data: enable RLS + tenant policies + a non-bypass app role." }
+  ],
+  "risks": [
+    { "id": "RSK-1", "like": "high", "impact": "high", "title": "API keys (OpenAI/Voyage/DB) were shared in plaintext in chat", "mitigation": "Rotate all keys after the demo; move to Vercel env vars", "owner": "RD", "detail": "OpenAI, Voyage, Supabase service-role, and the DB password were pasted into chat. They're gitignored locally, but the chat transcript retains them. Mitigation is TASK-7: rotate everything post-demo and move to managed env vars." },
+    { "id": "RSK-2", "like": "low", "impact": "high", "title": "✓ MITIGATED — demo was local-only; now deployed to Vercel", "mitigation": "Done — TASK-3 deployed the app to Vercel (public, resilient)", "owner": "PM", "detail": "RESOLVED via TASK-3. The app is live and public at https://web-seven-tawny-20.vercel.app (also bellwoodhub.vercel.app once Deployment Protection is off), so a laptop sleep / network drop no longer kills the demo. Residual (low): keep the deployment warm and have the URL open as the primary; the local server is just a backup now." },
+    { "id": "RSK-3", "like": "low", "impact": "med", "title": "Live DB path (DEMO_MODE=0) not yet verified end-to-end", "mitigation": "Verify semantic Ask + entity drill-ins before relying on it", "owner": "PM", "detail": "The Postgres path is loaded (30k + embeddings + entities) but has never been exercised end-to-end through the UI. Mitigation is TASK-4: verify before any reliance or cutover." },
+    { "id": "RSK-4", "like": "low", "impact": "high", "title": "Embeddings use voyage-4-large but the brief specified voyage-3 (OQ-5 lock-in)", "mitigation": "Confirm model + 1024-dim before any 70k backfill — re-embedding is the expensive replay path", "owner": "PM", "detail": "The canonical store is vector(1024) using voyage-4-large; the architecture brief named voyage-3. The dimension matches, so vectors are usable, but the embedding model is a lock-in decision (OQ-5). Confirm before any full 70k backfill — re-embedding is the costly replay." },
+    { "id": "RSK-5", "like": "low", "impact": "med", "title": "Shared status page is public (no login)", "mitigation": "Secrets-free now; lock behind Vercel auth before it carries anything sensitive", "owner": "PM", "detail": "project-status-ten.vercel.app is public with no auth. Currently secrets-free and noindex, so fine. Before it ever carries client-sensitive detail, enable Vercel auth/SSO protection on that project." },
+    { "id": "RSK-6", "like": "high", "impact": "high", "title": "Agent anxiety — distrust of agents doing unapproved or automated work could block adoption", "mitigation": "Log ALL agent activity, visibly", "owner": "RD", "detail": "The biggest adoption risk: the Mayor and staff won't trust a system where agents act on their own. If trust isn't established, the product isn't used. MITIGATION: log every agent action — both human-approved and automated — to a visible, date-sorted Agent Activity page (FEAT-6) that links each action to the agent and its logs, backed by R3 human gates (agents draft, never send unprompted) and the immutable audit trail (ISS-5). Transparency is the trust mechanism." }
+  ],
+  "deps": [
+    { "id": "DEP-1", "title": "Deploy the Chief-of-Staff app itself to Vercel for a shareable mayor URL", "status": "resolved", "on": "web-seven-tawny-20.vercel.app (public)", "detail": "RESOLVED — deployed and public at https://web-seven-tawny-20.vercel.app. Runs keyless demo mode; live Ask + voice via OpenAI key. The pretty alias bellwoodhub.vercel.app is set but gated by Deployment Protection (toggle off in project settings to make it public)." },
+    { "id": "DEP-2", "title": "BellwoodHub Postgres password (for the live DB path)", "status": "resolved", "on": "RD — provided", "detail": "Provided. The live DB connects via the Supabase Session Pooler (aws-1-us-west-2:5432, IPv4) — the direct IPv6 host doesn't resolve on this network." },
+    { "id": "DEP-3", "title": "API keys: OpenAI, Voyage, Supabase service-role", "status": "resolved", "on": "RD — provided", "detail": "All provided and written to gitignored env files. OpenAI powers live Ask synthesis + Whisper voice; Voyage is for the canonical embedding path; service-role is stored for future REST use." }
+  ],
+  "decisions": [
+    { "id": "VIS-2", "text": "<b>North Star:</b> ONE place for the Mayor to look, search, and build his day. The Chief of Staff organizes his inbox, confirms his calendar (agent-supported), powers AI Search, and builds <b>summaries by area</b>. Unifying concept: configurable <b>Area views</b> — e.g., Firehouse (contacts · events · tasks), Police (emails · notices · tasks), Public Works — each a single domain workspace, built up over time (FEAT-3)." },
+    { "id": "VIS-1", "text": "<b>Direction:</b> this becomes an <b>agent that connects to other agents</b> (agent-to-agent / MCP) — the capability agents + MCP server are the foundation." },
+    { "id": "DEC-4", "text": "<b>Jobs-to-be-done IA:</b> mobile reorganized around tasks — <b>Emails</b> (queued-to-go + needs-attention), <b>Events</b> (was Commitments), <b>Search</b>, <b>History</b> (was Memory), <b>Source</b>. Renamed throughout; kept \"institutional memory\" as the brand tagline. Every email is clickable to the full source document." },
+    { "id": "DEC-1", "text": "Kept the JSON demo as the default (<code>DEMO_MODE=1</code>) over the live DB — reliability for the mayor demo." },
+    { "id": "DEC-2", "text": "Connect via the Supabase <b>Session Pooler</b> (IPv4) instead of the direct IPv6 host — no IPv4 add-on needed." },
+    { "id": "DEC-3", "text": "Fixed a latent migration bug (canonical <code>message_topics</code> excluded from the RLS loop — no <code>tenant_id</code> column) so the schema applies cleanly on a fresh DB." }
+  ]
+}

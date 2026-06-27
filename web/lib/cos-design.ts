@@ -1,34 +1,35 @@
 // Design tokens for "Mayor's AI Chief of Staff — Desktop", ported from the
-// Claude Design prototype (claude.ai/design project 89b25fde …
-// "Mayor's AI Chief of Staff - Desktop.dc.html"). Dark institutional-memory
-// cockpit: Public Sans / Newsreader / JetBrains Mono; navy gradient; gold/
-// blue/green/orange/purple semantic accents.
+// Claude Design prototype. Now THEMEABLE: every value is a CSS custom property
+// resolved at runtime from the active [data-theme] (see app/globals.css). The
+// palette swaps live from the Admin → Appearance panel. `--ink` carries the
+// overlay channel (255,255,255 on dark themes, a dark slate on light) so the
+// glassy surfaces invert correctly.
 import type { CSSProperties } from "react";
 
-/** Palette. */
+/** Palette — CSS variables, themed by [data-theme] in globals.css. */
 export const C = {
-  bgBody: "#05080e",
-  text: "#EAF1FA",
-  text2: "#A9BDD4",
-  text3: "#93A8C2",
-  muted: "#7d8ea3",
-  dim: "#5E748F",
-  dim2: "#46586f",
-  gold: "#E7B53C",
-  goldHi: "#F4CB63",
-  goldLo: "#D7991C",
-  blue: "#67ADFF",
-  green: "#34C98B",
-  greenText: "#74dcb4",
-  orange: "#F0A33C",
-  orangeText: "#cf9a52",
-  red: "#FF6B5E",
-  redText: "#FF9084",
-  purple: "#9D8BFF",
-  purpleText: "#B0A2FF",
-  line: "rgba(255,255,255,.07)",
-  line2: "rgba(255,255,255,.06)",
-  cardBd: "rgba(255,255,255,.08)",
+  bgBody: "var(--c-bgbody)",
+  text: "var(--c-text)",
+  text2: "var(--c-text2)",
+  text3: "var(--c-text3)",
+  muted: "var(--c-muted)",
+  dim: "var(--c-dim)",
+  dim2: "var(--c-dim2)",
+  gold: "var(--c-gold)",
+  goldHi: "var(--c-goldhi)",
+  goldLo: "var(--c-goldlo)",
+  blue: "var(--c-blue)",
+  green: "var(--c-green)",
+  greenText: "var(--c-greentext)",
+  orange: "var(--c-orange)",
+  orangeText: "var(--c-orangetext)",
+  red: "var(--c-red)",
+  redText: "var(--c-redtext)",
+  purple: "var(--c-purple)",
+  purpleText: "var(--c-purpletext)",
+  line: "rgba(var(--ink),.07)",
+  line2: "rgba(var(--ink),.06)",
+  cardBd: "var(--c-cardbd)",
 } as const;
 
 /** Fonts (loaded via the /chief layout <link>). */
@@ -38,13 +39,11 @@ export const FONT = {
   mono: "'JetBrains Mono',monospace",
 } as const;
 
-export const APP_BG =
-  "radial-gradient(130% 100% at 18% -8%,#102139 0%,#0a1322 42%,#070b12 100%)";
+export const APP_BG = "var(--c-appbg)";
 
-/** A glassy card surface. */
+/** A glassy card surface — overlay inverts via --ink on light themes. */
 export const card: CSSProperties = {
-  background:
-    "linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.018))",
+  background: "linear-gradient(180deg,rgba(var(--ink),.05),rgba(var(--ink),.018))",
   border: `1px solid ${C.cardBd}`,
   borderRadius: 16,
 };

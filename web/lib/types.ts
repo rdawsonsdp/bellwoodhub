@@ -23,6 +23,7 @@ export interface Source {
   snippet: string;
   messageId: string;
   threadId: string | null;
+  docKind?: string | null; // non-email corpus document type (e.g. "Fire/EMS report"); absent for email
 }
 
 export type AskMode = "rag" | "open_items" | "who_emails_most";

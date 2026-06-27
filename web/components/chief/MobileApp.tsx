@@ -177,8 +177,19 @@ function PullToRefresh({ onRefresh, children }: { onRefresh: () => Promise<void>
 }
 
 /** The lowest level: the actual source email body. Opened from any reference. */
+/** Uploaded docs live only in the client store — synthesize their detail locally. */
+function ingestedDetail(mid: string): EmailDetail | null {
+  const r = getIngested().find((x) => x.id === mid);
+  if (!r) return null;
+  const body = `${r.summary}\n\n` + Object.entries(r.fields).map(([k, v]) => `${k}: ${v}`).join("\n");
+  return { subject: r.title, fromName: r.author, fromEmail: null, toEmail: null, cc: null,
+    direction: "inbound", topic: r.topic, stream: r.stream as EmailDetail["stream"], date: r.ingestedAt,
+    bodyRaw: body, bodyClean: body } as unknown as EmailDetail;
+}
 function EmailSheet({ mid, onClose }: { mid: string; onClose: () => void }) {
-  const { data } = useApi<EmailDetail>(`/api/email?mid=${encodeURIComponent(mid)}`);
+  const local = mid.startsWith("ing-") ? ingestedDetail(mid) : null;
+  const { data: fetched } = useApi<EmailDetail>(local ? null : `/api/email?mid=${encodeURIComponent(mid)}`);
+  const data = local ?? fetched;
   return (
     <Sheet title={data?.subject || "Source email"} onClose={onClose}>
       {!data ? <Loading label="Opening the source document…" /> : (
@@ -658,7 +669,13 @@ function AskSheet({ onClose }: { onClose: () => void }) {
   async function run(question?: string) {
     const Q = (question ?? q).trim(); if (!Q) return;
     setQ(Q); addRecentSearch(Q); setLoading(true); setRes(null);
-    const r = await postJson<AskResponse>("/api/ask", { question: Q });
+    // include freshly-ingested uploads so the broad search spans them too
+    const uploads = getIngested().map((r) => ({
+      id: r.id, title: r.title, summary: r.summary, author: r.author, date: r.date,
+      topic: r.topic, stream: r.stream, docKind: getSourceType(r.typeKey)?.label ?? "Uploaded document",
+      fields: r.fields, entities: r.entities,
+    }));
+    const r = await postJson<AskResponse>("/api/ask", { question: Q, uploads });
     setRes(r); setLoading(false);
   }
   async function mic() {
@@ -746,8 +763,11 @@ function AskResult({ res }: { res: AskResponse }) {
           <div style={{ display: "grid", gap: 9 }}>
             {res.sources.map((s: Source) => (
               <button key={s.index} onClick={() => openEmail(s.messageId)} style={{ ...cardS, padding: 13, textAlign: "left", color: C.text, display: "block", width: "100%" }}>
-                <div style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center", flexWrap: "wrap" }}>
                   <span style={chip(`[${s.index}]`, C.gold)}>[{s.index}]</span>
+                  {s.docKind
+                    ? <span style={chip(s.docKind, C.blue)}>{s.docKind}</span>
+                    : <span style={chip("Email", C.muted)}>Email</span>}
                   <span style={chip(s.stream, streamColor[s.stream] || C.muted)}>{s.stream}</span>
                   <span style={{ marginLeft: "auto", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{s.date.slice(0, 10)}</span>
                   <Svg d="M7 17L17 7M9 7h8v8" w={12} />

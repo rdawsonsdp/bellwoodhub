@@ -24,6 +24,7 @@ import drafts from "./data/drafts.json";
 import curated from "./data/ask-curated.json";
 import events from "./data/events.json";
 import businessInbox from "./data/business-inbox.json";
+import corpusDocs from "./data/corpus-docs.json";
 
 /** A business-mailbox email (the walled Gmail account). Richer than the index
  *  rows so it can drill to a full body without the 31MB search index. */
@@ -33,6 +34,24 @@ interface BizRow {
   topic: string | null; stream: StreamKey; direction: "inbound" | "outbound";
 }
 const BUSINESS: BizRow[] = businessInbox as unknown as BizRow[];
+
+/** A non-email corpus document (fire/police/permit/inspection/minutes/FOIA).
+ *  Ask searches these alongside email — the corpus is the whole record, not the
+ *  inbox. Each carries a full body so cited results drill to the source. */
+interface DocRow {
+  messageId: string; docKind: string; subject: string; fromName: string; fromEmail: string;
+  toEmail: string; date: string; topic: string | null; stream: StreamKey; snippet: string; body: string;
+}
+const DOCS: DocRow[] = corpusDocs as unknown as DocRow[];
+const docText = (d: DocRow) => `${d.subject} ${d.body} ${d.fromName}`.toLowerCase();
+
+/** A client-supplied uploaded document (from the Upload Source store), passed
+ *  into Ask so it's searchable immediately after ingestion. */
+export interface UploadDoc {
+  id: string; title?: string; summary?: string; author?: string; date?: string;
+  topic?: string | null; stream?: string; docKind?: string;
+  fields?: Record<string, string>; entities?: { name: string }[];
+}
 
 export const DEMO = process.env.DEMO_MODE === "1" || !process.env.DATABASE_URL;
 export const HAS_OPENAI = !!process.env.OPENAI_API_KEY;
@@ -76,6 +95,15 @@ export function demoEmail(mid: string) {
       subject: b.subject, fromName: b.fromName, fromEmail: b.fromEmail, toEmail: b.toEmail,
       cc: null, direction: b.direction, topic: b.topic, stream: b.stream, date: b.date,
       bodyClean: b.body, bodyRaw: b.body, mailbox: "biz",
+    };
+  }
+  if (mid.startsWith("doc-")) {
+    const d = DOCS.find((r) => r.messageId === mid);
+    if (!d) return null;
+    return {
+      subject: d.subject, fromName: d.fromName, fromEmail: d.fromEmail, toEmail: d.toEmail,
+      cc: null, direction: "inbound" as const, topic: d.topic, stream: d.stream, date: d.date,
+      bodyClean: d.body, bodyRaw: d.body, docKind: d.docKind, mailbox: "gov",
     };
   }
   const row = searchIndex().find((r) => r.messageId === mid);
@@ -185,36 +213,72 @@ export function demoInbox(limit = 120, mailbox = "gov") {
 const STOP = new Set("the a an of to in on for and or is are was were be been do does did how what who whats whos with about my our your his her their this that these those i me we us you they them it its as at by from re fwd".split(" "));
 const tokenize = (s: string) => s.toLowerCase().replace(/[^\w\s]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !STOP.has(w));
 
-/** Keyword retrieval over the seed index → top-k Source[]. */
-export function demoRetrieve(question: string, k = 8): Source[] {
+/** A scored, source-shaped retrieval candidate (email OR document OR upload). */
+interface Cand { src: Source; t: string; }
+
+/** Map an uploaded record (passed from the client store) into a searchable
+ *  candidate so freshly-ingested docs are findable right after the progress bar. */
+function uploadCands(uploads: UploadDoc[]): Cand[] {
+  return uploads.map((u): Cand => ({
+    t: `${u.title ?? ""} ${u.summary ?? ""} ${Object.values(u.fields ?? {}).join(" ")} ${(u.entities ?? []).map((e) => e.name).join(" ")}`.toLowerCase(),
+    src: {
+      index: 0, score: 0, direction: "inbound", date: u.date ?? new Date().toISOString(),
+      fromName: u.author ?? null, fromEmail: null, toEmail: null, subject: u.title ?? null,
+      topic: u.topic ?? null, stream: (u.stream as StreamKey) ?? "Interdepartmental",
+      snippet: u.summary ?? "", messageId: u.id, threadId: null, docKind: u.docKind ?? "Uploaded document",
+    },
+  }));
+}
+
+/** Keyword retrieval over the WHOLE corpus → top-k Source[].
+ *  Searches email (the 31MB index) + non-email documents (fire/police/permits/
+ *  inspections/minutes/FOIA) + any client-supplied uploads. This is a broad
+ *  search tool — the record, not just the inbox. Walled business mail is excluded. */
+export function demoRetrieve(question: string, k = 8, uploads: UploadDoc[] = []): Source[] {
   const toks = tokenize(question);
   if (!toks.length) return [];
-  const idx = searchIndex();
-  const scored: { r: IndexRow; s: number }[] = [];
-  for (const r of idx) {
+
+  const cands: Cand[] = [];
+  // emails
+  for (const r of searchIndex()) {
+    cands.push({
+      t: r.t,
+      src: {
+        index: 0, score: 0, direction: r.direction, date: r.date, fromName: r.fromName,
+        fromEmail: r.fromEmail, toEmail: r.toEmail, subject: r.subject, topic: r.topic,
+        stream: r.stream, snippet: r.snippet, messageId: r.messageId, threadId: r.threadId,
+      },
+    });
+  }
+  // non-email corpus documents
+  for (const d of DOCS) {
+    cands.push({
+      t: docText(d),
+      src: {
+        index: 0, score: 0, direction: "inbound", date: d.date, fromName: d.fromName,
+        fromEmail: d.fromEmail, toEmail: d.toEmail, subject: d.subject, topic: d.topic,
+        stream: d.stream, snippet: d.snippet, messageId: d.messageId, threadId: null, docKind: d.docKind,
+      },
+    });
+  }
+  // client-supplied uploads (freshly ingested this session)
+  cands.push(...uploadCands(uploads));
+
+  const scored: { c: Cand; s: number }[] = [];
+  for (const c of cands) {
     let s = 0;
     for (const tk of toks) {
-      if (r.t.includes(tk)) s += 1;
-      if (r.subject && r.subject.toLowerCase().includes(tk)) s += 1.5; // subject hits weigh more
+      if (c.t.includes(tk)) s += 1;
+      if (c.src.subject && c.src.subject.toLowerCase().includes(tk)) s += 1.5; // subject/title hits weigh more
+      if (c.src.docKind) s += 0; // documents compete on equal footing with email
     }
-    if (s > 0) scored.push({ r, s });
+    if (s > 0) scored.push({ c, s });
   }
-  // rank by score, then recency
-  scored.sort((a, b) => (b.s - a.s) || b.r.date.localeCompare(a.r.date));
+  scored.sort((a, b) => (b.s - a.s) || b.c.src.date.localeCompare(a.c.src.date));
   return scored.slice(0, k).map((x, i): Source => ({
+    ...x.c.src,
     index: i + 1,
     score: Math.min(0.99, 0.4 + x.s / (toks.length * 2.5)),
-    direction: x.r.direction,
-    date: x.r.date,
-    fromName: x.r.fromName,
-    fromEmail: x.r.fromEmail,
-    toEmail: x.r.toEmail,
-    subject: x.r.subject,
-    topic: x.r.topic,
-    stream: x.r.stream,
-    snippet: x.r.snippet,
-    messageId: x.r.messageId,
-    threadId: x.r.threadId,
   }));
 }
 
@@ -237,8 +301,9 @@ function curatedAnswer(q: string): string | null {
   return null;
 }
 
-/** The demo Ask — aggregate modes + RAG (curated answer or OpenAI synthesis over keyword hits). */
-export async function demoAsk(question: string, k = 8): Promise<AskResponse> {
+/** The demo Ask — aggregate modes + RAG (curated answer or OpenAI synthesis over keyword hits).
+ *  `uploads` are client-supplied documents folded into the searchable corpus. */
+export async function demoAsk(question: string, k = 8, uploads: UploadDoc[] = []): Promise<AskResponse> {
   const mode = detectMode(question);
 
   if (mode === "who") {
@@ -252,9 +317,10 @@ export async function demoAsk(question: string, k = 8): Promise<AskResponse> {
     return { mode: "open_items", question, answer: `${items.length} threads have the ball in your court.`, openItems: items };
   }
 
-  // RAG: keyword retrieval over the seed for real cited sources; the answer is a
-  // curated narrative for known demo questions, else OpenAI synthesis over the hits.
-  const sources = demoRetrieve(question, k);
+  // RAG: keyword retrieval across the WHOLE corpus (email + documents + uploads)
+  // for real cited sources; the answer is a curated narrative for known demo
+  // questions, else OpenAI synthesis over the hits.
+  const sources = demoRetrieve(question, k, uploads);
   const cur = curatedAnswer(question);
   const answer = cur ?? (await synthesize(question, sources));
   const streams = new Set(sources.map((s) => s.stream));
@@ -264,19 +330,19 @@ export async function demoAsk(question: string, k = 8): Promise<AskResponse> {
 /** Grounded synthesis via OpenAI when a key is present; deterministic fallback otherwise. */
 async function synthesize(question: string, sources: Source[]): Promise<string> {
   if (!sources.length) {
-    return "I couldn't find anything in the mayor's mailbox that matches that. Try a name, an address, or a topic like flooding, permits, or FOIA.";
+    return "I couldn't find anything in the village record that matches that. Try a name, an address, or a topic like flooding, permits, fire reports, or FOIA.";
   }
   if (HAS_OPENAI) {
     try {
       const { chat } = await import("../openai");
       const context = sources
-        .map((s) => `[${s.index}] ${s.date.slice(0, 10)} · ${s.fromName ?? "?"} · ${s.subject ?? ""}\n${s.snippet}`)
+        .map((s) => `[${s.index}] ${s.date.slice(0, 10)} · ${s.docKind ?? "Email"} · ${s.fromName ?? "?"} · ${s.subject ?? ""}\n${s.snippet}`)
         .join("\n\n");
       const sys =
-        "You are the Mayor of Bellwood's chief of staff. Answer the question using ONLY the numbered email excerpts. " +
-        "Cite sources inline as [n]. Be concise (2–4 sentences), name people/addresses/dates, and end by noting if anything looks unresolved. " +
-        "If the excerpts don't answer it, say so plainly.";
-      const out = await chat(sys, `Question: ${question}\n\nEmails:\n${context}`);
+        "You are the Mayor of Bellwood's chief of staff. Answer the question using ONLY the numbered records below — these span emails AND official documents (fire/EMS reports, police reports, permits, inspections, board minutes, FOIA requests). " +
+        "Cite sources inline as [n]. Be concise (2–4 sentences), name people/addresses/dates, draw across record types when relevant, and end by noting if anything looks unresolved. " +
+        "If the records don't answer it, say so plainly.";
+      const out = await chat(sys, `Question: ${question}\n\nRecords:\n${context}`);
       if (out) return out;
     } catch {
       /* fall through to template */
@@ -284,5 +350,5 @@ async function synthesize(question: string, sources: Source[]): Promise<string> 
   }
   // deterministic, still-grounded fallback
   const top = sources[0];
-  return `Across ${sources.length} messages in the mayor's mailbox, the most relevant is ${top.fromName ?? "a sender"} on ${top.date.slice(0, 10)} — "${top.subject ?? ""}" [1]. See the cited sources below for the full thread.`;
+  return `Across ${sources.length} records in the village archive, the most relevant is a ${top.docKind ?? "message"} from ${top.fromName ?? "a sender"} on ${top.date.slice(0, 10)} — "${top.subject ?? ""}" [1]. See the cited sources below.`;
 }

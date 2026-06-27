@@ -371,7 +371,7 @@ function Ask({ asked, loading, res, err, q, setQ, runAsk, resetAsk, go }:
   if (!asked) {
     return (
       <div className="fu" style={{ padding: "48px 36px", maxWidth: 920, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Star /><span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim, letterSpacing: ".04em" }}>70,431 messages indexed · every answer cites its sources</span></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Star /><span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim, letterSpacing: ".04em" }}>70,431 records indexed · email + documents · every answer cites its sources</span></div>
         <div style={{ fontFamily: FONT.serif, fontSize: 40, fontWeight: 400, color: C.text, lineHeight: 1.18, letterSpacing: "-.01em" }}>AI Search</div>
         <AskInput q={q} setQ={setQ} runAsk={runAsk} big />
         <div style={{ ...eyebrow(C.dim) }}>Recent searches</div>
@@ -513,6 +513,7 @@ function AnswerBody({ res }: { res: AskResponse }) {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 13.5, fontWeight: 700, color: C.text }}>{s.subject || "(no subject)"}</span>
+                <span style={{ display: "inline-block", padding: "2px 9px", borderRadius: 99, fontSize: 10.5, fontWeight: 700, color: s.docKind ? C.blue : C.muted, background: "rgba(var(--ink),.07)", border: "1px solid rgba(var(--ink),.1)" }}>{s.docKind || "Email"}</span>
                 <span style={{ ...streamPill(s.stream) }}>{s.stream}</span>
                 <span style={{ marginLeft: "auto", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{s.date?.slice(0, 10)}</span>
                 <Ico d={["M7 17L17 7M9 7h8v8"]} w={13} sw={2} stroke={C.dim} />

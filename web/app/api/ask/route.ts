@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
     }
     if (DEMO) {
       const k = typeof body.k === "number" && Number.isFinite(body.k) ? body.k : 8;
-      return NextResponse.json(await demoAsk(question, k));
+      const uploads = Array.isArray(body.uploads) ? body.uploads : [];
+      return NextResponse.json(await demoAsk(question, k, uploads));
     }
     const filters: SearchOpts = {
       person: clean(body.person),

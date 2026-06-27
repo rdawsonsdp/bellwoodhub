@@ -164,6 +164,15 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Changelog
 
+- **2026-06-27 (Ask = broad corpus search, not just email)** — AI Search now retrieves across the **whole
+  record**, not the inbox: emails **+** non-email documents (fire/EMS reports, police reports, permits, code
+  cases, Public Works inspections, board minutes, FOIA) **+** any freshly-ingested uploads (passed from the
+  client store, so the progress bar's "Indexed — searchable" is true end-to-end). New
+  `lib/demo/data/corpus-docs.json` (9 seeded documents themed to existing issues e.g. Eastern Ave flooding,
+  so answers go cross-source); `Source.docKind` added; cited results badge **Email** vs the document type and
+  drill to the full source (uploads drill in from the client store on mobile). Synthesis prompt + copy
+  generalized from "mailbox/email" to "the village record." Walled business mail stays excluded. Typecheck +
+  build clean.
 - **2026-06-27 (Upload Source · corpus progress bar)** — Added a staged **progress bar** on commit in the
   Upload Source flow: a new "Adding to corpus" step animates the 5-step ingest pipeline (Storing original →
   Writing canonical record → Resolving people & places → Classifying topic/stream → Embedding for AI Search →

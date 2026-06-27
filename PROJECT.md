@@ -170,6 +170,10 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
   instead of silently dying. Added **live progress**: a pulsing status pill (Listening… / Transcribing… /
   Searching the record…), the mic spins while transcribing, and the **Ask button pulses "Searching…"** while a
   query runs. `BUG-2` opened+closed.
+- **2026-06-27 (Voice "thank you for watching" fix)** — `BUG-3`: silent/near-silent clips made Whisper
+  hallucinate stock phrases ("thank you for watching", "please subscribe"). Now `/api/transcribe` rejects tiny
+  clips (<1.6KB), runs at `temperature 0`, and filters a list of known hallucination phrases → returns
+  `{empty:true}`; the client also size-guards before sending and shows "Didn't catch any speech…". Fixed.
 - **2026-06-27 (Ask = broad corpus search, not just email)** — AI Search now retrieves across the **whole
   record**, not the inbox: emails **+** non-email documents (fire/EMS reports, police reports, permits, code
   cases, Public Works inspections, board minutes, FOIA) **+** any freshly-ingested uploads (passed from the

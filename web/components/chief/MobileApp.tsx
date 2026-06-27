@@ -700,12 +700,14 @@ function AskSheet({ onClose }: { onClose: () => void }) {
         stream.getTracks().forEach((t) => t.stop()); setRec("busy");
         try {
           const type = mr.mimeType || "audio/webm"; // iOS Safari → audio/mp4, Chrome → audio/webm
+          const blob = new Blob(chunks.current, { type });
+          if (blob.size < 1600) { setErr("Didn't catch any speech — tap the mic, speak, then tap again to stop."); return; }
           const fd = new FormData();
-          fd.append("audio", new Blob(chunks.current, { type }), `speech.${audioExt(type)}`);
+          fd.append("audio", blob, `speech.${audioExt(type)}`);
           const r = await fetch("/api/transcribe", { method: "POST", body: fd });
-          const d = await r.json().catch(() => ({} as { text?: string; error?: string }));
+          const d = await r.json().catch(() => ({} as { text?: string; error?: string; empty?: boolean }));
           if (r.ok && d.text) { setRec("idle"); setQ(d.text); run(d.text); return; }
-          setErr(d.error || "Couldn't hear that — try again.");
+          setErr(d.empty ? "Didn't catch any speech — speak clearly, then tap the mic to stop." : d.error || "Couldn't hear that — try again.");
         } catch { setErr("Voice search failed — check your connection."); }
         finally { setRec((s) => (s === "busy" ? "idle" : s)); }
       };

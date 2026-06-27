@@ -78,6 +78,7 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 | 5 | Full Morning Brief | ⚪ pending | `needsYouToday()` is the precursor |
 | 6 | Expand eval harness | ⚪ pending | 5 → meaningful set |
 | FEAT-10 | Agent-driven **Upload Source** ingestion | 🔵 Phase 1 done | **Phase 1 (demo-safe) shipped:** "Upload Source" button on Sources (mobile + desktop) → pick type → drop file → simulated agent draft → R3 review/categorize form → in-memory commit, surfaced as "Agent-ingested this session". Source-type registry: Fire/EMS, Police (restricted→secured store), Permit, General. Maps 1:1 to messages/entity_aliases/message_topics/chunks. **Next:** Phase 2 real OpenAI-vision parse · Phase 3 canonical writes · Phase 4 Voyage embed · Phase 5 FEAT-11 secured S3. |
+| FEAT-12 | **Multiple mailboxes** + source-system filter | 🔵 Phase 1 done | Mayor's Government (Outlook) + Business (Gmail) accounts as a filterable "source system" on the Emails screen. New `lib/mailboxes.ts` registry + `mailbox_id` dimension; demo splits seed = Government, adds a walled Gmail business fixture. **Business is walled (DEC-6):** private, not FOIA-indexed, excluded from default AI Search. **Next:** Phase 2 Outlook (Graph) connector · Phase 3 Gmail connector · per-mailbox OAuth (read-only) + canonical.mailboxes table. |
 | FEAT-11 | **Secured AWS document store** (S3, encrypted) | ⚪ pending | Per-source/sensitivity storage routing: `restricted` originals (e.g. police) go to a secured, access-controlled S3 bucket — `messages.raw_ref` points there; app holds only searchable metadata/RAG, not the file. `public/internal` may use Supabase Storage. Demo: restricted = memory-only. |
 
 **Known demo gaps (optional polish):** Commitments screen still uses static prototype content (not seed-wired); Brief mixes live data + a few hardcoded hero cards; "who emails most" surfaces institutional senders over residents.
@@ -133,6 +134,14 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 - **`VIS-1` Direction (2026-06-26)** — This becomes an **agent that connects to other agents**
   (agent-to-agent / MCP). The capability agents + MCP server are the foundation.
+- **`DEC-6` Multiple mailboxes; business walled (2026-06-27)** — The mayor's accounts are modeled as
+  **Mailboxes** (the filterable "source system"), distinct from `messages.source`: **Government** =
+  Outlook (`mayor@villageofbellwood.gov`, public record, FOIA-scoped, default) and **Business** = Gmail
+  (`merrill.bellwood@gmail.com`). Business is **walled**: private, NOT FOIA-indexed, excluded from default
+  AI Search, visible only when explicitly switched to. Same email appearing in both → **a copy per mailbox**
+  (no cross-mailbox unify). Identity resolution still unifies *senders* across mailboxes. *Decided by RD.*
+  The gov/business wall is a legal/records boundary, not just UX (commingling personal business with public
+  records is a real FOIA risk). Ties to ISS-5 (audit) and FEAT-12.
 - **`DEC-4` Storage routing by sensitivity (2026-06-27)** — Uploaded source originals are routed by the
   canonical `sensitivity` field, configured per source type. `restricted` (e.g. police/CJIS) originals are
   **not** stored in the app or Supabase — they live in a **secured, access-controlled AWS S3 store** (FEAT-11),
@@ -155,6 +164,13 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Changelog
 
+- **2026-06-27 (Multiple mailboxes · source-system filter, Phase 1)** — Planned + shipped the demo for
+  multi-mailbox. The Emails screen now has a **mailbox switcher** (Government / Business) — the mayor filters
+  his inbox by "source system." **Government** = the Outlook seed (default, public record); **Business** = a
+  new walled **Gmail** fixture (`lib/demo/data/business-inbox.json`) that's private, not FOIA-indexed, and
+  excluded from default AI Search (DEC-6). New `lib/mailboxes.ts` registry; `/api/inbox?mailbox=` scoping;
+  `demoEmail` drills into business docs; Sources page lists connected mailboxes (Outlook/Gmail) with an Add-
+  mailbox affordance. Logged FEAT-12 + DEC-6. Typecheck + build clean.
 - **2026-06-27 (Upload Source · agent ingestion, Phase 1)** — Shipped the agent-driven **Upload
   Source** flow on the Sources page (mobile + desktop): pick source type → drop file → Ingestion
   Agent drafts the record → **R3 review/categorize form** → commit. Grounded the form on the real

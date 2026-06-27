@@ -15,6 +15,7 @@ import { getRecentSearches, addRecentSearch } from "@/lib/recent-searches";
 import { getEnabledTabs } from "@/lib/email-config";
 import { getIngested, type IngestedRecord } from "@/lib/ingested-sources";
 import { SENSITIVITY_META, getSourceType } from "@/lib/source-types";
+import { MAILBOXES, getMailbox, PROVIDER_META, type Mailbox } from "@/lib/mailboxes";
 
 const CAT_META: Record<string, [string, string]> = {
   urgent: [C.red, "Urgent"], important: [C.gold, "Important"], social: [C.green, "Social"], spam: [C.dim, "Spam"], general: [C.muted, "General"],
@@ -234,7 +235,7 @@ function Header() {
 }
 
 /* ── BRIEF ── */
-interface InboxItem { messageId: string; fromName: string | null; subject: string | null; snippet: string; date: string; stream: string; topic: string | null; cat: string; }
+interface InboxItem { messageId: string; fromName: string | null; subject: string | null; snippet: string; date: string; stream: string; topic: string | null; cat: string; mailbox?: string; }
 const fmtTime = (iso: string) => { try { return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" }); } catch { return iso.slice(5, 10); } };
 
 /* A dense, traditional inbox row — scales to hundreds of messages. */
@@ -261,20 +262,22 @@ function InboxRow({ from, time, subject, snippet, dot, tag, tagColor, onClick }:
 
 /* EMAILS — agent-sorted inbox: Urgent / Important / Social / Spam / Inbox / Agent Answered. */
 function EmailsScreen({ onAsk }: { onAsk: () => void }) {
+  const [mailboxId, setMailboxId] = useState("gov");
   const { data: appr, reload } = useApi<{ drafts: DraftRow[] }>("/api/approvals");
-  const { data: inbox } = useApi<{ count: number; emails: InboxItem[]; counts: Record<string, number> }>("/api/inbox");
+  const { data: inbox } = useApi<{ count: number; emails: InboxItem[]; counts: Record<string, number> }>(`/api/inbox?mailbox=${mailboxId}`);
   const openEmail = useOpenEmail();
   const enabledCats = getEnabledTabs();
   const [tab, setTab] = useState<string>(enabledCats[0] ?? "all");
+  const mailbox = getMailbox(mailboxId)!;
 
-  const queued = appr?.drafts ?? [];
+  const queued = mailbox.isPrivate ? [] : appr?.drafts ?? []; // agent drafting is gov-only in the demo
   const emails = inbox?.emails ?? [];
   const counts = inbox?.counts ?? {};
   const empty = (t: string) => <div style={{ padding: 40, textAlign: "center", color: C.dim, fontSize: 13 }}>{t}</div>;
   const tabs: [string, string, number][] = [
     ...enabledCats.map((c) => [c, CAT_META[c]?.[1] ?? c, counts[c] ?? 0] as [string, string, number]),
     ["all", "Inbox", inbox?.count ?? 0],
-    ["queued", "Agent Answered", queued.length],
+    ...(mailbox.isPrivate ? [] : [["queued", "Agent Answered", queued.length] as [string, string, number]]),
   ];
   const shown = tab === "all" ? emails : tab === "queued" ? [] : emails.filter((e) => e.cat === tab);
 
@@ -284,6 +287,16 @@ function EmailsScreen({ onAsk }: { onAsk: () => void }) {
         <div style={{ fontFamily: FONT.serif, fontSize: 27, fontWeight: 500, lineHeight: 1 }}>Emails</div>
         <button onClick={onAsk} aria-label="Search" style={{ marginLeft: "auto", width: 38, height: 38, borderRadius: 99, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, display: "flex", alignItems: "center", justifyContent: "center" }}><Svg d={I.search} w={18} /></button>
       </div>
+
+      {/* mailbox (source system) switcher */}
+      <MailboxSwitcher current={mailboxId} onChange={(id) => { setMailboxId(id); setTab(getEnabledTabs()[0] ?? "all"); }} />
+      {mailbox.isPrivate && (
+        <div style={{ margin: "0 16px 4px", padding: "9px 12px", borderRadius: 11, border: `1px solid ${mailbox.color}55`, background: `${mailbox.color}14`, display: "flex", gap: 9, alignItems: "flex-start" }}>
+          <span style={{ color: mailbox.color, marginTop: 1 }}><Svg d="M6 10V8a6 6 0 0 1 12 0v2M5 10h14v10H5zM12 14v3" w={15} /></span>
+          <div style={{ fontSize: 11.5, color: C.text3, lineHeight: 1.5 }}><b style={{ color: C.text2 }}>Private business account.</b> Walled off from the public record — not FOIA-indexed and excluded from village AI Search.</div>
+        </div>
+      )}
+
       <div style={{ display: "flex", gap: 7, padding: "12px 16px 6px", overflowX: "auto" }}>
         {tabs.map(([k, label, n]) => {
           const on = tab === k;
@@ -316,6 +329,32 @@ function EmailsScreen({ onAsk }: { onAsk: () => void }) {
           </div>
         ))}
       </div>)}
+    </div>
+  );
+}
+
+/* Mailbox (source-system) switcher — Government (Outlook) vs the walled Business (Gmail). */
+function MailboxSwitcher({ current, onChange }: { current: string; onChange: (id: string) => void }) {
+  return (
+    <div style={{ display: "flex", gap: 8, padding: "12px 16px 2px" }}>
+      {MAILBOXES.map((m: Mailbox) => {
+        const on = current === m.id;
+        return (
+          <button key={m.id} onClick={() => onChange(m.id)} style={{
+            flex: 1, cursor: "pointer", display: "flex", flexDirection: "column", gap: 2, alignItems: "flex-start",
+            padding: "9px 13px", borderRadius: 12, textAlign: "left",
+            border: `1.5px solid ${on ? m.color : "var(--c-cardbd)"}`,
+            background: on ? `${m.color}1c` : "rgba(var(--ink),.03)",
+          }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 7, width: "100%" }}>
+              <span style={{ width: 8, height: 8, borderRadius: 99, background: m.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 13.5, fontWeight: 700, color: on ? C.text : C.text3 }}>{m.short}</span>
+              {m.isPrivate && <span style={{ marginLeft: "auto" }}><Svg d="M6 10V8a6 6 0 0 1 12 0v2M5 10h14v10H5z" w={12} /></span>}
+            </span>
+            <span style={{ fontFamily: FONT.mono, fontSize: 9.5, color: C.dim, letterSpacing: ".02em" }}>{PROVIDER_META[m.provider].badge}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -508,6 +547,8 @@ function SourcesView() {
 
       {ingested.length > 0 && <IngestedSection records={ingested} />}
 
+      <MailboxesBlock />
+
       <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
         <Stat n={data.totals.messages.toLocaleString()} label="messages" />
         <Stat n={String(data.connectors.length)} label="connectors" />
@@ -546,6 +587,34 @@ function SourcesView() {
         ))}
       </div>
       {uploadOpen && <UploadSource onClose={() => setUploadOpen(false)} onCommitted={() => setIngested(getIngested())} />}
+    </div>
+  );
+}
+
+/* Connected mailboxes (the source systems) — Government (Outlook) + Business (Gmail). */
+function MailboxesBlock() {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".1em", color: C.dim, textTransform: "uppercase", marginBottom: 9 }}>Mailboxes · source systems</div>
+      <div style={{ display: "grid", gap: 9 }}>
+        {MAILBOXES.map((m: Mailbox) => (
+          <div key={m.id} style={{ ...cardS, padding: 13, display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 99, background: m.color, flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.label}</span>
+                {m.isPrivate ? <span style={chip("Private", m.color)}>Private</span> : <span style={chip("Public record", C.greenText)}>Public record</span>}
+              </div>
+              <div style={{ fontFamily: FONT.mono, fontSize: 11, color: C.dim, marginTop: 2 }}>{PROVIDER_META[m.provider].badge} · {m.address}</div>
+            </div>
+            <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.greenText }}>synced</span>
+          </div>
+        ))}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px", borderRadius: 12, border: "1px dashed var(--c-cardbd)", color: C.text3, fontSize: 13, fontWeight: 600 }}>
+          <Svg d="M12 5v14M5 12h14" w={16} sw={2.2} /> Add mailbox
+        </div>
+        <div style={{ fontSize: 11, color: C.dim, fontFamily: FONT.mono, textAlign: "center" }}>New mailboxes connect via Microsoft / Google OAuth (read-only) — set up by the technical team.</div>
+      </div>
     </div>
   );
 }

@@ -23,6 +23,16 @@ import dashboard from "./data/dashboard.json";
 import drafts from "./data/drafts.json";
 import curated from "./data/ask-curated.json";
 import events from "./data/events.json";
+import businessInbox from "./data/business-inbox.json";
+
+/** A business-mailbox email (the walled Gmail account). Richer than the index
+ *  rows so it can drill to a full body without the 31MB search index. */
+interface BizRow {
+  messageId: string; fromName: string | null; fromEmail: string | null; toEmail: string | null;
+  subject: string | null; snippet: string; body: string; date: string;
+  topic: string | null; stream: StreamKey; direction: "inbound" | "outbound";
+}
+const BUSINESS: BizRow[] = businessInbox as unknown as BizRow[];
 
 export const DEMO = process.env.DEMO_MODE === "1" || !process.env.DATABASE_URL;
 export const HAS_OPENAI = !!process.env.OPENAI_API_KEY;
@@ -56,8 +66,18 @@ export function demoMemoryDetail(value: string): MemoryDetail | null {
 }
 
 /** Full source email by message_id. Falls back to the seed snippet when the DB
- *  (full body) isn't reachable — so every reference can still drill to a document. */
+ *  (full body) isn't reachable — so every reference can still drill to a document.
+ *  Business-mailbox ids (biz-*) resolve from the walled Gmail fixture. */
 export function demoEmail(mid: string) {
+  if (mid.startsWith("biz-")) {
+    const b = BUSINESS.find((r) => r.messageId === mid);
+    if (!b) return null;
+    return {
+      subject: b.subject, fromName: b.fromName, fromEmail: b.fromEmail, toEmail: b.toEmail,
+      cc: null, direction: b.direction, topic: b.topic, stream: b.stream, date: b.date,
+      bodyClean: b.body, bodyRaw: b.body, mailbox: "biz",
+    };
+  }
   const row = searchIndex().find((r) => r.messageId === mid);
   if (!row) return null;
   return {
@@ -72,6 +92,7 @@ export function demoEmail(mid: string) {
     date: row.date,
     bodyClean: row.snippet,
     bodyRaw: row.snippet,
+    mailbox: "gov",
   };
 }
 
@@ -128,18 +149,37 @@ export function emailCategory(topic: string | null, stream: string, subject: str
   return "general";
 }
 
-/** Recent inbox feed — newest inbound first, with the agent's category label. */
-export function demoInbox(limit = 120) {
-  const idx = searchIndex().filter((r) => r.direction === "inbound");
-  idx.sort((a, b) => b.date.localeCompare(a.date));
-  const emails = idx.slice(0, limit).map((r) => ({
-    messageId: r.messageId, fromName: r.fromName, subject: r.subject,
-    snippet: r.snippet, date: r.date, stream: r.stream, topic: r.topic,
-    cat: emailCategory(r.topic, r.stream, r.subject),
-  }));
+interface InboxEmail {
+  messageId: string; fromName: string | null; subject: string | null; snippet: string;
+  date: string; stream: StreamKey; topic: string | null; cat: EmailCat; mailbox: string;
+}
+
+/** Recent inbox feed — newest inbound first, with the agent's category label.
+ *  Scoped by mailbox (the "source system"): "gov" (Outlook seed, default) or
+ *  "biz" (the walled Gmail fixture). Business is private — only returned when
+ *  explicitly requested, never folded into the government inbox. */
+export function demoInbox(limit = 120, mailbox = "gov") {
+  let rows: InboxEmail[];
+  let total: number;
+  if (mailbox === "biz") {
+    const biz = [...BUSINESS].filter((r) => r.direction === "inbound").sort((a, b) => b.date.localeCompare(a.date));
+    total = biz.length;
+    rows = biz.slice(0, limit).map((r) => ({
+      messageId: r.messageId, fromName: r.fromName, subject: r.subject, snippet: r.snippet,
+      date: r.date, stream: r.stream, topic: r.topic, cat: emailCategory(r.topic, r.stream, r.subject), mailbox: "biz",
+    }));
+  } else {
+    const idx = searchIndex().filter((r) => r.direction === "inbound");
+    idx.sort((a, b) => b.date.localeCompare(a.date));
+    total = idx.length;
+    rows = idx.slice(0, limit).map((r) => ({
+      messageId: r.messageId, fromName: r.fromName, subject: r.subject, snippet: r.snippet,
+      date: r.date, stream: r.stream, topic: r.topic, cat: emailCategory(r.topic, r.stream, r.subject), mailbox: "gov",
+    }));
+  }
   const counts: Record<string, number> = { urgent: 0, important: 0, social: 0, spam: 0 };
-  for (const e of emails) if (e.cat in counts) counts[e.cat]++;
-  return { count: idx.length, emails, counts };
+  for (const e of rows) if (e.cat in counts) counts[e.cat]++;
+  return { count: total, emails: rows, counts, mailbox };
 }
 
 const STOP = new Set("the a an of to in on for and or is are was were be been do does did how what who whats whos with about my our your his her their this that these those i me we us you they them it its as at by from re fwd".split(" "));

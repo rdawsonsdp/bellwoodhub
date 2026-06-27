@@ -164,6 +164,10 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Changelog
 
+- **2026-06-27 (Calendar desktop/mobile parity)** — Desktop Calendar diverged from mobile; reconciled
+  **desktop → mobile** (RD's call). Desktop now has the **horizontal date strip** + **Calendar | Events
+  & Meetings** toggle, matching mobile; status filters (All/Open/Overdue/Done) moved into the Events &
+  Meetings view. Both form factors now share the same calendar model.
 - **2026-06-27 (Multiple mailboxes · source-system filter, Phase 1)** — Planned + shipped the demo for
   multi-mailbox. The Emails screen now has a **mailbox switcher** (Government / Business) — the mayor filters
   his inbox by "source system." **Government** = the Outlook seed (default, public record); **Business** = a

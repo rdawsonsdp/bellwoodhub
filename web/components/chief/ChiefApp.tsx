@@ -607,18 +607,60 @@ interface EventItem {
 }
 const EVDOT: Record<string, string> = { open: C.blue, late: C.orange, done: C.greenText };
 const dayLabelD = (iso: string) => { try { return new Date(iso).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }); } catch { return iso.slice(0, 10); } };
+function dayStripD(maxDay: string, n = 30): string[] {
+  const out: string[] = [];
+  const end = new Date(maxDay + "T00:00:00");
+  const start = new Date(end); start.setDate(start.getDate() - (n - 1));
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) out.push(new Date(d).toISOString().slice(0, 10));
+  return out;
+}
+function EventRowD({ e }: { e: EventItem }) {
+  return (
+    <a href={`/email?mid=${encodeURIComponent(e.messageId)}`} style={{ textDecoration: "none", display: "flex", gap: 13, padding: "13px 18px", borderBottom: `1px solid ${C.line2}`, alignItems: "flex-start" }}>
+      <span style={{ width: 9, height: 9, borderRadius: 99, background: EVDOT[e.status] || C.muted, flexShrink: 0, marginTop: 6 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
+          <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.title}</span>
+          <span style={{ fontFamily: FONT.mono, fontSize: 11, color: e.status === "late" ? C.orange : C.dim, flexShrink: 0 }}>{e.dueLabel}</span>
+        </div>
+        <div style={{ fontSize: 12.5, color: C.text3, marginTop: 2 }}>{e.role} · {e.who}</div>
+      </div>
+    </a>
+  );
+}
 function Track({ filter, setFilter }: { filter: Filter; setFilter: (f: Filter) => void }) {
   const { data } = useApi<{ events: EventItem[]; stats: { open: number; late: number; done: number } }>("/api/events");
+  const [view, setView] = useState<"calendar" | "meetings">("calendar");
   const semOf = (s: string): "open" | "late" | "kept" => (s === "done" ? "kept" : s === "late" ? "late" : "open");
   const match = (s: string) => filter === "all" || filter === semOf(s);
-  const chip = (f: Filter, label: string) => {
+
+  const allEvs = data?.events ?? [];
+  const byDay = new Map<string, EventItem[]>();
+  for (const e of allEvs) { const d = e.date.slice(0, 10); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d)!.push(e); }
+  const eventDays = [...byDay.keys()].sort();
+  const maxDay = eventDays.length ? eventDays[eventDays.length - 1] : new Date().toISOString().slice(0, 10);
+  const strip = dayStripD(maxDay, 30);
+  const stripRef = useRef<HTMLDivElement>(null);
+  const [sel, setSel] = useState(maxDay);
+  useEffect(() => { setSel(maxDay); }, [maxDay]);
+  useEffect(() => { if (stripRef.current) stripRef.current.scrollLeft = stripRef.current.scrollWidth; }, [strip.length]);
+  const dayEvents = byDay.get(sel) ?? [];
+
+  // meetings view keeps the status filters + day-grouped list
+  const filtered = allEvs.filter((e) => match(e.status));
+  const mByDay = new Map<string, EventItem[]>();
+  for (const e of filtered) { const d = e.date.slice(0, 10); if (!mByDay.has(d)) mByDay.set(d, []); mByDay.get(d)!.push(e); }
+  const mDays = [...mByDay.keys()].sort((a, b) => b.localeCompare(a));
+
+  const tab = (v: "calendar" | "meetings", label: string) => {
+    const on = view === v;
+    return <button onClick={() => setView(v)} style={{ cursor: "pointer", padding: "8px 17px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans, background: on ? C.gold : "transparent", color: on ? "#081627" : C.text3, border: `1px solid ${on ? C.gold : "rgba(var(--ink),.14)"}` }}>{label}</button>;
+  };
+  const fchip = (f: Filter, label: string) => {
     const on = filter === f;
     return <button key={f} onClick={() => setFilter(f)} style={{ cursor: "pointer", padding: "8px 16px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans, background: on ? C.gold : "transparent", color: on ? "#081627" : C.text3, border: `1px solid ${on ? C.gold : "rgba(var(--ink),.14)"}` }}>{label}</button>;
   };
-  const evs = (data?.events ?? []).filter((e) => match(e.status));
-  const byDay = new Map<string, EventItem[]>();
-  for (const e of evs) { const d = e.date.slice(0, 10); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d)!.push(e); }
-  const days = [...byDay.keys()].sort((a, b) => b.localeCompare(a));
+
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 980 }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 20, flexWrap: "wrap", marginBottom: 18 }}>
@@ -632,29 +674,46 @@ function Track({ filter, setFilter }: { filter: Filter; setFilter: (f: Filter) =
           <Stat n={String(data?.stats.done ?? "—")} label="done" color={C.green} bg="rgba(52,201,139,.08)" bd="rgba(52,201,139,.22)" />
         </div>
       </div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
-        {chip("all", "All")}{chip("open", "Open")}{chip("late", "Overdue")}{chip("kept", "Done")}
-      </div>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>{tab("calendar", "Calendar")}{tab("meetings", "Events & Meetings")}</div>
+
       {!data && <div style={{ color: C.dim, fontSize: 13 }}>Loading calendar…</div>}
-      <div style={{ ...card, overflow: "hidden" }}>
-        {days.map((d) => (
-          <div key={d}>
-            <div style={{ padding: "9px 18px", background: "rgba(var(--ink),.05)", borderBottom: `1px solid ${C.line2}`, fontFamily: FONT.mono, fontSize: 11, letterSpacing: ".06em", color: C.text2, textTransform: "uppercase" }}>{dayLabelD(d)} · {byDay.get(d)!.length}</div>
-            {byDay.get(d)!.map((e) => (
-              <a key={e.id} href={`/email?mid=${encodeURIComponent(e.messageId)}`} style={{ textDecoration: "none", display: "flex", gap: 13, padding: "13px 18px", borderBottom: `1px solid ${C.line2}`, alignItems: "flex-start" }}>
-                <span style={{ width: 9, height: 9, borderRadius: 99, background: EVDOT[e.status] || C.muted, flexShrink: 0, marginTop: 6 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
-                    <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.title}</span>
-                    <span style={{ fontFamily: FONT.mono, fontSize: 11, color: e.status === "late" ? C.orange : C.dim, flexShrink: 0 }}>{e.dueLabel}</span>
-                  </div>
-                  <div style={{ fontSize: 12.5, color: C.text3, marginTop: 2 }}>{e.role} · {e.who}</div>
-                </div>
-              </a>
-            ))}
+
+      {view === "calendar" && data && (
+        <>
+          <div ref={stripRef} style={{ display: "flex", gap: 9, overflowX: "auto", padding: "2px 2px 16px" }}>
+            {strip.map((d) => {
+              const on = d === sel; const dt = new Date(d + "T00:00:00"); const count = byDay.get(d)?.length ?? 0;
+              return (
+                <button key={d} onClick={() => setSel(d)} style={{ flexShrink: 0, width: 58, padding: "10px 0 8px", borderRadius: 14, border: `1px solid ${on ? C.gold : C.cardBd}`, background: on ? C.gold : "rgba(var(--ink),.04)", color: on ? "#081627" : C.text2, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer" }}>
+                  <span style={{ fontSize: 10, fontFamily: FONT.mono, opacity: 0.85 }}>{dt.toLocaleDateString("en-US", { weekday: "short" })}</span>
+                  <span style={{ fontSize: 19, fontWeight: 700 }}>{dt.getDate()}</span>
+                  <span style={{ width: 5, height: 5, borderRadius: 99, background: count ? (on ? "#081627" : C.gold) : "transparent" }} />
+                </button>
+              );
+            })}
           </div>
-        ))}
-      </div>
+          <div style={{ ...eyebrow(C.dim), fontSize: 10.5, marginBottom: 10 }}>{new Date(sel + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · {dayEvents.length} event{dayEvents.length === 1 ? "" : "s"}</div>
+          {dayEvents.length === 0
+            ? <div style={{ ...card, padding: "28px 18px", textAlign: "center", color: C.dim, fontSize: 13 }}>Nothing on this day.</div>
+            : <div style={{ ...card, overflow: "hidden" }}>{dayEvents.map((e) => <EventRowD key={e.id} e={e} />)}</div>}
+        </>
+      )}
+
+      {view === "meetings" && data && (
+        <>
+          <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>{fchip("all", "All")}{fchip("open", "Open")}{fchip("late", "Overdue")}{fchip("kept", "Done")}</div>
+          <div style={{ ...card, overflow: "hidden" }}>
+            {mDays.map((d) => (
+              <div key={d}>
+                <div style={{ padding: "9px 18px", background: "rgba(var(--ink),.05)", borderBottom: `1px solid ${C.line2}`, fontFamily: FONT.mono, fontSize: 11, letterSpacing: ".06em", color: C.text2, textTransform: "uppercase" }}>{dayLabelD(d)} · {mByDay.get(d)!.length}</div>
+                {mByDay.get(d)!.map((e) => <EventRowD key={e.id} e={e} />)}
+              </div>
+            ))}
+            {mDays.length === 0 && <div style={{ padding: "28px 18px", textAlign: "center", color: C.dim, fontSize: 13 }}>No events match this filter.</div>}
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -383,60 +383,77 @@ function MailboxSwitcher({ current, onChange }: { current: string; onChange: (id
 /* ── CALENDAR (agenda: dates with their events) ── */
 interface EventItem {
   id: string; title: string; who: string | null; role: string; dueLabel: string;
-  status: "open" | "late" | "done"; stream: string; messageId: string; date: string;
+  status: "open" | "late" | "done"; stream: string; messageId: string; date: string; source?: "gov" | "gmail";
 }
 const evDot: Record<string, string> = { open: C.blue, late: C.orange, done: C.greenText };
-function dayLabel(iso: string) {
-  try { return new Date(iso).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }); }
-  catch { return iso.slice(0, 10); }
-}
-function dayStrip(maxDay: string, n = 30): string[] {
+const SRC_META: Record<string, { label: string; color: string }> = {
+  gov: { label: "Outlook", color: C.blue },
+  gmail: { label: "Gmail", color: C.purpleText },
+};
+function dayRange(start: string, end: string): string[] {
   const out: string[] = [];
-  const end = new Date(maxDay + "T00:00:00");
-  const start = new Date(end); start.setDate(start.getDate() - (n - 1));
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) out.push(new Date(d).toISOString().slice(0, 10));
+  const s = new Date(start + "T00:00:00"); const e = new Date(end + "T00:00:00");
+  for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) out.push(new Date(d).toISOString().slice(0, 10));
   return out;
 }
+const addDays = (iso: string, n: number) => { const d = new Date(iso + "T00:00:00"); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 function EventsScreen() {
   const { data } = useApi<{ events: EventItem[]; stats: { open: number; late: number; done: number } }>("/api/events");
   const openEmail = useOpenEmail();
-  const evs = data?.events ?? [];
+  const [view, setView] = useState<"calendar" | "meetings">("calendar");
+  const [src, setSrc] = useState<"all" | "gov" | "gmail">("all");
+  const today = new Date().toISOString().slice(0, 10);
+
+  const evs = (data?.events ?? []).filter((e) => src === "all" || (e.source ?? "gov") === src);
   const byDay = new Map<string, EventItem[]>();
   for (const e of evs) { const d = e.date.slice(0, 10); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d)!.push(e); }
   const eventDays = [...byDay.keys()].sort();
-  const maxDay = eventDays.length ? eventDays[eventDays.length - 1] : new Date().toISOString().slice(0, 10);
-  const strip = dayStrip(maxDay, 30);
-  const [sel, setSel] = useState(maxDay);
-  const [view, setView] = useState<"calendar" | "meetings">("calendar");
+  const lastDay = eventDays.length ? eventDays[eventDays.length - 1] : today;
+  // forward agenda: a few days of context before today → through the last event
+  const strip = dayRange(addDays(today, -3), lastDay > addDays(today, 13) ? lastDay : addDays(today, 13));
+  const [sel, setSel] = useState(today);
   const stripRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { setSel(maxDay); }, [maxDay]);
-  useEffect(() => { if (stripRef.current) stripRef.current.scrollLeft = stripRef.current.scrollWidth; }, [strip.length]);
-  const dayEvents = byDay.get(sel) ?? [];
+  useEffect(() => { setSel(today); }, [today]);
+  useEffect(() => { const i = strip.indexOf(sel); if (stripRef.current && i >= 0) stripRef.current.scrollLeft = Math.max(0, i * 58 - 80); }, [strip.length, sel]);
+  const dayEvents = (byDay.get(sel) ?? []).sort((a, b) => a.date.localeCompare(b.date));
+
+  const srcTab = (k: "all" | "gov" | "gmail", label: string, color?: string) => {
+    const on = src === k;
+    return <button key={k} onClick={() => setSrc(k)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, fontFamily: FONT.sans, background: on ? "rgba(var(--ink),.08)" : "transparent", color: on ? C.text : C.text3, border: `1px solid ${on ? "rgba(var(--ink),.2)" : "var(--c-cardbd)"}` }}>{color && <span style={{ width: 7, height: 7, borderRadius: 99, background: color }} />}{label}</button>;
+  };
 
   return (
     <div>
-      <ScreenHead title="Calendar" sub="Your days and what's on them — synced from Outlook." stats={[[String(data?.stats.open ?? "—"), "open"], [String(data?.stats.late ?? "—"), "overdue"], [String(data?.stats.done ?? "—"), "done"]]} />
-      <div style={{ display: "flex", gap: 8, padding: "2px 16px 12px" }}>
+      <ScreenHead title="Calendar" sub="Your whole day — Government (Outlook) + Business (Gmail), consolidated." stats={[[String(data?.stats.open ?? "—"), "open"], [String(data?.stats.late ?? "—"), "overdue"], [String(data?.stats.done ?? "—"), "done"]]} />
+      <div style={{ display: "flex", gap: 8, padding: "2px 16px 10px" }}>
         {(["calendar", "meetings"] as const).map((v) => {
           const on = view === v;
           return <button key={v} onClick={() => setView(v)} style={{ cursor: "pointer", padding: "7px 14px", borderRadius: 99, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans, background: on ? C.gold : "transparent", color: on ? "#081627" : C.text3, border: `1px solid ${on ? C.gold : "var(--c-cardbd)"}` }}>{v === "calendar" ? "Calendar" : "Events & Meetings"}</button>;
         })}
       </div>
+      {/* source filter — consolidated by default */}
+      <div style={{ display: "flex", gap: 7, padding: "0 16px 12px", overflowX: "auto" }}>
+        {srcTab("all", "All")}{srcTab("gov", "Government", C.blue)}{srcTab("gmail", "Business", C.purpleText)}
+      </div>
 
       {view === "calendar" && (<>
         <div ref={stripRef} style={{ display: "flex", gap: 8, overflowX: "auto", padding: "2px 16px 14px", WebkitOverflowScrolling: "touch" as never }}>
           {strip.map((d) => {
-            const on = d === sel; const dt = new Date(d + "T00:00:00"); const count = byDay.get(d)?.length ?? 0;
+            const on = d === sel; const isToday = d === today; const dt = new Date(d + "T00:00:00"); const dayEvs = byDay.get(d) ?? [];
+            const hasGov = dayEvs.some((e) => (e.source ?? "gov") === "gov"); const hasGmail = dayEvs.some((e) => e.source === "gmail");
             return (
-              <button key={d} onClick={() => setSel(d)} style={{ flexShrink: 0, width: 50, padding: "8px 0 6px", borderRadius: 13, border: `1px solid ${on ? C.gold : "var(--c-cardbd)"}`, background: on ? C.gold : "rgba(var(--ink),.04)", color: on ? "#081627" : C.text2, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, cursor: "pointer" }}>
+              <button key={d} onClick={() => setSel(d)} style={{ flexShrink: 0, width: 50, padding: "8px 0 6px", borderRadius: 13, border: `1px solid ${on ? C.gold : isToday ? "rgba(231,181,60,.5)" : "var(--c-cardbd)"}`, background: on ? C.gold : "rgba(var(--ink),.04)", color: on ? "#081627" : C.text2, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, cursor: "pointer" }}>
                 <span style={{ fontSize: 9.5, fontFamily: FONT.mono, opacity: 0.85 }}>{dt.toLocaleDateString("en-US", { weekday: "short" })}</span>
                 <span style={{ fontSize: 17, fontWeight: 700 }}>{dt.getDate()}</span>
-                <span style={{ width: 5, height: 5, borderRadius: 99, background: count ? (on ? "#081627" : C.gold) : "transparent" }} />
+                <span style={{ display: "flex", gap: 2, height: 5 }}>
+                  {hasGov && <span style={{ width: 5, height: 5, borderRadius: 99, background: on ? "#081627" : C.blue }} />}
+                  {hasGmail && <span style={{ width: 5, height: 5, borderRadius: 99, background: on ? "#081627" : C.purpleText }} />}
+                </span>
               </button>
             );
           })}
         </div>
-        <div style={{ padding: "0 18px 8px", fontFamily: FONT.mono, fontSize: 11, letterSpacing: ".05em", color: C.dim, textTransform: "uppercase" }}>{new Date(sel + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · {dayEvents.length} event{dayEvents.length === 1 ? "" : "s"}</div>
+        <div style={{ padding: "0 18px 8px", fontFamily: FONT.mono, fontSize: 11, letterSpacing: ".05em", color: C.dim, textTransform: "uppercase" }}>{new Date(sel + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}{sel === today ? " · today" : ""} · {dayEvents.length} event{dayEvents.length === 1 ? "" : "s"}</div>
         {!data && <Loading />}
         {data && dayEvents.length === 0 && <div style={{ padding: "30px 16px", textAlign: "center", color: C.dim, fontSize: 13 }}>Nothing on this day.</div>}
         {dayEvents.map((e) => <EventRow key={e.id} e={e} onClick={() => openEmail(e.messageId)} />)}
@@ -455,13 +472,16 @@ function EventsScreen() {
 function EventRow({ e, day, onClick }: { e: EventItem; day?: string; onClick: () => void }) {
   return (
     <button onClick={onClick} style={{ display: "flex", gap: 12, width: "100%", textAlign: "left", padding: "12px 16px", borderBottom: "1px solid var(--c-cardbd)", background: "transparent", color: C.text, alignItems: "flex-start" }}>
-      <span style={{ width: 9, height: 9, borderRadius: 99, background: evDot[e.status] || C.muted, flexShrink: 0, marginTop: 5 }} />
+      <span style={{ width: 9, height: 9, borderRadius: 99, background: SRC_META[e.source ?? "gov"].color, flexShrink: 0, marginTop: 5 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
           <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.title}</span>
           <span style={{ fontSize: 11, color: e.status === "late" ? C.orange : C.dim, fontFamily: FONT.mono, flexShrink: 0 }}>{day || e.dueLabel}</span>
         </div>
-        <div style={{ fontSize: 12.5, color: C.text3, marginTop: 2 }}>{e.role} · {e.who}</div>
+        <div style={{ display: "flex", gap: 7, alignItems: "center", marginTop: 3 }}>
+          <span style={{ ...chip(SRC_META[e.source ?? "gov"].label, SRC_META[e.source ?? "gov"].color), flexShrink: 0 }}>{SRC_META[e.source ?? "gov"].label}</span>
+          <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: C.text3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.role} · {e.who}</span>
+        </div>
       </div>
     </button>
   );

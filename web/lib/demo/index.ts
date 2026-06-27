@@ -25,6 +25,7 @@ import curated from "./data/ask-curated.json";
 import events from "./data/events.json";
 import businessInbox from "./data/business-inbox.json";
 import corpusDocs from "./data/corpus-docs.json";
+import gmailCalendar from "./data/gmail-calendar.json";
 
 /** A business-mailbox email (the walled Gmail account). Richer than the index
  *  rows so it can drill to a full body without the 31MB search index. */
@@ -65,10 +66,22 @@ export const demoDashboard = () => dashboard;
 export interface DemoEvent {
   id: string; title: string; who: string | null; role: string; dueLabel: string;
   status: "open" | "late" | "done"; stream: StreamKey; topic: string | null;
-  messageId: string; date: string; why: string;
+  messageId: string; date: string; why: string; source?: "gov" | "gmail";
 }
-export const demoEvents = (): { events: DemoEvent[]; stats: { open: number; late: number; done: number } } =>
-  events as unknown as { events: DemoEvent[]; stats: { open: number; late: number; done: number } };
+
+/** Consolidated calendar = the mayor's Government (Outlook) day + his personal
+ *  Business (Gmail) day. This is the Chief-of-Staff view: one place to see the
+ *  whole day across both accounts. Gmail entries (charity, social, dispensary)
+ *  carry source:"gmail" so the UI can color/badge and filter them. */
+export const demoEvents = (): { events: DemoEvent[]; stats: { open: number; late: number; done: number } } => {
+  const govData = events as unknown as { events: DemoEvent[]; stats: { open: number; late: number; done: number } };
+  const gov = govData.events.map((e) => ({ ...e, source: "gov" as const }));
+  const gmail = (gmailCalendar as unknown as DemoEvent[]).map((e) => ({ ...e, source: "gmail" as const }));
+  const all = [...gov, ...gmail];
+  const stats = { ...govData.stats };
+  for (const e of gmail) stats[e.status] = (stats[e.status] ?? 0) + 1;
+  return { events: all, stats };
+};
 // approve/discard in the demo can't persist to a DB — track decisions in memory
 // so the card visibly clears (resets on server restart).
 const decided = new Set<string>();

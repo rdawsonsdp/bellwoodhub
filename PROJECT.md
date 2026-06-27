@@ -164,6 +164,14 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Changelog
 
+- **2026-06-27 (Gmail business records + consolidated calendar)** — Expanded the walled Gmail account: added
+  dispensary-business emails (Harbor Wellness Dispensary, Cary IL — IDFPR license, METRC, Brink's cash, Cresco
+  wholesale, dispensary mgr) + social/charity invites (Ed Foundation gala, Rotary golf, Chamber awards, food
+  pantry, family birthday). New **Gmail calendar** fixture (`gmail-calendar.json`). The **Calendar is now
+  consolidated** across Government (Outlook) + Business (Gmail) — the Chief-of-Staff "whole day" view — with a
+  source filter (All/Government/Business), per-event source badges (Outlook blue / Gmail purple), a forward
+  agenda anchored on **today**, and day-dots colored by source. Mobile + desktop. Events carry `source`;
+  `demoEvents()` merges both calendars. FEAT-12 extended.
 - **2026-06-27 (Voice search fix + searching progress)** — Fixed the **mic not returning**: iOS Safari records
   `audio/mp4` but the upload was hardcoded `speech.webm`, so OpenAI rejected the format. Now the filename
   extension is derived from the real MIME (`audioExt`) on mobile + desktop, and failures surface a message

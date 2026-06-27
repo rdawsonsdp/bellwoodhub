@@ -8,7 +8,7 @@
  * (lib/ingested-sources). Phase 2 swaps in a real OpenAI-vision parse; Phase 3
  * writes real canonical rows + entity_aliases + chunks.
  */
-import { useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { C, FONT } from "@/lib/cos-design";
 import {
   SOURCE_TYPES, getSourceType, simulateExtraction, storageRoute, SENSITIVITY_META,
@@ -16,7 +16,7 @@ import {
 } from "@/lib/source-types";
 import { addIngested, newId, type IngestedRecord } from "@/lib/ingested-sources";
 
-type Step = "type" | "file" | "analyzing" | "review" | "done";
+type Step = "type" | "file" | "analyzing" | "review" | "committing" | "done";
 
 const entKindColor: Record<string, string> = {
   address: C.blue, parcel: C.blue, person: C.green, business: C.purpleText, organization: C.gold, department: C.orange,
@@ -46,6 +46,10 @@ export default function UploadSource({ onClose, onCommitted }: { onClose: () => 
 
   function commit() {
     if (!draft) return;
+    setStep("committing"); // run the pipeline progress, then finalize
+  }
+  function finalize() {
+    if (!draft) return;
     const rec: IngestedRecord = {
       ...draft,
       id: newId(),
@@ -59,7 +63,7 @@ export default function UploadSource({ onClose, onCommitted }: { onClose: () => 
   }
 
   const t = getSourceType(typeKey);
-  const title = step === "review" || step === "analyzing" ? "Review & categorize" : step === "done" ? "Ingested" : "Upload source";
+  const title = step === "review" || step === "analyzing" ? "Review & categorize" : step === "committing" ? "Adding to corpus" : step === "done" ? "Ingested" : "Upload source";
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 55, background: "var(--c-appbg)", color: C.text, display: "flex", flexDirection: "column", animation: "sheetUp .22s ease-out", fontFamily: FONT.sans }}>
@@ -125,9 +129,75 @@ export default function UploadSource({ onClose, onCommitted }: { onClose: () => 
         {/* STEP 4 — review */}
         {step === "review" && draft && <ReviewForm draft={draft} setDraft={setDraft} onCommit={commit} />}
 
-        {/* STEP 5 — done */}
+        {/* STEP 5 — committing (pipeline progress into the corpus) */}
+        {step === "committing" && draft && <Committing draft={draft} onComplete={finalize} />}
+
+        {/* STEP 6 — done */}
         {step === "done" && draft && <Done draft={draft} onClose={onClose} />}
       </div>
+    </div>
+  );
+}
+
+/* The pipeline-progress view — watch the document move through the 5-step
+ * ingest contract into the corpus. In the demo it's timed; in production each
+ * row reflects a real stage event (the embed step is when it becomes searchable). */
+function Committing({ draft, onComplete }: { draft: IngestDraft; onComplete: () => void }) {
+  const route = storageRoute(draft.sensitivity);
+  const stages: { label: string; sub: string }[] = [
+    { label: "Storing original", sub: route.label },
+    { label: "Writing canonical record", sub: "1 message" },
+    { label: "Resolving people & places", sub: `${draft.entities.length} linked` },
+    { label: "Classifying topic & stream", sub: `${draft.topic} → ${draft.stream}` },
+    { label: "Embedding for AI Search", sub: "Voyage · 1024-dim" },
+    { label: "Indexed — searchable", sub: "live in AI Search" },
+  ];
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (i >= stages.length) { const t = window.setTimeout(onComplete, 480); return () => window.clearTimeout(t); }
+    const t = window.setTimeout(() => setI((n) => n + 1), i === 4 ? 1000 : 620); // embedding takes a touch longer
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i]);
+  const pct = Math.round((Math.min(i, stages.length) / stages.length) * 100);
+
+  return (
+    <div style={{ display: "grid", gap: 18, paddingTop: 12 }}>
+      <div>
+        <div style={{ fontFamily: FONT.serif, fontSize: 19, lineHeight: 1.3 }}>Adding to the corpus…</div>
+        <div style={{ fontSize: 13, color: C.text3, marginTop: 4, lineHeight: 1.5 }}>“{draft.title}” is moving through the ingestion pipeline.</div>
+      </div>
+
+      {/* progress bar */}
+      <div>
+        <div style={{ height: 8, borderRadius: 99, background: "rgba(var(--ink),.08)", overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${pct}%`, background: `linear-gradient(90deg,var(--c-goldlo),var(--c-goldhi))`, borderRadius: 99, transition: "width .5s cubic-bezier(.4,0,.2,1)" }} />
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontFamily: FONT.mono, fontSize: 10.5, color: C.dim }}>
+          <span>{pct}%</span><span>{Math.min(i, stages.length)} / {stages.length} steps</span>
+        </div>
+      </div>
+
+      {/* stage checklist */}
+      <div style={{ display: "grid", gap: 2 }}>
+        {stages.map((s, idx) => {
+          const done = idx < i, active = idx === i;
+          return (
+            <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 11, background: active ? "rgba(231,181,60,.07)" : "transparent" }}>
+              <span style={{ width: 22, height: 22, flexShrink: 0, display: "grid", placeItems: "center", color: done ? C.green : active ? C.gold : C.dim }}>
+                {done
+                  ? <Svg d="M20 6 9 17l-5-5" w={16} sw={2.4} />
+                  : active
+                    ? <span style={{ display: "inline-flex", animation: "cosSpin .8s linear infinite" }}><Svg d="M21 12a9 9 0 1 1-6.2-8.5" w={15} sw={2.2} /></span>
+                    : <span style={{ width: 8, height: 8, borderRadius: 99, border: `1.5px solid ${C.dim}` }} />}
+              </span>
+              <span style={{ flex: 1, fontSize: 14, fontWeight: active || done ? 600 : 500, color: active || done ? C.text : C.text3 }}>{s.label}</span>
+              <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim, textAlign: "right" }}>{s.sub}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ fontSize: 11, color: C.dim, fontFamily: FONT.mono, textAlign: "center" }}>5-step ingest contract · audit-logged · R3</div>
     </div>
   );
 }

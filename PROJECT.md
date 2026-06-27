@@ -164,6 +164,11 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Changelog
 
+- **2026-06-27 (Upload Source · corpus progress bar)** — Added a staged **progress bar** on commit in the
+  Upload Source flow: a new "Adding to corpus" step animates the 5-step ingest pipeline (Storing original →
+  Writing canonical record → Resolving people & places → Classifying topic/stream → Embedding for AI Search →
+  Indexed/searchable) with a % bar. Demo-timed; in production each row reflects a real stage event (embed =
+  becomes searchable). The record is written to the store only after the run completes.
 - **2026-06-27 (Calendar desktop/mobile parity)** — Desktop Calendar diverged from mobile; reconciled
   **desktop → mobile** (RD's call). Desktop now has the **horizontal date strip** + **Calendar | Events
   & Meetings** toggle, matching mobile; status filters (All/Open/Overdue/Done) moved into the Events &

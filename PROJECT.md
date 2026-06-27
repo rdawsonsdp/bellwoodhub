@@ -143,6 +143,10 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Changelog
 
+- **2026-06-27 (kickoff + mobile polish)** — PM skill gained a **Project Kickoff** (PMP-certified
+  Sr. PM interview → Project Charter in PROJECT.md). Added a **temporary Project Status tab** under
+  Admin linking to the live PM dashboard. Mobile: **swipe-down (pull-to-refresh)** on the main
+  screens — rubber-band pull, gold spinner, remounts the active screen to refetch.
 - **2026-06-27 (UX sprint)** — Heavy demo-UX iteration. Jobs-to-be-done renames (Brief→Emails,
   Events→Calendar, Memory→History, Ask→AI Search, Agents→Staff Agents). Emails = dense inbox
   with **agent email categories** (Urgent/Important/Social/Spam/Inbox) + drill-to-source.

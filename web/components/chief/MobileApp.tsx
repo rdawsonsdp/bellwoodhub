@@ -83,23 +83,92 @@ export default function MobileApp() {
   const [moreView, setMoreView] = useState<MoreView>(null);
   const [askOpen, setAskOpen] = useState(false);
   const [emailMid, setEmailMid] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Swipe-down to refresh: remount the active screen so its useApi hooks refetch.
+  async function doRefresh() {
+    setRefreshKey((k) => k + 1);
+    await new Promise((r) => setTimeout(r, 700));
+  }
 
   return (
     <EmailCtx.Provider value={setEmailMid}>
       <div style={{ minHeight: "100dvh", background: "var(--c-appbg)", color: C.text, fontFamily: FONT.sans, paddingBottom: "calc(74px + env(safe-area-inset-bottom))" }}>
         <Header />
-        <div style={{ padding: "8px 0 20px" }}>
-          {screen === "emails" && <EmailsScreen onAsk={() => setAskOpen(true)} />}
-          {screen === "events" && <EventsScreen />}
-          {screen === "history" && <HistoryScreen />}
-          {screen === "source" && <SourceScreen view={moreView} setView={setMoreView} />}
-        </div>
+        <PullToRefresh onRefresh={doRefresh}>
+          <div key={refreshKey} style={{ padding: "8px 0 20px" }}>
+            {screen === "emails" && <EmailsScreen onAsk={() => setAskOpen(true)} />}
+            {screen === "events" && <EventsScreen />}
+            {screen === "history" && <HistoryScreen />}
+            {screen === "source" && <SourceScreen view={moreView} setView={setMoreView} />}
+          </div>
+        </PullToRefresh>
 
         <BottomNav screen={screen} go={(s) => { setScreen(s); setMoreView(null); }} onAsk={() => setAskOpen(true)} />
         {askOpen && <AskSheet onClose={() => setAskOpen(false)} />}
         {emailMid && <EmailSheet mid={emailMid} onClose={() => setEmailMid(null)} />}
       </div>
     </EmailCtx.Provider>
+  );
+}
+
+/* ── pull / swipe-down to refresh ──
+ * Native-feeling: only engages when the page is scrolled to the very top, applies
+ * rubber-band resistance, and shows a spinner that fills in as you pull past the
+ * threshold. Releasing past the threshold triggers onRefresh. */
+function PullToRefresh({ onRefresh, children }: { onRefresh: () => Promise<void>; children: ReactNode }) {
+  const THRESHOLD = 72;
+  const [pull, setPull] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const startY = useRef<number | null>(null);
+
+  function start(e: React.TouchEvent) {
+    startY.current = (typeof window !== "undefined" && window.scrollY <= 0 && !refreshing) ? e.touches[0].clientY : null;
+  }
+  function move(e: React.TouchEvent) {
+    if (startY.current === null || refreshing) return;
+    const dy = e.touches[0].clientY - startY.current;
+    if (dy > 0 && window.scrollY <= 0) {
+      setPull(Math.min(dy * 0.5, 96)); // rubber-band resistance + cap
+    } else if (dy <= 0) {
+      setPull(0);
+    }
+  }
+  async function end() {
+    if (startY.current === null) return;
+    const trigger = pull >= THRESHOLD;
+    startY.current = null;
+    if (trigger && !refreshing) {
+      setRefreshing(true);
+      setPull(52);
+      try { await onRefresh(); } finally { setRefreshing(false); setPull(0); }
+    } else {
+      setPull(0);
+    }
+  }
+
+  const armed = pull >= THRESHOLD;
+  const progress = Math.min(pull / THRESHOLD, 1);
+  return (
+    <div onTouchStart={start} onTouchMove={move} onTouchEnd={end} onTouchCancel={end} style={{ position: "relative", overscrollBehaviorY: "contain" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: Math.max(pull, 0), display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 8, pointerEvents: "none", overflow: "hidden" }}>
+        <span style={{
+          width: 30, height: 30, borderRadius: 99, display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(var(--ink),.06)", border: "1px solid var(--c-cardbd)", opacity: Math.min(progress + 0.15, 1),
+          color: armed || refreshing ? C.gold : C.dim,
+        }}>
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+            style={{ animation: refreshing ? "cosSpin .8s linear infinite" : undefined, transform: refreshing ? undefined : `rotate(${armed ? 180 : 0}deg)`, transition: "transform .18s" }}>
+            {refreshing
+              ? <path d="M21 12a9 9 0 1 1-6.2-8.5" />
+              : <path d="M12 5v14M6 13l6 6 6-6" />}
+          </svg>
+        </span>
+      </div>
+      <div style={{ transform: `translateY(${pull}px)`, transition: startY.current === null ? "transform .24s cubic-bezier(.2,.8,.2,1)" : "none" }}>
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -275,6 +344,7 @@ function EventsScreen() {
   const maxDay = eventDays.length ? eventDays[eventDays.length - 1] : new Date().toISOString().slice(0, 10);
   const strip = dayStrip(maxDay, 30);
   const [sel, setSel] = useState(maxDay);
+  const [view, setView] = useState<"calendar" | "meetings">("calendar");
   const stripRef = useRef<HTMLDivElement>(null);
   useEffect(() => { setSel(maxDay); }, [maxDay]);
   useEffect(() => { if (stripRef.current) stripRef.current.scrollLeft = stripRef.current.scrollWidth; }, [strip.length]);
@@ -283,35 +353,54 @@ function EventsScreen() {
   return (
     <div>
       <ScreenHead title="Calendar" sub="Your days and what's on them — synced from Outlook." stats={[[String(data?.stats.open ?? "—"), "open"], [String(data?.stats.late ?? "—"), "overdue"], [String(data?.stats.done ?? "—"), "done"]]} />
-      {/* horizontal calendar strip */}
-      <div ref={stripRef} style={{ display: "flex", gap: 8, overflowX: "auto", padding: "2px 16px 14px", WebkitOverflowScrolling: "touch" as never }}>
-        {strip.map((d) => {
-          const on = d === sel; const dt = new Date(d + "T00:00:00"); const count = byDay.get(d)?.length ?? 0;
-          return (
-            <button key={d} onClick={() => setSel(d)} style={{ flexShrink: 0, width: 50, padding: "8px 0 6px", borderRadius: 13, border: `1px solid ${on ? C.gold : "var(--c-cardbd)"}`, background: on ? C.gold : "rgba(var(--ink),.04)", color: on ? "#081627" : C.text2, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, cursor: "pointer" }}>
-              <span style={{ fontSize: 9.5, fontFamily: FONT.mono, opacity: 0.85 }}>{dt.toLocaleDateString("en-US", { weekday: "short" })}</span>
-              <span style={{ fontSize: 17, fontWeight: 700 }}>{dt.getDate()}</span>
-              <span style={{ width: 5, height: 5, borderRadius: 99, background: count ? (on ? "#081627" : C.gold) : "transparent" }} />
-            </button>
-          );
+      <div style={{ display: "flex", gap: 8, padding: "2px 16px 12px" }}>
+        {(["calendar", "meetings"] as const).map((v) => {
+          const on = view === v;
+          return <button key={v} onClick={() => setView(v)} style={{ cursor: "pointer", padding: "7px 14px", borderRadius: 99, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans, background: on ? C.gold : "transparent", color: on ? "#081627" : C.text3, border: `1px solid ${on ? C.gold : "var(--c-cardbd)"}` }}>{v === "calendar" ? "Calendar" : "Events & Meetings"}</button>;
         })}
       </div>
-      <div style={{ padding: "0 18px 8px", fontFamily: FONT.mono, fontSize: 11, letterSpacing: ".05em", color: C.dim, textTransform: "uppercase" }}>{new Date(sel + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · {dayEvents.length} event{dayEvents.length === 1 ? "" : "s"}</div>
-      {!data && <Loading />}
-      {data && dayEvents.length === 0 && <div style={{ padding: "30px 16px", textAlign: "center", color: C.dim, fontSize: 13 }}>Nothing on this day.</div>}
-      {dayEvents.map((e) => (
-        <button key={e.id} onClick={() => openEmail(e.messageId)} style={{ display: "flex", gap: 12, width: "100%", textAlign: "left", padding: "12px 16px", borderBottom: "1px solid var(--c-cardbd)", background: "transparent", color: C.text, alignItems: "flex-start" }}>
-          <span style={{ width: 9, height: 9, borderRadius: 99, background: evDot[e.status] || C.muted, flexShrink: 0, marginTop: 5 }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-              <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.title}</span>
-              <span style={{ fontSize: 11, color: e.status === "late" ? C.orange : C.dim, fontFamily: FONT.mono, flexShrink: 0 }}>{e.dueLabel}</span>
-            </div>
-            <div style={{ fontSize: 12.5, color: C.text3, marginTop: 2 }}>{e.role} · {e.who}</div>
-          </div>
-        </button>
-      ))}
+
+      {view === "calendar" && (<>
+        <div ref={stripRef} style={{ display: "flex", gap: 8, overflowX: "auto", padding: "2px 16px 14px", WebkitOverflowScrolling: "touch" as never }}>
+          {strip.map((d) => {
+            const on = d === sel; const dt = new Date(d + "T00:00:00"); const count = byDay.get(d)?.length ?? 0;
+            return (
+              <button key={d} onClick={() => setSel(d)} style={{ flexShrink: 0, width: 50, padding: "8px 0 6px", borderRadius: 13, border: `1px solid ${on ? C.gold : "var(--c-cardbd)"}`, background: on ? C.gold : "rgba(var(--ink),.04)", color: on ? "#081627" : C.text2, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, cursor: "pointer" }}>
+                <span style={{ fontSize: 9.5, fontFamily: FONT.mono, opacity: 0.85 }}>{dt.toLocaleDateString("en-US", { weekday: "short" })}</span>
+                <span style={{ fontSize: 17, fontWeight: 700 }}>{dt.getDate()}</span>
+                <span style={{ width: 5, height: 5, borderRadius: 99, background: count ? (on ? "#081627" : C.gold) : "transparent" }} />
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ padding: "0 18px 8px", fontFamily: FONT.mono, fontSize: 11, letterSpacing: ".05em", color: C.dim, textTransform: "uppercase" }}>{new Date(sel + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · {dayEvents.length} event{dayEvents.length === 1 ? "" : "s"}</div>
+        {!data && <Loading />}
+        {data && dayEvents.length === 0 && <div style={{ padding: "30px 16px", textAlign: "center", color: C.dim, fontSize: 13 }}>Nothing on this day.</div>}
+        {dayEvents.map((e) => <EventRow key={e.id} e={e} onClick={() => openEmail(e.messageId)} />)}
+      </>)}
+
+      {view === "meetings" && (<>
+        {!data && <Loading />}
+        {data && evs.length === 0 && <div style={{ padding: "30px 16px", textAlign: "center", color: C.dim, fontSize: 13 }}>No events or meetings.</div>}
+        {[...evs].sort((a, b) => b.date.localeCompare(a.date)).map((e) => (
+          <EventRow key={e.id} e={e} day={fmtTime(e.date)} onClick={() => openEmail(e.messageId)} />
+        ))}
+      </>)}
     </div>
+  );
+}
+function EventRow({ e, day, onClick }: { e: EventItem; day?: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} style={{ display: "flex", gap: 12, width: "100%", textAlign: "left", padding: "12px 16px", borderBottom: "1px solid var(--c-cardbd)", background: "transparent", color: C.text, alignItems: "flex-start" }}>
+      <span style={{ width: 9, height: 9, borderRadius: 99, background: evDot[e.status] || C.muted, flexShrink: 0, marginTop: 5 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+          <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.title}</span>
+          <span style={{ fontSize: 11, color: e.status === "late" ? C.orange : C.dim, fontFamily: FONT.mono, flexShrink: 0 }}>{day || e.dueLabel}</span>
+        </div>
+        <div style={{ fontSize: 12.5, color: C.text3, marginTop: 2 }}>{e.role} · {e.who}</div>
+      </div>
+    </button>
   );
 }
 

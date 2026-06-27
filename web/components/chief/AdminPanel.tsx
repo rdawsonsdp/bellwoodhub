@@ -13,7 +13,11 @@ import {
   SOURCES_DEFAULT, COST_MODEL, type SourceDef,
 } from "@/lib/admin-config";
 
-type Section = "appearance" | "models" | "cost" | "rules" | "skills" | "sources";
+type Section = "appearance" | "models" | "cost" | "rules" | "skills" | "sources" | "status";
+
+// Temporary: link to the live PM status dashboard (its own Vercel project).
+// Remove this tab once the project ships — it's a build-time convenience, not a product feature.
+const PROJECT_STATUS_URL = "https://project-status-ten.vercel.app";
 
 const THEMES = [
   { id: "midnight", name: "Midnight", desc: "The original deep navy — maximum focus.", sw: ["#070b12", "#102139", "#e7b53c", "#eaf1fa"] },
@@ -72,6 +76,7 @@ export default function AdminPanel() {
   const tabs: [Section, string][] = [
     ["appearance", "Appearance"], ["models", "Models"], ["cost", "API Cost"],
     ["rules", "Agent Rules"], ["skills", "Skills"], ["sources", "Sources"],
+    ["status", "Project Status"],
   ];
 
   return (
@@ -108,6 +113,31 @@ export default function AdminPanel() {
       {section === "rules" && <Rules st={st} update={update} />}
       {section === "skills" && <Skills st={st} update={update} />}
       {section === "sources" && <Sources st={st} update={update} />}
+      {section === "status" && <ProjectStatus />}
+    </div>
+  );
+}
+
+/* ───────────────────────── PROJECT STATUS (temporary) ───────────────────────── */
+function ProjectStatus() {
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      <Banner tone="gold" title="Project status dashboard · temporary"
+        body="A live, shareable readout of project status — tasks, risks, decisions, and recent git activity — published from the Project Manager. This link is a build-time convenience and will be removed before go-live." />
+      <div style={{ ...card, padding: 20, display: "grid", gap: 14 }}>
+        <div>
+          <div style={eyebrow(C.dim)}>Live status page</div>
+          <div style={{ fontFamily: FONT.mono, fontSize: 13, color: C.text3, marginTop: 6, wordBreak: "break-all" }}>{PROJECT_STATUS_URL}</div>
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <a href={PROJECT_STATUS_URL} target="_blank" rel="noopener noreferrer" style={{
+            cursor: "pointer", padding: "10px 18px", borderRadius: 10, background: C.gold, color: "#081627",
+            border: `1px solid ${C.gold}`, fontSize: 13, fontWeight: 700, fontFamily: FONT.sans, textDecoration: "none",
+          }}>Open status dashboard ↗</a>
+          <button onClick={() => { try { navigator.clipboard.writeText(PROJECT_STATUS_URL); } catch { /* */ } }} style={ghostBtn}>Copy link</button>
+        </div>
+      </div>
+      <div style={{ fontSize: 11.5, color: C.dim, fontFamily: FONT.mono }}>Auto-refreshes on each push to git · maintained by the Project Manager skill.</div>
     </div>
   );
 }

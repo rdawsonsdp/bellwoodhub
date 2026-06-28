@@ -80,7 +80,9 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 | FEAT-10 | Agent-driven **Upload Source** ingestion | 🔵 Phase 1 done | **Phase 1 (demo-safe) shipped:** "Upload Source" button on Sources (mobile + desktop) → pick type → drop file → simulated agent draft → R3 review/categorize form → in-memory commit, surfaced as "Agent-ingested this session". Source-type registry: Fire/EMS, Police (restricted→secured store), Permit, General. Maps 1:1 to messages/entity_aliases/message_topics/chunks. **Next:** Phase 2 real OpenAI-vision parse · Phase 3 canonical writes · Phase 4 Voyage embed · Phase 5 FEAT-11 secured S3. |
 | FEAT-12 | **Multiple mailboxes** + source-system filter | 🔵 Phase 1 done | Mayor's Government (Outlook) + Business (Gmail) accounts as a filterable "source system" on the Emails screen. New `lib/mailboxes.ts` registry + `mailbox_id` dimension; demo splits seed = Government, adds a walled Gmail business fixture. **Business is walled (DEC-6):** private, not FOIA-indexed, excluded from default AI Search. **Next:** Phase 2 Outlook (Graph) connector · Phase 3 Gmail connector · per-mailbox OAuth (read-only) + canonical.mailboxes table. |
 | FEAT-11 | **Secured AWS document store** (S3, encrypted) | ⚪ pending | Per-source/sensitivity storage routing: `restricted` originals (e.g. police) go to a secured, access-controlled S3 bucket — `messages.raw_ref` points there; app holds only searchable metadata/RAG, not the file. `public/internal` may use Supabase Storage. Demo: restricted = memory-only. |
-| FEAT-13 | **Today screen + Chief of Staff agent** | 🔵 v1 shipped | "Good morning, Mayor Harvey" landing (mobile + desktop): persona-voiced briefing (what happened/new/important) + today's calendar + **sign-to-approve** agent drafts inline + inbox preview. New R4 Chief of Staff agent summarizes all other agents. Hybrid keyless/OpenAI (`/api/morning-summary`). Persona configurable in Admin → Chief of Staff. **Next:** the **Morning Agent** (configurable web-search query cards, Supabase `morning_agent_queries` + results, Claude live web search — spec in progress) · verbal/TTS phase. |
+| FEAT-13 | **Today screen + Chief of Staff agent** | 🔵 shipped+ | "Good morning, Mayor Harvey" landing (mobile + desktop): **agent-generated, time-aware persona greeting** (varied) + briefing + today's calendar + **editable sign-to-approve** drafts + inbox preview. Bright **time-of-day banner** (sunrise→midday→dusk→night) + seal + weather + on-this-day. New R4 Chief of Staff agent. Hybrid keyless/OpenAI. Persona configurable. **Next:** the **Morning Agent** (web-search query cards) · verbal/TTS. |
+| FEAT-14 | **Multi-customer / white-label** (per-tenant config) | ⚪ planned · post-launch | Shared repo + `lib/tenant.ts` (scaffold shipped) selected by `NEXT_PUBLIC_TENANT`; **one Vercel project + isolated Supabase per customer** (DEC-9). **Tasks:** (1) extend tenant config to branding/seal/title/persona/feedback-repo + wire all consumers; (2) per-tenant mailboxes + `SOURCES_DEFAULT`; (3) per-tenant demo fixtures + search index; (4) per-tenant live env (DATABASE_URL/keys/mailboxes); (5) add customer #2 + its Vercel project + write the "add a customer" runbook. **RD builds after Bellwood launch.** |
+| FEAT-15 | **User feedback → Supabase + portal section** | ⚪ planned | Persist in-app Quick Notes durably + surface them on the portal (DEC-8). **Tasks:** (1) `feedback` table migration in BellwoodHub (same DB connection); (2) `/api/feedback` writes to Supabase when connected, in-memory demo fallback; (3) app prod env gets the Supabase/DB connection (infra step); (4) **"User Feedback & Comments"** section on the Project Status portal (`build-status.mjs` reads the table); (5) triage `status` field + optional GitHub/Linear forward. |
 
 **Known demo gaps (optional polish):** Commitments screen still uses static prototype content (not seed-wired); Brief mixes live data + a few hardcoded hero cards; "who emails most" surfaces institutional senders over residents.
 
@@ -133,6 +135,19 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Decisions log
 
+- **`DEC-9` Multi-customer = shared repo + per-tenant config + isolated data (2026-06-28)** — One codebase
+  on `main`; everything customer-specific (branding, persona, mailboxes, sources, demo fixtures) lives in
+  `lib/tenant.ts`, selected by `NEXT_PUBLIC_TENANT` (default `bellwood`). **One Vercel project per customer**,
+  each with its own env + **its own isolated Supabase project** (no commingling — FOIA/CJIS). A single push
+  ships to every customer in lockstep. Grow into hostname-based multi-tenancy (`tenant_id` + RLS, one deploy)
+  only at ~5–10+ customers. *Decided by RD; build after Bellwood launches (FEAT-14).*
+- **`DEC-8` User feedback → Supabase, surfaced on the portal (2026-06-28)** — In-app Quick Notes (typed/voice)
+  are the **system of record in a Supabase `feedback` table on the same BellwoodHub DB connection** the app
+  uses, so the app and the portal stay in sync. They surface as a **"User Feedback & Comments"** section on the
+  Project Status portal. The table is durable + tenant-scoped; an issue tracker (GitHub/Linear) is an optional
+  *forward* for items actioned, not the store. Supersedes the GitHub-issue-only path. Schema:
+  `feedback(id, tenant, text, page, source['typed'|'voice'], status['new'|'triaged'|'done'], created_at)`.
+  *Decided by RD (FEAT-15).*
 - **`DEC-7` Today screen = "see + act", persona-driven (2026-06-28)** — The Mayor's landing is a
   **Chief-of-Staff Today screen**, not the inbox: greet → brief (what happened / new / important) →
   calendar → **sign the checks (approve agent drafts inline)** → inbox preview. The metaphor is a human
@@ -174,6 +189,17 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Changelog
 
+- **2026-06-28 (Today polish · time-of-day life · feedback · planning)** — Iterated the Today screen on
+  device: **bright sunrise banner** with a Village of Bellwood seal watermark, at-a-glance **weather** +
+  **on-this-day**, tighter ~4-line briefing, and an **agent-generated persona greeting** that's varied each
+  load (JSON output, temp 0.9) and time-aware, with a deterministic keyless fallback. **Editable draft
+  approvals** (edit → save → approve) via a shared `DraftCard` + `/api/approvals` `save`; wired into Today
+  "To sign" + mobile "Agent Answered". **Voice-enabled feedback button** in the footer (type or talk →
+  `/api/feedback`). **Auto · time-of-day theme** (new default): 4 new palettes (morning/midday/evening/night)
+  that shift by the hour; the banner + greeting move with the day; manual themes still pin. Fixed iOS text
+  auto-inflation (oversized fonts) + wrapped the "most important" titles. **Planning:** logged DEC-8/DEC-9 and
+  FEAT-14 (multi-customer / per-tenant config; scaffolded `lib/tenant.ts`) + FEAT-15 (feedback → Supabase +
+  portal section) as post-launch workstreams. Many incremental prod deploys.
 - **2026-06-28 (Today screen + Chief of Staff agent)** — Built the Mayor's **landing screen**: a
   "Good morning, Mayor Harvey" Chief-of-Staff briefing as the default Home view (mobile + desktop). A new
   **R4 Chief of Staff agent** (`cos-agents.ts`) reads every other agent's output + the inbox + the

@@ -43,10 +43,13 @@ export function getCosPersona(): CosPersona {
   } catch { return COS_PERSONA_DEFAULT; }
 }
 
-/** Fill the greeting template. timeOfDay derives from the hour when provided. */
+/** Fill the greeting template. timeOfDay derives from the hour when provided.
+ *  Works whether the template uses the {timeOfDay} token OR hardcodes a literal
+ *  "Good morning/afternoon/evening" — either way the word tracks the clock. */
 export function fillGreeting(p: CosPersona, hour?: number): string {
   const part = hour == null ? "morning" : hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
   return (p.greeting || COS_PERSONA_DEFAULT.greeting)
+    .replace(/\bgood\s+(morning|afternoon|evening)\b/i, `Good ${part}`)
     .replace(/\{name\}/g, p.mayorName || "Mayor")
     .replace(/\{timeOfDay\}/g, part);
 }

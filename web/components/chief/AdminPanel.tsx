@@ -14,8 +14,10 @@ import {
 } from "@/lib/admin-config";
 import { COS_PERSONA_DEFAULT, COS_TONE_PRESETS, type CosPersona, type CosTone } from "@/lib/morning";
 import { applyTheme } from "@/lib/theme";
+import { ROUTINES, ON_DEMAND_AGENTS } from "@/lib/routines";
+import { AUTONOMY_LABEL } from "@/lib/cos-agents";
 
-type Section = "appearance" | "cos" | "models" | "cost" | "rules" | "skills" | "sources" | "status";
+type Section = "appearance" | "cos" | "models" | "cost" | "rules" | "skills" | "sources" | "routines" | "status";
 
 // Temporary: link to the live PM status dashboard (its own Vercel project).
 // Remove this tab once the project ships — it's a build-time convenience, not a product feature.
@@ -37,6 +39,7 @@ interface AdminState {
   sources: Record<string, { enabled: boolean; schedule: string }>;
   extraSources: SourceDef[];
   cos: CosPersona;
+  routinesOff: string[];
 }
 const DEFAULT_STATE: AdminState = {
   router: Object.fromEntries(ROUTER_DEFAULT.map((r) => [r.task, r.model])),
@@ -46,6 +49,7 @@ const DEFAULT_STATE: AdminState = {
   sources: {},
   extraSources: [],
   cos: COS_PERSONA_DEFAULT,
+  routinesOff: [],
 };
 const KEY = "bw-admin-config-v1";
 
@@ -80,7 +84,7 @@ export default function AdminPanel() {
 
   const tabs: [Section, string][] = [
     ["appearance", "Appearance"], ["cos", "Chief of Staff"], ["models", "Models"], ["cost", "API Cost"],
-    ["rules", "Agent Rules"], ["skills", "Skills"], ["sources", "Sources"],
+    ["rules", "Agent Rules"], ["skills", "Skills"], ["sources", "Sources"], ["routines", "Routines"],
     ["status", "Project Status"],
   ];
 
@@ -119,6 +123,7 @@ export default function AdminPanel() {
       {section === "rules" && <Rules st={st} update={update} />}
       {section === "skills" && <Skills st={st} update={update} />}
       {section === "sources" && <Sources st={st} update={update} />}
+      {section === "routines" && <Routines st={st} update={update} />}
       {section === "status" && <ProjectStatus />}
     </div>
   );
@@ -151,6 +156,65 @@ function ProjectStatus() {
         style={{ width: "100%", height: "72vh", minHeight: 460, border: `1px solid ${C.cardBd}`, borderRadius: 14, background: "#fff" }}
       />
       <div style={{ fontSize: 11.5, color: C.dim, fontFamily: FONT.mono }}>Auto-refreshes on each push to git · maintained by the Project Manager skill.</div>
+    </div>
+  );
+}
+
+/* ───────────────────────── ROUTINES (scheduled agents) ───────────────────────── */
+function Routines({ st, update }: { st: AdminState; update: (n: Partial<AdminState>) => void }) {
+  const off = st.routinesOff ?? [];
+  const toggle = (id: string) => update({ routinesOff: off.includes(id) ? off.filter((x) => x !== id) : [...off, id] });
+  const autoColor: Record<string, string> = { R1: C.greenText, R2: C.blue, R3: C.purpleText, R4: C.gold };
+  const statusPill: Record<string, CSSProperties> = {
+    healthy: pill(C.greenText, "rgba(52,201,139,.14)"),
+    scheduled: pill(C.blue, "rgba(103,173,255,.14)"),
+    paused: pill(C.dim, "rgba(var(--ink),.08)"),
+    planned: pill(C.orange, "rgba(240,163,60,.14)"),
+  };
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      <Banner tone="gold" title="Routines — agents on a schedule"
+        body="Every agent has a scope; a routine binds it to a schedule and a place to work (a directory, a server, a feed). One agent can run many routines. Some agents instead run on demand. Demo: schedules illustrate the architecture — the scheduler isn't firing them yet." />
+      <div style={{ display: "grid", gap: 12 }}>
+        {ROUTINES.map((r) => {
+          const on = !off.includes(r.id);
+          return (
+            <div key={r.id} style={{ ...card, padding: "15px 17px", display: "grid", gap: 10, opacity: on ? 1 : 0.5 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 99, background: on ? C.green : C.dim2, flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14.5, fontWeight: 700, color: C.text }}>{r.name}</div>
+                  <div style={{ fontSize: 11.5, color: C.dim, fontFamily: FONT.mono, marginTop: 1 }}>{r.agent}</div>
+                </div>
+                <span style={statusPill[r.status]}>{r.status}</span>
+                <button onClick={() => toggle(r.id)} aria-label="Toggle routine" style={{ width: 42, height: 24, borderRadius: 99, border: 0, cursor: "pointer", background: on ? C.green : "rgba(var(--ink),.16)", position: "relative", flexShrink: 0 }}>
+                  <span style={{ position: "absolute", top: 2, left: on ? 20 : 2, width: 20, height: 20, borderRadius: 99, background: "#fff", transition: "left .15s", boxShadow: "0 1px 2px rgba(0,0,0,.3)" }} />
+                </button>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "5px 14px", alignItems: "baseline" }}>
+                <span style={{ fontSize: 12.5, color: C.text2, fontWeight: 600 }}>🕑 {r.schedule}</span>
+                <span style={{ fontFamily: FONT.mono, fontSize: 11, color: C.dim }}>{r.cron}</span>
+              </div>
+              <div style={{ fontSize: 12, color: C.muted, fontFamily: FONT.mono, wordBreak: "break-all" }}>📂 {r.scope}</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
+                <span style={pill(autoColor[r.autonomy], "rgba(var(--ink),.06)")} title={AUTONOMY_LABEL[r.autonomy]}>{r.autonomy} · {AUTONOMY_LABEL[r.autonomy]}</span>
+                <span style={{ fontSize: 11.5, color: C.dim }}>last <b style={{ color: C.text3, fontWeight: 600 }}>{r.lastRun}</b></span>
+                <span style={{ fontSize: 11.5, color: C.dim }}>next <b style={{ color: C.text3, fontWeight: 600 }}>{r.nextRun}</b></span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <button style={ghostBtn} onClick={() => { /* demo: routine builder is a pending feature */ }}>+ Add routine</button>
+      <div style={{ ...card, padding: "15px 17px" }}>
+        <div style={{ ...eyebrow(C.dim), fontSize: 10.5, marginBottom: 9 }}>Also: agents that run on demand</div>
+        <div style={{ display: "grid", gap: 7 }}>
+          {ON_DEMAND_AGENTS.map((a) => (
+            <div key={a.agent} style={{ fontSize: 12.5, color: C.text3, lineHeight: 1.5 }}><b style={{ color: C.text2 }}>{a.agent}</b> — {a.note}</div>
+          ))}
+        </div>
+      </div>
+      <div style={{ fontSize: 11.5, color: C.dim, fontFamily: FONT.mono, lineHeight: 1.6 }}>Demo: schedules shown for the architecture. The production scheduler (Vercel Cron / Supabase pg_cron → run agent → Agent Activity log) is a tracked feature. Routines are per-tenant config.</div>
     </div>
   );
 }

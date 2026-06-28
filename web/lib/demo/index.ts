@@ -192,26 +192,22 @@ export async function demoMorningSummary(persona: CosPersona, hour?: number): Pr
       const sys =
         `You are ${persona.mayorName}'s chief of staff, greeting the mayor as he walks into the office with his coffee this ${part}. ` +
         `${COS_TONE_PRESETS[tone].prompt} ${persona.instructions || ""} ` +
-        `Reply in TWO parts separated by a line containing only "|||". ` +
-        `PART 1 — a short, warm ONE-sentence greeting that addresses him by name (${persona.mayorName}) and fits the ${part}; make it personal and varied in your own chief-of-staff voice, NOT a generic "Good ${part}, Mayor." ` +
-        `PART 2 — the briefing: 2-3 short sentences (about 4 lines): what's new, the single most important thing, and a quick nod to his calendar. ` +
-        `Use ONLY the facts below; never invent items. Plain prose, no markdown, no lists.`;
+        `Respond with a JSON object: {"greeting": string, "briefing": string}. ` +
+        `"greeting": a short, warm ONE-sentence greeting addressing him by name (${persona.mayorName}) and fitting the ${part}; personal and varied in your own chief-of-staff voice — NOT a generic "Good ${part}, Mayor." ` +
+        `"briefing": 2-3 short sentences (about 4 lines): what's new, the single most important thing, and a quick nod to his calendar. ` +
+        `Use ONLY the facts below; never invent items. Plain text in each field, no markdown.`;
       const ctx = [
         `Most pressing (${top.length}): ${top.map((p) => `${p.title} [${p.tag}]`).join("; ") || "nothing urgent"}.`,
         `On the calendar today (${calendar.length}): ${calendar.map((c) => c.title + (c.when ? ` (${c.when})` : "")).join("; ") || "nothing scheduled"}.`,
         `Overnight agent activity: ${agents.map((a) => `${a.name} — ${a.note}`).join("; ") || "quiet"}.`,
         `${needYou} threads need your reply.`,
       ].join("\n");
-      const out = await chat(sys, ctx, { temperature: 0.9 }); // less deterministic — the persona, varied each morning
+      const out = await chat(sys, ctx, { temperature: 0.9, json: true }); // varied persona greeting + briefing
       if (out) {
-        const parts = out.split(/\n?\|\|\|\n?/);
-        if (parts.length >= 2 && parts[0].trim() && parts[1].trim()) {
-          greeting = parts[0].trim().replace(/^["']|["']$/g, "");
-          narrative = parts[1].trim();
-        } else {
-          narrative = out.trim(); // no delimiter → keep the deterministic greeting, use it all as the briefing
-        }
-        live = true;
+        try {
+          const j = JSON.parse(out) as { greeting?: string; briefing?: string };
+          if (j.greeting && j.briefing) { greeting = String(j.greeting).trim(); narrative = String(j.briefing).trim(); live = true; }
+        } catch { /* keep deterministic greeting + baseline narrative */ }
       }
     } catch { /* keep the deterministic baseline */ }
   }

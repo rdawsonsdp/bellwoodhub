@@ -27,10 +27,11 @@ export async function embed(text: string): Promise<number[]> {
 }
 
 /** One-shot grounded completion. */
-export async function chat(system: string, user: string, opts?: { temperature?: number }): Promise<string> {
+export async function chat(system: string, user: string, opts?: { temperature?: number; json?: boolean }): Promise<string> {
   const r = await openai().chat.completions.create({
     model: ANSWER_MODEL,
     temperature: opts?.temperature ?? 0.2,
+    ...(opts?.json ? { response_format: { type: "json_object" as const } } : {}),
     messages: [
       { role: "system", content: system },
       { role: "user", content: user },

@@ -12,6 +12,7 @@ import AdminPanel from "./AdminPanel";
 import AgentsPage from "./AgentsPage";
 import TodayScreen from "./TodayScreen";
 import DraftCard from "./DraftCard";
+import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
 import { getRecentSearches, addRecentSearch } from "@/lib/recent-searches";
 import { getEnabledTabs } from "@/lib/email-config";
@@ -124,6 +125,7 @@ export default function MobileApp() {
         </PullToRefresh>
 
         <AskFab onAsk={() => setAskOpen(true)} />
+        <FeedbackButton />
         {menuOpen && <NavMenu current={screen} go={(s) => { setScreen(s); setMenuOpen(false); }} onClose={() => setMenuOpen(false)} />}
         {askOpen && <AskSheet onClose={() => setAskOpen(false)} />}
         {emailMid && <EmailSheet mid={emailMid} onClose={() => setEmailMid(null)} />}

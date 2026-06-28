@@ -19,6 +19,7 @@ import type { MemoryDetail, EntityListItem, SourcesOverview, DraftRow } from "@/
 import AdminPanel from "./AdminPanel";
 import AgentsPage from "./AgentsPage";
 import TodayScreen from "./TodayScreen";
+import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
 import { getRecentSearches, addRecentSearch } from "@/lib/recent-searches";
 import { getIngested, type IngestedRecord } from "@/lib/ingested-sources";
@@ -145,6 +146,7 @@ export default function ChiefApp() {
           {screen === "agents" && <AgentsPage />}
         </div>
       </div>
+      <FeedbackButton />
     </div>
   );
 }

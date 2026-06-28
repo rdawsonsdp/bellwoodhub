@@ -102,6 +102,16 @@ export const demoDecideDraft = (draftId: string): DraftRow[] => {
 // is present the narrative is rewritten in the configured CoS persona/voice.
 const CURRENT_DATE = "2026-06-28"; // the demo's "today" — matches the seed window
 
+// Demo "at a glance" extras (keyless). Live weather / Wikipedia "on this day"
+// can replace these later; fixtures keep the demo bulletproof.
+const DEMO_WEATHER = { icon: "⛅", tempF: 81, label: "Partly cloudy" };
+const ON_THIS_DAY: Record<string, string> = {
+  "06-28": "1919 — the Treaty of Versailles was signed, formally ending World War I.",
+};
+function onThisDayFor(date: string): string {
+  return ON_THIS_DAY[date.slice(5)] ?? "A good day to move the Village forward.";
+}
+
 function todayEvents(): DemoEvent[] {
   const all = demoEvents().events;
   const today = all.filter((e) => e.date.slice(0, 10) === CURRENT_DATE);
@@ -113,13 +123,12 @@ function todayEvents(): DemoEvent[] {
     .slice(0, 4);
 }
 
-function baselineNarrative(tone: CosPersona["tone"], pressing: PressingItem[], calendar: BriefCalendarItem[], agents: AgentNote[], needYou: number): string {
-  const lead = tone === "brisk" ? "" : tone === "formal" ? "Here is where things stand. " : "Here's the lay of the land — fresh cup in hand. ";
-  const ball = `${needYou} thread${needYou === 1 ? "" : "s"} have the ball in your court.`;
-  const press = pressing[0] ? ` The one that needs you most is "${pressing[0].title}" (${pressing[0].tag}).` : " Nothing urgent is waiting on you.";
-  const ev = calendar.length ? ` You've got ${calendar.length} thing${calendar.length === 1 ? "" : "s"} on the calendar today${calendar[0] ? `, starting with ${calendar[0].title}` : ""}.` : " Your calendar is clear today.";
-  const ag = agents[0] ? ` Overnight your ${agents[0].name.toLowerCase()} ${agents[0].note.charAt(0).toLowerCase()}${agents[0].note.slice(1)}.` : "";
-  return `${lead}${ball}${press}${ev}${ag}`.trim();
+function baselineNarrative(tone: CosPersona["tone"], pressing: PressingItem[], calendar: BriefCalendarItem[], needYou: number): string {
+  const lead = tone === "brisk" ? "" : tone === "formal" ? "Here is where things stand. " : "Here's the quick read, coffee in hand. ";
+  const ball = `${needYou} thread${needYou === 1 ? "" : "s"} need your reply.`;
+  const press = pressing[0] ? ` Top of the pile: "${pressing[0].title}" (${pressing[0].tag}).` : " Nothing urgent is waiting on you.";
+  const ev = calendar.length ? ` ${calendar.length} thing${calendar.length === 1 ? "" : "s"} on the calendar today${calendar[0] ? `, starting with ${calendar[0].title}` : ""}.` : " Calendar's clear today.";
+  return `${lead}${ball}${press}${ev}`.trim();
 }
 
 /** Assemble the morning briefing from every other agent's output + inbox + calendar. */
@@ -160,15 +169,15 @@ export async function demoMorningSummary(persona: CosPersona): Promise<MorningSu
   const needYou = (b.awaitingReply?.length ?? 0) + (b.highSensitivity?.length ?? 0);
   const counts = { needYou, eventsToday: evs.length };
 
-  let narrative = baselineNarrative(tone, top, calendar, agents, needYou);
+  let narrative = baselineNarrative(tone, top, calendar, needYou);
   let live = false;
   if (HAS_OPENAI) {
     try {
       const { chat } = await import("../openai");
       const sys =
-        `You are ${persona.mayorName}'s chief of staff, giving the morning briefing as the mayor walks into the office with his coffee. ` +
+        `You are ${persona.mayorName}'s chief of staff giving the morning briefing as he walks in with his coffee. ` +
         `${COS_TONE_PRESETS[tone].prompt} ${persona.instructions || ""} ` +
-        `Speak directly to the mayor in 2-4 sentences covering, in order: what happened overnight / what's new, what's most important today, and a nod to his calendar. ` +
+        `Be BRIEF — at most 2-3 short sentences (about 4 lines, ~45 words). He needs to know what's happening at a glance: what's new, the single most important thing, and a quick nod to his calendar. ` +
         `Do NOT greet him (the greeting is shown separately). Use ONLY the facts below — never invent items. Plain prose, no markdown, no lists.`;
       const ctx = [
         `Most pressing (${top.length}): ${top.map((p) => `${p.title} [${p.tag}]`).join("; ") || "nothing urgent"}.`,
@@ -183,7 +192,9 @@ export async function demoMorningSummary(persona: CosPersona): Promise<MorningSu
 
   return {
     greeting: fillGreeting(persona),
-    narrative, pressing: top, calendar, agents, counts, tone, live,
+    narrative, pressing: top, calendar, agents, counts,
+    weather: DEMO_WEATHER, onThisDay: onThisDayFor(CURRENT_DATE),
+    tone, live,
     generatedAt: new Date().toISOString(),
   };
 }

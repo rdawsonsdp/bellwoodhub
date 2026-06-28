@@ -36,7 +36,8 @@ async function post<T>(url: string, body: unknown): Promise<T | null> {
   try { const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); return r.ok ? await r.json() : null; } catch { return null; }
 }
 
-const tagColor: Record<string, string> = { sensitive: C.red, "needs reply": C.blue, "open issue": C.orange };
+// Fixed (theme-independent) colours so tags stay legible on the bright banner.
+const tagColor: Record<string, string> = { sensitive: "#c0341d", "needs reply": "#1d5fb8", "open issue": "#9a5b00" };
 const srcMeta: Record<string, { label: string; color: string }> = { gov: { label: "Outlook", color: C.blue }, gmail: { label: "Gmail", color: C.purpleText } };
 
 function Section({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
@@ -57,11 +58,9 @@ function GoLink({ label, onClick }: { label: string; onClick: () => void }) {
 
 export default function TodayScreen({ onOpenEmail, onGo }: Props) {
   const [summary, setSummary] = useState<MorningSummary | null>(null);
-  const [busy, setBusy] = useState(true);
 
   const load = useCallback(() => {
-    setBusy(true);
-    post<MorningSummary>("/api/morning-summary", { persona: getCosPersona() }).then((s) => { setSummary(s); setBusy(false); });
+    post<MorningSummary>("/api/morning-summary", { persona: getCosPersona() }).then((s) => setSummary(s));
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -73,45 +72,68 @@ export default function TodayScreen({ onOpenEmail, onGo }: Props) {
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 16px 28px" }}>
-      {/* ── HERO: greeting + what happened / new / important ── */}
-      <div style={{ ...card, position: "relative", overflow: "hidden", padding: "22px 22px 20px", marginTop: 16, borderColor: "rgba(231,181,60,.3)" }}>
-        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(120% 90% at 0% 0%, rgba(231,181,60,.10), transparent 60%)", pointerEvents: "none" }} />
+      {/* ── HERO: bright "good morning" sunrise banner — the first thing the Mayor sees ── */}
+      <div style={{
+        position: "relative", overflow: "hidden", borderRadius: 20, padding: "26px 24px 22px", marginTop: 16,
+        background: "linear-gradient(125deg,#FFD86B 0%,#FFAE57 46%,#FF7E61 100%)",
+        boxShadow: "0 16px 40px rgba(255,140,84,.42)",
+      }}>
+        {/* rising sun + sky glow */}
+        <div style={{ position: "absolute", top: -78, right: -28, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,.65), rgba(255,255,255,0) 70%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(130% 120% at 100% -10%, rgba(255,255,255,.28), transparent 55%)", pointerEvents: "none" }} />
+        {/* Village of Bellwood seal — subtle watermark behind the briefing */}
+        <div style={{ position: "absolute", right: -38, top: -20, opacity: 0.14, pointerEvents: "none" }}>
+          <svg width={250} height={250} viewBox="0 0 120 120" fill="none" stroke="#ffffff">
+            <circle cx={60} cy={60} r={55} strokeWidth={1.4} />
+            <circle cx={60} cy={60} r={47} strokeWidth={0.7} />
+            <path d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z" fill="#ffffff" stroke="none" transform="translate(36 24) scale(2)" />
+            <text x={60} y={87} textAnchor="middle" fontFamily="Newsreader, serif" fontSize={12} letterSpacing={3} fontWeight={700} fill="#ffffff" stroke="none">BELLWOOD</text>
+            <text x={60} y={100} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize={5.2} letterSpacing={2.4} fill="#ffffff" stroke="none">EST. 1900</text>
+            <text x={60} y={21} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize={5.2} letterSpacing={2} fill="#ffffff" stroke="none">★ VILLAGE OF ★</text>
+          </svg>
+        </div>
         <div style={{ position: "relative" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, ...eyebrow(C.gold) }}>
-            <span style={{ width: 7, height: 7, borderRadius: 99, background: C.gold }} />
-            Your Chief of Staff · {today}
+          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 7, fontFamily: FONT.mono, fontSize: 11, letterSpacing: ".13em", textTransform: "uppercase", color: "#8a3c12", fontWeight: 700 }}>
+            <span style={{ fontSize: 13 }}>☀</span> Your Chief of Staff · {today}
+            {summary?.weather && <span>· {summary.weather.icon} {summary.weather.tempF}° {summary.weather.label}</span>}
           </div>
-          <div style={{ fontFamily: FONT.serif, fontSize: 28, fontWeight: 600, color: C.text, lineHeight: 1.15, margin: "10px 0 4px" }}>
-            {busy && !summary ? "Good morning." : summary?.greeting ?? "Good morning."}
+          <div style={{ fontFamily: FONT.serif, fontSize: 31, fontWeight: 700, color: "#3a1404", lineHeight: 1.1, margin: "11px 0 4px", letterSpacing: "-.01em" }}>
+            {summary?.greeting ?? "Good morning."}
           </div>
-          <div style={{ fontSize: 15, color: C.text2, lineHeight: 1.62, marginTop: 8, minHeight: 24 }}>
-            {summary ? summary.narrative : <span style={{ color: C.dim }}>Pulling together your morning briefing…</span>}
+          <div style={{ fontSize: 15, color: "#5a2a12", lineHeight: 1.6, marginTop: 8, minHeight: 24, fontWeight: 500 }}>
+            {summary ? summary.narrative : <span style={{ opacity: .7 }}>Pulling together your morning briefing…</span>}
           </div>
+          {summary?.onThisDay && (
+            <div style={{ display: "flex", gap: 8, alignItems: "baseline", marginTop: 10, fontSize: 12.5, color: "#7a3411", fontStyle: "italic" }}>
+              <span style={{ fontFamily: FONT.mono, fontStyle: "normal", fontSize: 9.5, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 700, flexShrink: 0 }}>On this day</span>
+              <span>{summary.onThisDay}</span>
+            </div>
+          )}
 
           {summary && summary.pressing.length > 0 && (
             <div style={{ marginTop: 16 }}>
-              <div style={{ ...eyebrow(C.dim), fontSize: 10.5, marginBottom: 8 }}>Most important today</div>
+              <div style={{ fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: "#8a3c12", fontWeight: 700, marginBottom: 8 }}>Most important today</div>
               <div style={{ display: "grid", gap: 7 }}>
                 {summary.pressing.map((p, i) => (
                   <button key={p.messageId ?? i} onClick={() => p.messageId && onOpenEmail?.(p.messageId)} style={{
                     display: "flex", alignItems: "center", gap: 10, textAlign: "left", width: "100%", cursor: p.messageId ? "pointer" : "default",
-                    padding: "9px 11px", borderRadius: 11, border: `1px solid ${C.cardBd}`, background: "rgba(var(--ink),.03)", color: C.text,
+                    padding: "9px 11px", borderRadius: 11, border: "1px solid rgba(255,255,255,.55)", background: "rgba(255,255,255,.74)", color: "#3a1404",
                   }}>
-                    <span style={{ ...miniTag(tagColor[p.tag] ?? C.muted) }}>{p.tag}</span>
-                    <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.title}</span>
-                    {p.messageId && <span style={{ color: C.dim, fontSize: 16, lineHeight: 1 }}>›</span>}
+                    <span style={{ ...miniTagLight(tagColor[p.tag] ?? "#8a3c12") }}>{p.tag}</span>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.title}</span>
+                    {p.messageId && <span style={{ color: "#a8552a", fontSize: 16, lineHeight: 1 }}>›</span>}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
-            <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 15, flexWrap: "wrap" }}>
+            <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: "#8a3c12", fontWeight: 600 }}>
               {summary ? (summary.live ? "voiced by your Chief of Staff" : "briefing") : ""}
               {summary && ` · ${summary.counts.needYou} need you · ${summary.counts.eventsToday} on calendar · ${drafts.length} to sign`}
             </span>
-            <button onClick={load} style={{ marginLeft: "auto", cursor: "pointer", background: "none", border: `1px solid ${C.cardBd}`, borderRadius: 8, color: C.text3, fontSize: 11.5, fontWeight: 600, padding: "5px 11px", fontFamily: FONT.sans }}>↻ Refresh</button>
+            <button onClick={load} style={{ marginLeft: "auto", cursor: "pointer", background: "rgba(255,255,255,.6)", border: "1px solid rgba(255,255,255,.7)", borderRadius: 8, color: "#7a3411", fontSize: 11.5, fontWeight: 700, padding: "5px 11px", fontFamily: FONT.sans }}>↻ Refresh</button>
           </div>
         </div>
       </div>
@@ -184,4 +206,8 @@ function Placeholder({ text }: { text: string }) {
 }
 function miniTag(color: string): CSSProperties {
   return { display: "inline-block", padding: "2px 8px", borderRadius: 99, fontSize: 10.5, fontWeight: 700, fontFamily: FONT.mono, color, background: "rgba(var(--ink),.08)", whiteSpace: "nowrap", flexShrink: 0 };
+}
+// Same chip, but for the bright sunrise banner (solid light bg so it stays legible).
+function miniTagLight(color: string): CSSProperties {
+  return { display: "inline-block", padding: "2px 8px", borderRadius: 99, fontSize: 10.5, fontWeight: 800, fontFamily: FONT.mono, color, background: "rgba(255,255,255,.9)", whiteSpace: "nowrap", flexShrink: 0, border: `1px solid ${color}33` };
 }

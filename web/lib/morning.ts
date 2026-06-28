@@ -60,13 +60,17 @@ export interface BriefCalendarItem {
 }
 export interface AgentNote { name: string; note: string; when?: string; }
 
+export interface Weather { icon: string; tempF: number; label: string }
+
 export interface MorningSummary {
   greeting: string;
-  narrative: string;        // the CoS voice — "what's happened, what's new, what's important"
+  narrative: string;        // the CoS voice — "what's happened, what's new, what's important" (≤4 lines)
   pressing: PressingItem[];
   calendar: BriefCalendarItem[];
   agents: AgentNote[];
   counts: { needYou: number; eventsToday: number };
+  weather: Weather | null;  // at-a-glance morning weather
+  onThisDay: string | null; // "on this day in history" one-liner
   tone: CosTone;
   live: boolean;            // true if OpenAI voiced the narrative
   generatedAt: string;

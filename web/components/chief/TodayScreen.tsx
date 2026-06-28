@@ -98,10 +98,10 @@ export default function TodayScreen({ onOpenEmail, onGo }: Props) {
             <span style={{ fontSize: 13 }}>☀</span> Your Chief of Staff · {today}
             {summary?.weather && <span>· {summary.weather.icon} {summary.weather.tempF}° {summary.weather.label}</span>}
           </div>
-          <div style={{ fontFamily: FONT.serif, fontSize: "clamp(22px, 6.2vw, 31px)", fontWeight: 700, color: "#3a1404", lineHeight: 1.12, margin: "11px 0 4px", letterSpacing: "-.01em" }}>
+          <div style={{ fontFamily: FONT.serif, fontSize: "clamp(20px, 5.2vw, 28px)", fontWeight: 700, color: "#3a1404", lineHeight: 1.12, margin: "10px 0 4px", letterSpacing: "-.01em" }}>
             {summary?.greeting ?? "Good morning."}
           </div>
-          <div style={{ fontSize: "clamp(13.5px, 3.6vw, 15px)", color: "#5a2a12", lineHeight: 1.58, marginTop: 8, minHeight: 24, fontWeight: 500 }}>
+          <div style={{ fontSize: "clamp(12.5px, 3.2vw, 14px)", color: "#5a2a12", lineHeight: 1.5, marginTop: 8, minHeight: 22, fontWeight: 500 }}>
             {summary ? summary.narrative : <span style={{ opacity: .7 }}>Pulling together your morning briefing…</span>}
           </div>
           {summary?.onThisDay && (
@@ -117,12 +117,12 @@ export default function TodayScreen({ onOpenEmail, onGo }: Props) {
               <div style={{ display: "grid", gap: 7 }}>
                 {summary.pressing.map((p, i) => (
                   <button key={p.messageId ?? i} onClick={() => p.messageId && onOpenEmail?.(p.messageId)} style={{
-                    display: "flex", alignItems: "center", gap: 10, textAlign: "left", width: "100%", cursor: p.messageId ? "pointer" : "default",
-                    padding: "9px 11px", borderRadius: 11, border: "1px solid rgba(255,255,255,.55)", background: "rgba(255,255,255,.74)", color: "#3a1404",
+                    display: "flex", alignItems: "flex-start", gap: 9, textAlign: "left", width: "100%", minWidth: 0, cursor: p.messageId ? "pointer" : "default",
+                    padding: "8px 11px", borderRadius: 11, border: "1px solid rgba(255,255,255,.55)", background: "rgba(255,255,255,.74)", color: "#3a1404",
                   }}>
-                    <span style={{ ...miniTagLight(tagColor[p.tag] ?? "#8a3c12") }}>{p.tag}</span>
-                    <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.title}</span>
-                    {p.messageId && <span style={{ color: "#a8552a", fontSize: 16, lineHeight: 1 }}>›</span>}
+                    <span style={{ ...miniTagLight(tagColor[p.tag] ?? "#8a3c12"), marginTop: 1 }}>{p.tag}</span>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 600, lineHeight: 1.32, overflowWrap: "anywhere" }}>{p.title}</span>
+                    {p.messageId && <span style={{ color: "#a8552a", fontSize: 15, lineHeight: 1.2, flexShrink: 0 }}>›</span>}
                   </button>
                 ))}
               </div>

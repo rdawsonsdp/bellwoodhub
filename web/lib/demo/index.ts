@@ -143,8 +143,9 @@ function baselineNarrative(tone: CosPersona["tone"], pressing: PressingItem[], c
   return `${lead}${ball}${press}${ev}`.trim();
 }
 
-/** Assemble the morning briefing from every other agent's output + inbox + calendar. */
-export async function demoMorningSummary(persona: CosPersona): Promise<MorningSummary> {
+/** Assemble the morning briefing from every other agent's output + inbox + calendar.
+ *  `hour` is the Mayor's local hour (0-23) so the greeting reflects time of day. */
+export async function demoMorningSummary(persona: CosPersona, hour?: number): Promise<MorningSummary> {
   const b = demoBrief();
   const evs = todayEvents();
   const tone: CosPersona["tone"] = persona.tone === "formal" || persona.tone === "brisk" ? persona.tone : "warm";
@@ -203,7 +204,7 @@ export async function demoMorningSummary(persona: CosPersona): Promise<MorningSu
   }
 
   return {
-    greeting: fillGreeting(persona),
+    greeting: fillGreeting(persona, hour),
     narrative, pressing: top, calendar, agents, counts,
     weather: DEMO_WEATHER, onThisDay: onThisDayFor(CURRENT_DATE),
     tone, live,

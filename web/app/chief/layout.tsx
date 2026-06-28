@@ -11,10 +11,11 @@ export const metadata = {
 export default function ChiefLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      {/* Apply the saved theme before paint (no flash). Default: midnight. */}
+      {/* Apply the saved theme before paint (no flash). Default: auto · time of day.
+          "auto" resolves to a morning/midday/evening/night palette by the hour. */}
       <script
         dangerouslySetInnerHTML={{
-          __html: `(function(){try{var t=localStorage.getItem('bw-theme')||'midnight';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','midnight');}})();`,
+          __html: `(function(){try{var t=localStorage.getItem('bw-theme')||'auto';if(t==='auto'){var h=new Date().getHours();t=(h>=5&&h<11)?'am':(h>=11&&h<17)?'midday':(h>=17&&h<21)?'evening':'night';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','night');}})();`,
         }}
       />
       <link rel="preconnect" href="https://fonts.googleapis.com" />

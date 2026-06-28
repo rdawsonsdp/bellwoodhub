@@ -13,6 +13,7 @@ import {
   SOURCES_DEFAULT, COST_MODEL, type SourceDef,
 } from "@/lib/admin-config";
 import { COS_PERSONA_DEFAULT, COS_TONE_PRESETS, type CosPersona, type CosTone } from "@/lib/morning";
+import { applyTheme } from "@/lib/theme";
 
 type Section = "appearance" | "cos" | "models" | "cost" | "rules" | "skills" | "sources" | "status";
 
@@ -21,8 +22,9 @@ type Section = "appearance" | "cos" | "models" | "cost" | "rules" | "skills" | "
 const PROJECT_STATUS_URL = "https://project-status-ten.vercel.app";
 
 const THEMES = [
+  { id: "auto", name: "Auto · time of day", desc: "Lives with the day — bright morning, clean midday, warm dusk, calm night.", sw: ["#ffd86b", "#bfe0ff", "#ff8f7e", "#0c1830"], rec: true },
   { id: "midnight", name: "Midnight", desc: "The original deep navy — maximum focus.", sw: ["#070b12", "#102139", "#e7b53c", "#eaf1fa"] },
-  { id: "dim", name: "Dim", desc: "Softer slate, brighter text. Easy on the eyes.", sw: ["#141a24", "#27384f", "#ecbe4c", "#f3f7fc"], rec: true },
+  { id: "dim", name: "Dim", desc: "Softer slate, brighter text. Easy on the eyes.", sw: ["#141a24", "#27384f", "#ecbe4c", "#f3f7fc"] },
   { id: "daylight", name: "Daylight", desc: "Light scheme, dark text. Best in bright rooms & on mobile.", sw: ["#eef2f8", "#ffffff", "#a9750c", "#18212f"] },
   { id: "contrast", name: "High contrast", desc: "Pure black & white — accessibility-first.", sw: ["#000000", "#1a1a1a", "#ffcb47", "#ffffff"] },
 ];
@@ -206,11 +208,11 @@ function ChiefOfStaff({ st, update }: { st: AdminState; update: (n: Partial<Admi
 
 /* ───────────────────────── APPEARANCE ───────────────────────── */
 function Appearance() {
-  const [theme, setTheme] = useState("midnight");
-  useEffect(() => { try { setTheme(localStorage.getItem("bw-theme") || "midnight"); } catch { /* */ } }, []);
+  const [theme, setTheme] = useState("auto");
+  useEffect(() => { try { setTheme(localStorage.getItem("bw-theme") || "auto"); } catch { /* */ } }, []);
   function apply(id: string) {
     try { localStorage.setItem("bw-theme", id); } catch { /* */ }
-    if (typeof document !== "undefined") document.documentElement.setAttribute("data-theme", id);
+    applyTheme(id); // resolves "auto" to the current time-of-day palette
     setTheme(id);
   }
   return (

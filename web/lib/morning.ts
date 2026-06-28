@@ -20,7 +20,7 @@ export interface CosPersona {
 
 export const COS_PERSONA_DEFAULT: CosPersona = {
   mayorName: "Mayor Harvey",
-  greeting: "Good morning, {name}.",
+  greeting: "Good {timeOfDay}, {name}.",
   tone: "warm",
   instructions: "",
 };

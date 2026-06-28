@@ -16,12 +16,14 @@ export const runtime = "nodejs";
  */
 export async function POST(req: Request) {
   let persona: CosPersona = COS_PERSONA_DEFAULT;
+  let hour: number | undefined;
   try {
     const body = await req.json();
     persona = { ...COS_PERSONA_DEFAULT, ...(body?.persona ?? {}) };
+    if (typeof body?.hour === "number" && body.hour >= 0 && body.hour <= 23) hour = body.hour;
   } catch { /* defaults */ }
 
-  if (DEMO) return NextResponse.json(await demoMorningSummary(persona));
+  if (DEMO) return NextResponse.json(await demoMorningSummary(persona, hour));
   // Live path not yet wired — serve the fixture-derived briefing so Today renders.
-  return NextResponse.json(await demoMorningSummary(persona));
+  return NextResponse.json(await demoMorningSummary(persona, hour));
 }

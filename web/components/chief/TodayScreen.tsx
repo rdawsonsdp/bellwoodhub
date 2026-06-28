@@ -14,10 +14,20 @@
 import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { C, FONT, card, eyebrow } from "@/lib/cos-design";
 import { getCosPersona, type MorningSummary } from "@/lib/morning";
+import { bandForHour, type Band } from "@/lib/theme";
 import type { DraftRow } from "@/lib/screens";
 import DraftCard from "./DraftCard";
 
 interface InboxItem { messageId: string; fromName: string | null; subject: string | null; snippet: string; date: string; stream: string; cat: string; }
+
+// The hero "lives with the day": sunrise gold morning → bright midday → warm dusk
+// evening → deep calm night. Picked by the local hour, independent of theme mode.
+const BANNER: Record<Band, { grad: string; ink: string; sub: string; eye: string; shadow: string; dark: boolean }> = {
+  am: { grad: "linear-gradient(125deg,#FFD86B 0%,#FFAE57 46%,#FF7E61 100%)", ink: "#3a1404", sub: "#5a2a12", eye: "#8a3c12", shadow: "rgba(255,140,84,.42)", dark: false },
+  midday: { grad: "linear-gradient(125deg,#8fd0ff 0%,#bfe0ff 50%,#ffe7ad 100%)", ink: "#11314f", sub: "#284a66", eye: "#1d5a86", shadow: "rgba(90,150,210,.40)", dark: false },
+  evening: { grad: "linear-gradient(125deg,#ffc06b 0%,#ff8f7e 52%,#ff6f9c 100%)", ink: "#4a1726", sub: "#6a2436", eye: "#8a2c44", shadow: "rgba(220,110,120,.42)", dark: false },
+  night: { grad: "linear-gradient(125deg,#2a3a66 0%,#1a2547 55%,#0f1730 100%)", ink: "#eaf1fb", sub: "#b9c8e6", eye: "#9ab0d6", shadow: "rgba(10,20,45,.50)", dark: true },
+};
 
 type GoDest = "emails" | "calendar" | "approvals";
 interface Props { onOpenEmail?: (mid: string) => void; onGo: (dest: GoDest) => void; }
@@ -61,7 +71,7 @@ export default function TodayScreen({ onOpenEmail, onGo }: Props) {
   const [summary, setSummary] = useState<MorningSummary | null>(null);
 
   const load = useCallback(() => {
-    post<MorningSummary>("/api/morning-summary", { persona: getCosPersona() }).then((s) => setSummary(s));
+    post<MorningSummary>("/api/morning-summary", { persona: getCosPersona(), hour: new Date().getHours() }).then((s) => setSummary(s));
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -70,14 +80,15 @@ export default function TodayScreen({ onOpenEmail, onGo }: Props) {
   const drafts = appr?.drafts ?? [];
 
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const bn = BANNER[bandForHour(new Date().getHours())];
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 16px 28px" }}>
-      {/* ── HERO: bright "good morning" sunrise banner — the first thing the Mayor sees ── */}
+      {/* ── HERO: the "good morning" banner — its mood shifts with the time of day ── */}
       <div style={{
         position: "relative", overflow: "hidden", borderRadius: 20, padding: "26px 24px 22px", marginTop: 16,
-        background: "linear-gradient(125deg,#FFD86B 0%,#FFAE57 46%,#FF7E61 100%)",
-        boxShadow: "0 16px 40px rgba(255,140,84,.42)",
+        background: bn.grad,
+        boxShadow: `0 16px 40px ${bn.shadow}`,
       }}>
         {/* rising sun + sky glow */}
         <div style={{ position: "absolute", top: -78, right: -28, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,.65), rgba(255,255,255,0) 70%)", pointerEvents: "none" }} />
@@ -94,18 +105,18 @@ export default function TodayScreen({ onOpenEmail, onGo }: Props) {
           </svg>
         </div>
         <div style={{ position: "relative" }}>
-          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 7, fontFamily: FONT.mono, fontSize: 11, letterSpacing: ".13em", textTransform: "uppercase", color: "#8a3c12", fontWeight: 700 }}>
+          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 7, fontFamily: FONT.mono, fontSize: 11, letterSpacing: ".13em", textTransform: "uppercase", color: bn.eye, fontWeight: 700 }}>
             <span style={{ fontSize: 13 }}>☀</span> Your Chief of Staff · {today}
             {summary?.weather && <span>· {summary.weather.icon} {summary.weather.tempF}° {summary.weather.label}</span>}
           </div>
-          <div style={{ fontFamily: FONT.serif, fontSize: "clamp(20px, 5.2vw, 28px)", fontWeight: 700, color: "#3a1404", lineHeight: 1.12, margin: "10px 0 4px", letterSpacing: "-.01em" }}>
+          <div style={{ fontFamily: FONT.serif, fontSize: "clamp(20px, 5.2vw, 28px)", fontWeight: 700, color: bn.ink, lineHeight: 1.12, margin: "10px 0 4px", letterSpacing: "-.01em" }}>
             {summary?.greeting ?? "Good morning."}
           </div>
-          <div style={{ fontSize: "clamp(12.5px, 3.2vw, 14px)", color: "#5a2a12", lineHeight: 1.5, marginTop: 8, minHeight: 22, fontWeight: 500 }}>
+          <div style={{ fontSize: "clamp(12.5px, 3.2vw, 14px)", color: bn.sub, lineHeight: 1.5, marginTop: 8, minHeight: 22, fontWeight: 500 }}>
             {summary ? summary.narrative : <span style={{ opacity: .7 }}>Pulling together your morning briefing…</span>}
           </div>
           {summary?.onThisDay && (
-            <div style={{ display: "flex", gap: 8, alignItems: "baseline", marginTop: 10, fontSize: 12.5, color: "#7a3411", fontStyle: "italic" }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "baseline", marginTop: 10, fontSize: 12.5, color: bn.sub, fontStyle: "italic" }}>
               <span style={{ fontFamily: FONT.mono, fontStyle: "normal", fontSize: 9.5, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 700, flexShrink: 0 }}>On this day</span>
               <span>{summary.onThisDay}</span>
             </div>
@@ -113,16 +124,16 @@ export default function TodayScreen({ onOpenEmail, onGo }: Props) {
 
           {summary && summary.pressing.length > 0 && (
             <div style={{ marginTop: 16 }}>
-              <div style={{ fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: "#8a3c12", fontWeight: 700, marginBottom: 8 }}>Most important today</div>
+              <div style={{ fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: bn.eye, fontWeight: 700, marginBottom: 8 }}>Most important today</div>
               <div style={{ display: "grid", gap: 7 }}>
                 {summary.pressing.map((p, i) => (
                   <button key={p.messageId ?? i} onClick={() => p.messageId && onOpenEmail?.(p.messageId)} style={{
                     display: "flex", alignItems: "flex-start", gap: 9, textAlign: "left", width: "100%", minWidth: 0, cursor: p.messageId ? "pointer" : "default",
                     padding: "8px 11px", borderRadius: 11, border: "1px solid rgba(255,255,255,.55)", background: "rgba(255,255,255,.74)", color: "#3a1404",
                   }}>
-                    <span style={{ ...miniTagLight(tagColor[p.tag] ?? "#8a3c12"), marginTop: 1 }}>{p.tag}</span>
+                    <span style={{ ...miniTagLight(tagColor[p.tag] ?? bn.eye), marginTop: 1 }}>{p.tag}</span>
                     <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 600, lineHeight: 1.32, overflowWrap: "anywhere" }}>{p.title}</span>
-                    {p.messageId && <span style={{ color: "#a8552a", fontSize: 15, lineHeight: 1.2, flexShrink: 0 }}>›</span>}
+                    {p.messageId && <span style={{ color: bn.eye, fontSize: 15, lineHeight: 1.2, flexShrink: 0 }}>›</span>}
                   </button>
                 ))}
               </div>
@@ -130,11 +141,11 @@ export default function TodayScreen({ onOpenEmail, onGo }: Props) {
           )}
 
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 15, flexWrap: "wrap" }}>
-            <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: "#8a3c12", fontWeight: 600 }}>
+            <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: bn.eye, fontWeight: 600 }}>
               {summary ? (summary.live ? "voiced by your Chief of Staff" : "briefing") : ""}
               {summary && ` · ${summary.counts.needYou} need you · ${summary.counts.eventsToday} on calendar · ${drafts.length} to sign`}
             </span>
-            <button onClick={load} style={{ marginLeft: "auto", cursor: "pointer", background: "rgba(255,255,255,.6)", border: "1px solid rgba(255,255,255,.7)", borderRadius: 8, color: "#7a3411", fontSize: 11.5, fontWeight: 700, padding: "5px 11px", fontFamily: FONT.sans }}>↻ Refresh</button>
+            <button onClick={load} style={{ marginLeft: "auto", cursor: "pointer", background: bn.dark ? "rgba(255,255,255,.14)" : "rgba(255,255,255,.6)", border: `1px solid ${bn.dark ? "rgba(255,255,255,.28)" : "rgba(255,255,255,.7)"}`, borderRadius: 8, color: bn.eye, fontSize: 11.5, fontWeight: 700, padding: "5px 11px", fontFamily: FONT.sans }}>↻ Refresh</button>
           </div>
         </div>
       </div>

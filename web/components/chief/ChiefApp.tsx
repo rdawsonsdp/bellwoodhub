@@ -21,6 +21,7 @@ import AgentsPage from "./AgentsPage";
 import TodayScreen from "./TodayScreen";
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
+import { applyTheme, resolveTheme, watchAutoTheme } from "@/lib/theme";
 import { getRecentSearches, addRecentSearch } from "@/lib/recent-searches";
 import { getIngested, type IngestedRecord } from "@/lib/ingested-sources";
 import { SENSITIVITY_META, getSourceType } from "@/lib/source-types";
@@ -100,6 +101,7 @@ export default function ChiefApp() {
   const [res, setRes] = useState<AskResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  useEffect(() => watchAutoTheme(), []); // keep "auto" theme shifting through the day
   const go = (s: Screen) => () => { setScreen(s); setAsked(false); };
 
   async function runAsk(question?: string) {
@@ -219,17 +221,18 @@ function Sidebar({ screen, go }: { screen: Screen; go: (s: Screen) => () => void
 }
 
 /* ════════════════════════ TOPBAR ════════════════════════ */
-const THEME_CYCLE = ["midnight", "dim", "daylight", "contrast"];
+const THEME_CYCLE = ["auto", "midnight", "dim", "daylight", "contrast"];
 function ThemeToggle() {
-  const [theme, setTheme] = useState("midnight");
-  useEffect(() => { try { setTheme(localStorage.getItem("bw-theme") || "midnight"); } catch { /* */ } }, []);
+  const [theme, setTheme] = useState("auto");
+  useEffect(() => { try { setTheme(localStorage.getItem("bw-theme") || "auto"); } catch { /* */ } }, []);
   function cycle() {
     const next = THEME_CYCLE[(THEME_CYCLE.indexOf(theme) + 1) % THEME_CYCLE.length];
     try { localStorage.setItem("bw-theme", next); } catch { /* */ }
-    document.documentElement.setAttribute("data-theme", next);
+    applyTheme(next); // resolves "auto" to the current time-of-day palette
     setTheme(next);
   }
-  const light = theme === "daylight";
+  const resolved = resolveTheme(theme, new Date().getHours());
+  const light = resolved === "daylight" || resolved === "am" || resolved === "midday";
   return (
     <button onClick={cycle} aria-label="Switch color scheme" title={`Theme: ${theme} — tap to change`}
       style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 99, border: `1px solid ${C.line}`, background: "rgba(var(--ink),.05)", color: C.text2 }}>

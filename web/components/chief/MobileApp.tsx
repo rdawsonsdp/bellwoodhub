@@ -14,6 +14,7 @@ import TodayScreen from "./TodayScreen";
 import DraftCard from "./DraftCard";
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
+import { applyTheme, resolveTheme, watchAutoTheme } from "@/lib/theme";
 import { getRecentSearches, addRecentSearch } from "@/lib/recent-searches";
 import { getEnabledTabs } from "@/lib/email-config";
 import { getIngested, type IngestedRecord } from "@/lib/ingested-sources";
@@ -73,7 +74,7 @@ function Svg({ d, w = 22, sw = 1.9, fill = "none" }: { d: string; w?: number; sw
 }
 
 type Screen = "today" | "emails" | "events" | "history" | "agents" | "sources" | "admin";
-const THEME_CYCLE = ["midnight", "dim", "daylight", "contrast"];
+const THEME_CYCLE = ["auto", "midnight", "dim", "daylight", "contrast"];
 
 const streamColor: Record<string, string> = {
   Police: C.blue, "Fire/EMS": C.red, Business: C.purpleText, Interdepartmental: C.gold,
@@ -101,6 +102,7 @@ export default function MobileApp() {
   const [askOpen, setAskOpen] = useState(false);
   const [emailMid, setEmailMid] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  useEffect(() => watchAutoTheme(), []); // keep "auto" theme shifting through the day
 
   // Swipe-down to refresh: remount the active screen so its useApi hooks refetch.
   async function doRefresh() {
@@ -294,13 +296,14 @@ function Row({ k, v }: { k: string; v: string | null }) {
 
 /* ── header ── */
 function Header({ onMenu }: { onMenu: () => void }) {
-  const [theme, setTheme] = useState("midnight");
-  useEffect(() => { try { setTheme(localStorage.getItem("bw-theme") || "midnight"); } catch { /* */ } }, []);
+  const [theme, setTheme] = useState("auto");
+  useEffect(() => { try { setTheme(localStorage.getItem("bw-theme") || "auto"); } catch { /* */ } }, []);
   function cycle() {
     const next = THEME_CYCLE[(THEME_CYCLE.indexOf(theme) + 1) % THEME_CYCLE.length];
     try { localStorage.setItem("bw-theme", next); } catch { /* */ }
-    document.documentElement.setAttribute("data-theme", next); setTheme(next);
+    applyTheme(next); setTheme(next); // resolves "auto" to the current time-of-day palette
   }
+  const light = ["daylight", "am", "midday"].includes(resolveTheme(theme, new Date().getHours()));
   return (
     <div style={{ position: "sticky", top: 0, zIndex: 10, display: "flex", alignItems: "center", gap: 11, padding: "calc(env(safe-area-inset-top) + 12px) 16px 12px", background: "rgba(var(--ink),.04)", backdropFilter: "blur(14px)", borderBottom: "1px solid var(--c-cardbd)" }}>
       <button onClick={onMenu} aria-label="Menu" style={{ width: 38, height: 38, borderRadius: 11, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -314,7 +317,7 @@ function Header({ onMenu }: { onMenu: () => void }) {
         <div style={{ fontFamily: FONT.mono, fontSize: 9, letterSpacing: ".12em", color: C.dim, marginTop: 2 }}>INSTITUTIONAL MEMORY</div>
       </div>
       <button onClick={cycle} aria-label="Theme" style={{ width: 36, height: 36, borderRadius: 99, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        {theme === "daylight"
+        {light
           ? <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="4.2" /><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M5 5l1.8 1.8M17.2 17.2l1.8 1.8M19 5l-1.8 1.8M6.8 17.2 5 19" /></svg>
           : <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>}
       </button>

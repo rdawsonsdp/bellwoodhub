@@ -57,6 +57,58 @@
   --c-purple: #b8a8ff; --c-purpletext: #ccc1ff; --c-cardbd: rgba(255, 255, 255, 0.24);
 }
 
+/* ── Time-of-day palettes (used by the "Auto · time of day" theme) ───────────
+   The app lives with the day: bright warm morning → clean cool midday →
+   warm dusk evening → deep calm night. Resolved by the hour in lib/theme.ts. */
+
+/* AM — bright, warm sunrise. Light, dark warm text. */
+[data-theme="am"] {
+  --ink: 58, 36, 21;
+  --c-bgbody: #fff6ec;
+  --c-appbg: radial-gradient(130% 100% at 18% -8%, #fff8ef 0%, #ffeede 45%, #ffe1cd 100%);
+  --c-text: #3a2415; --c-text2: #6a4a33; --c-text3: #7d5b42; --c-muted: #94715a; --c-dim: #ab8b73; --c-dim2: #c2a58e;
+  --c-gold: #b5740a; --c-goldhi: #9a6207; --c-goldlo: #cf9326;
+  --c-blue: #1f6ed6; --c-green: #0c9760; --c-greentext: #0a8453;
+  --c-orange: #c2691a; --c-orangetext: #a55915; --c-red: #d23a2d; --c-redtext: #b83228;
+  --c-purple: #6b4fd8; --c-purpletext: #563fc0; --c-cardbd: rgba(58, 36, 21, 0.13);
+}
+
+/* Midday — clean, cool, productive "working" light. */
+[data-theme="midday"] {
+  --ink: 22, 30, 44;
+  --c-bgbody: #eef1f6;
+  --c-appbg: radial-gradient(130% 100% at 18% -8%, #ffffff 0%, #eef2f7 45%, #e3e9f1 100%);
+  --c-text: #161e2c; --c-text2: #36445a; --c-text3: #4c5b72; --c-muted: #62718a; --c-dim: #7e8ea4; --c-dim2: #98a6ba;
+  --c-gold: #9a6f12; --c-goldhi: #7e5a0e; --c-goldlo: #b58a28;
+  --c-blue: #1f6ed6; --c-green: #0c9760; --c-greentext: #0a8453;
+  --c-orange: #b96f14; --c-orangetext: #9c5f15; --c-red: #d23a2d; --c-redtext: #b83228;
+  --c-purple: #5d46d8; --c-purpletext: #4d3ac0; --c-cardbd: rgba(22, 30, 44, 0.13);
+}
+
+/* Evening — warm dusk. Medium-dark plum/violet, warm gold, light text. */
+[data-theme="evening"] {
+  --ink: 255, 240, 230;
+  --c-bgbody: #1a1320;
+  --c-appbg: radial-gradient(130% 100% at 18% -8%, #3b2440 0%, #271830 45%, #1a1320 100%);
+  --c-text: #f6ecf6; --c-text2: #d9c4d4; --c-text3: #c6b0c2; --c-muted: #a892a6; --c-dim: #8c768a; --c-dim2: #6f5b6e;
+  --c-gold: #f0b454; --c-goldhi: #ffc97a; --c-goldlo: #dba038;
+  --c-blue: #8ab4ff; --c-green: #4ad39a; --c-greentext: #86e4c0;
+  --c-orange: #ff9d5c; --c-orangetext: #e9a574; --c-red: #ff7b6f; --c-redtext: #ffa097;
+  --c-purple: #b59bff; --c-purpletext: #c9b8ff; --c-cardbd: rgba(255, 240, 230, 0.12);
+}
+
+/* Night — deep, calm dark. Restful for after-hours. */
+[data-theme="night"] {
+  --ink: 255, 255, 255;
+  --c-bgbody: #04060b;
+  --c-appbg: radial-gradient(130% 100% at 18% -8%, #0c1830 0%, #070d1c 45%, #04060b 100%);
+  --c-text: #e3ecf7; --c-text2: #9fb2cb; --c-text3: #889cb8; --c-muted: #6f8298; --c-dim: #56697f; --c-dim2: #3f5066;
+  --c-gold: #e7b53c; --c-goldhi: #f4cb63; --c-goldlo: #d7991c;
+  --c-blue: #67adff; --c-green: #34c98b; --c-greentext: #74dcb4;
+  --c-orange: #f0a33c; --c-orangetext: #cf9a52; --c-red: #ff6b5e; --c-redtext: #ff9084;
+  --c-purple: #9d8bff; --c-purpletext: #b0a2ff; --c-cardbd: rgba(255, 255, 255, 0.08);
+}
+
 /* Themed pages paint their background even before the app container mounts. */
 html[data-theme] body { background: var(--c-bgbody); }
 

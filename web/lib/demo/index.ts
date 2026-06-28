@@ -182,29 +182,42 @@ export async function demoMorningSummary(persona: CosPersona, hour?: number): Pr
   const needYou = (b.awaitingReply?.length ?? 0) + (b.highSensitivity?.length ?? 0);
   const counts = { needYou, eventsToday: evs.length };
 
+  const part = hour == null ? "morning" : hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+  let greeting = fillGreeting(persona, hour);          // deterministic fallback (keyless)
   let narrative = baselineNarrative(tone, top, calendar, needYou);
   let live = false;
   if (HAS_OPENAI) {
     try {
       const { chat } = await import("../openai");
       const sys =
-        `You are ${persona.mayorName}'s chief of staff giving the morning briefing as he walks in with his coffee. ` +
+        `You are ${persona.mayorName}'s chief of staff, greeting the mayor as he walks into the office with his coffee this ${part}. ` +
         `${COS_TONE_PRESETS[tone].prompt} ${persona.instructions || ""} ` +
-        `Be BRIEF — at most 2-3 short sentences (about 4 lines, ~45 words). He needs to know what's happening at a glance: what's new, the single most important thing, and a quick nod to his calendar. ` +
-        `Do NOT greet him (the greeting is shown separately). Use ONLY the facts below — never invent items. Plain prose, no markdown, no lists.`;
+        `Reply in TWO parts separated by a line containing only "|||". ` +
+        `PART 1 — a short, warm ONE-sentence greeting that addresses him by name (${persona.mayorName}) and fits the ${part}; make it personal and varied in your own chief-of-staff voice, NOT a generic "Good ${part}, Mayor." ` +
+        `PART 2 — the briefing: 2-3 short sentences (about 4 lines): what's new, the single most important thing, and a quick nod to his calendar. ` +
+        `Use ONLY the facts below; never invent items. Plain prose, no markdown, no lists.`;
       const ctx = [
         `Most pressing (${top.length}): ${top.map((p) => `${p.title} [${p.tag}]`).join("; ") || "nothing urgent"}.`,
         `On the calendar today (${calendar.length}): ${calendar.map((c) => c.title + (c.when ? ` (${c.when})` : "")).join("; ") || "nothing scheduled"}.`,
         `Overnight agent activity: ${agents.map((a) => `${a.name} — ${a.note}`).join("; ") || "quiet"}.`,
         `${needYou} threads need your reply.`,
       ].join("\n");
-      const out = await chat(sys, ctx);
-      if (out) { narrative = out.trim(); live = true; }
+      const out = await chat(sys, ctx, { temperature: 0.9 }); // less deterministic — the persona, varied each morning
+      if (out) {
+        const parts = out.split(/\n?\|\|\|\n?/);
+        if (parts.length >= 2 && parts[0].trim() && parts[1].trim()) {
+          greeting = parts[0].trim().replace(/^["']|["']$/g, "");
+          narrative = parts[1].trim();
+        } else {
+          narrative = out.trim(); // no delimiter → keep the deterministic greeting, use it all as the briefing
+        }
+        live = true;
+      }
     } catch { /* keep the deterministic baseline */ }
   }
 
   return {
-    greeting: fillGreeting(persona, hour),
+    greeting,
     narrative, pressing: top, calendar, agents, counts,
     weather: DEMO_WEATHER, onThisDay: onThisDayFor(CURRENT_DATE),
     tone, live,

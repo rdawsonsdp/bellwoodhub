@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listDrafts, createDraft, setDraftStatus } from "@/lib/screens";
-import { DEMO, demoDrafts, demoDecideDraft } from "@/lib/demo";
+import { DEMO, demoDrafts, demoDecideDraft, demoSaveDraft } from "@/lib/demo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,6 +24,11 @@ export async function POST(req: NextRequest) {
     if ((body.action === "approve" || body.action === "discard") && typeof body.draftId === "string") {
       if (DEMO) return NextResponse.json({ drafts: demoDecideDraft(body.draftId) });
       await setDraftStatus(body.draftId, body.action === "approve" ? "approved" : "discarded");
+      return NextResponse.json({ drafts: await listDrafts("pending") });
+    }
+    if (body.action === "save" && typeof body.draftId === "string") {
+      if (DEMO) return NextResponse.json({ drafts: demoSaveDraft(body.draftId, { subject: body.subject, body: body.body }) });
+      // Live edit-persist not yet wired; return the current list so the UI stays consistent.
       return NextResponse.json({ drafts: await listDrafts("pending") });
     }
     if (body.action === "draft" && typeof body.messageId === "string") {

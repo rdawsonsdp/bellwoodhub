@@ -90,10 +90,22 @@ export const demoEvents = (): { events: DemoEvent[]; stats: { open: number; late
 // approve/discard in the demo can't persist to a DB — track decisions in memory
 // so the card visibly clears (resets on server restart).
 const decided = new Set<string>();
+// The Mayor's edits to a draft before approval (demo: in-memory, resets on restart).
+const draftEdits = new Map<string, { subject?: string; body?: string }>();
 export const demoDrafts = (status = "pending"): DraftRow[] =>
-  (drafts as unknown as DraftRow[]).filter((d) => d.status === status && !decided.has(d.draftId));
+  (drafts as unknown as DraftRow[])
+    .filter((d) => d.status === status && !decided.has(d.draftId))
+    .map((d) => { const e = draftEdits.get(d.draftId); return e ? { ...d, ...e } : d; });
 export const demoDecideDraft = (draftId: string): DraftRow[] => {
   decided.add(draftId);
+  return demoDrafts("pending");
+};
+/** Save the Mayor's edits to a draft (subject/body) before he approves it. */
+export const demoSaveDraft = (draftId: string, patch: { subject?: string; body?: string }): DraftRow[] => {
+  const clean: { subject?: string; body?: string } = {};
+  if (typeof patch.subject === "string") clean.subject = patch.subject;
+  if (typeof patch.body === "string") clean.body = patch.body;
+  draftEdits.set(draftId, { ...(draftEdits.get(draftId) ?? {}), ...clean });
   return demoDrafts("pending");
 };
 

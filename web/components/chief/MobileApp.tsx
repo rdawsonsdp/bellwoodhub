@@ -11,6 +11,7 @@ import { C, FONT } from "@/lib/cos-design";
 import AdminPanel from "./AdminPanel";
 import AgentsPage from "./AgentsPage";
 import TodayScreen from "./TodayScreen";
+import DraftCard from "./DraftCard";
 import UploadSource from "./UploadSource";
 import { getRecentSearches, addRecentSearch } from "@/lib/recent-searches";
 import { getEnabledTabs } from "@/lib/email-config";
@@ -398,21 +399,7 @@ function EmailsScreen({ onAsk }: { onAsk: () => void }) {
 
       {tab === "queued" && (<div>
         {appr && queued.length === 0 && empty("Nothing queued to send.")}
-        {queued.map((d) => (
-          <div key={d.draftId} style={{ borderBottom: "1px solid var(--c-cardbd)", padding: "12px 16px" }}>
-            <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-              <span style={{ flex: 1, fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>To · {d.recipients}</span>
-              <span style={chip("draft", C.purpleText)}>draft</span>
-            </div>
-            <div style={{ fontSize: 13.5, color: C.text2, marginTop: 2 }}>{d.subject}</div>
-            <div style={{ fontSize: 12.5, color: C.muted, marginTop: 3, lineHeight: 1.5, maxHeight: 54, overflow: "hidden" }}>{d.body}</div>
-            <div style={{ display: "flex", gap: 9, marginTop: 10 }}>
-              <button onClick={async () => { await postJson("/api/approvals", { action: "discard", draftId: d.draftId }); reload(); }} style={{ flex: 1, padding: 9, borderRadius: 9, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, fontSize: 12.5, fontWeight: 600 }}>Discard</button>
-              <button onClick={async () => { await postJson("/api/approvals", { action: "approve", draftId: d.draftId }); reload(); }} style={{ flex: 1, padding: 9, borderRadius: 9, border: 0, background: C.green, color: "#062418", fontSize: 12.5, fontWeight: 700 }}>Approve &amp; send</button>
-            </div>
-            <div style={{ fontSize: 10.5, color: C.dim, marginTop: 8, fontFamily: FONT.mono }}>drafted by the Drafting Agent · R3 · never auto-sent</div>
-          </div>
-        ))}
+        {queued.map((d) => <div key={d.draftId} style={{ padding: "8px 16px" }}><DraftCard draft={d} onReload={reload} /></div>)}
       </div>)}
     </div>
   );

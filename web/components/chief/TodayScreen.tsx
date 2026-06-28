@@ -15,6 +15,7 @@ import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } 
 import { C, FONT, card, eyebrow } from "@/lib/cos-design";
 import { getCosPersona, type MorningSummary } from "@/lib/morning";
 import type { DraftRow } from "@/lib/screens";
+import DraftCard from "./DraftCard";
 
 interface InboxItem { messageId: string; fromName: string | null; subject: string | null; snippet: string; date: string; stream: string; cat: string; }
 
@@ -97,10 +98,10 @@ export default function TodayScreen({ onOpenEmail, onGo }: Props) {
             <span style={{ fontSize: 13 }}>☀</span> Your Chief of Staff · {today}
             {summary?.weather && <span>· {summary.weather.icon} {summary.weather.tempF}° {summary.weather.label}</span>}
           </div>
-          <div style={{ fontFamily: FONT.serif, fontSize: 31, fontWeight: 700, color: "#3a1404", lineHeight: 1.1, margin: "11px 0 4px", letterSpacing: "-.01em" }}>
+          <div style={{ fontFamily: FONT.serif, fontSize: "clamp(22px, 6.2vw, 31px)", fontWeight: 700, color: "#3a1404", lineHeight: 1.12, margin: "11px 0 4px", letterSpacing: "-.01em" }}>
             {summary?.greeting ?? "Good morning."}
           </div>
-          <div style={{ fontSize: 15, color: "#5a2a12", lineHeight: 1.6, marginTop: 8, minHeight: 24, fontWeight: 500 }}>
+          <div style={{ fontSize: "clamp(13.5px, 3.6vw, 15px)", color: "#5a2a12", lineHeight: 1.58, marginTop: 8, minHeight: 24, fontWeight: 500 }}>
             {summary ? summary.narrative : <span style={{ opacity: .7 }}>Pulling together your morning briefing…</span>}
           </div>
           {summary?.onThisDay && (
@@ -162,21 +163,7 @@ export default function TodayScreen({ onOpenEmail, onGo }: Props) {
         <div style={{ display: "grid", gap: 10 }}>
           {!appr && <div style={{ ...card, padding: 14 }}><Placeholder text="Loading drafts…" /></div>}
           {appr && drafts.length === 0 && <div style={{ ...card, padding: 18, textAlign: "center", color: C.dim, fontSize: 13 }}>Nothing waiting on your signature. ✓</div>}
-          {drafts.map((d) => (
-            <div key={d.draftId} style={{ ...card, padding: "14px 16px" }}>
-              <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-                <span style={{ flex: 1, minWidth: 0, fontWeight: 700, fontSize: 14, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>To · {d.recipients}</span>
-                <span style={{ ...miniTag(C.purpleText) }}>draft</span>
-              </div>
-              <div style={{ fontSize: 13.5, color: C.text2, marginTop: 3 }}>{d.subject}</div>
-              <div style={{ fontSize: 12.5, color: C.muted, marginTop: 4, lineHeight: 1.5, maxHeight: 54, overflow: "hidden" }}>{d.body}</div>
-              <div style={{ display: "flex", gap: 9, marginTop: 11 }}>
-                <button onClick={async () => { await post("/api/approvals", { action: "discard", draftId: d.draftId }); reloadAppr(); }} style={{ flex: 1, cursor: "pointer", padding: 9, borderRadius: 9, border: `1px solid ${C.cardBd}`, background: "rgba(var(--ink),.05)", color: C.text2, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans }}>Discard</button>
-                <button onClick={async () => { await post("/api/approvals", { action: "approve", draftId: d.draftId }); reloadAppr(); }} style={{ flex: 1, cursor: "pointer", padding: 9, borderRadius: 9, border: 0, background: C.green, color: "#062418", fontSize: 12.5, fontWeight: 700, fontFamily: FONT.sans }}>Approve &amp; send</button>
-              </div>
-              <div style={{ fontSize: 10.5, color: C.dim, marginTop: 8, fontFamily: FONT.mono }}>drafted by the Drafting Agent · R3 · never auto-sent</div>
-            </div>
-          ))}
+          {drafts.map((d) => <DraftCard key={d.draftId} draft={d} onReload={reloadAppr} />)}
         </div>
       </Section>
 

@@ -22,6 +22,7 @@ import TodayScreen from "./TodayScreen";
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
 import { applyTheme, resolveTheme, watchAutoTheme } from "@/lib/theme";
+import { MAILBOXES, getMailbox, PROVIDER_META } from "@/lib/mailboxes";
 import { getRecentSearches, addRecentSearch } from "@/lib/recent-searches";
 import { getIngested, type IngestedRecord } from "@/lib/ingested-sources";
 import { SENSITIVITY_META, getSourceType } from "@/lib/source-types";
@@ -290,16 +291,21 @@ function DInboxRow({ href, from, time, subject, snippet, dot, tag, tagColor, bor
 }
 
 function Brief({ go, onAsk }: { go: (s: Screen) => () => void; onAsk: () => void }) {
+  const [mailboxId, setMailboxId] = useState("gov");
+  const mailbox = getMailbox(mailboxId)!;
   const { data: brief } = useApi<NeedsYouToday>("/api/brief");
   const { data: appr, reload } = useApi<{ drafts: DraftRow[] }>("/api/approvals");
-  const { data: inbox } = useApi<{ count: number; emails: InboxItem[] }>("/api/inbox");
+  const { data: inbox } = useApi<{ count: number; emails: InboxItem[] }>(`/api/inbox?mailbox=${mailboxId}`);
   const [tab, setTab] = useState<"focus" | "all" | "queued">("focus");
-  const queued = appr?.drafts ?? [];
+  // The walled Business (Gmail) mailbox is private: no agent drafts, no FOIA digest.
+  const queued = mailbox.isPrivate ? [] : (appr?.drafts ?? []);
   const seen = new Set<string>();
-  const needs = [...(brief?.awaitingReply ?? []), ...(brief?.highSensitivity ?? [])].filter((b) => (seen.has(b.messageId) ? false : (seen.add(b.messageId), true)));
+  const needs = mailbox.isPrivate ? [] : [...(brief?.awaitingReply ?? []), ...(brief?.highSensitivity ?? [])].filter((b) => (seen.has(b.messageId) ? false : (seen.add(b.messageId), true)));
   const sensitive = new Set((brief?.highSensitivity ?? []).map((b) => b.messageId));
   const mid = (m: string) => `/email?mid=${encodeURIComponent(m)}`;
-  const tabs: [typeof tab, string, number][] = [["focus", "Urgent", needs.length], ["all", "Inbox", inbox?.count ?? 0], ["queued", "Agent Answered", queued.length]];
+  const tabs: [typeof tab, string, number][] = mailbox.isPrivate
+    ? [["all", "Inbox", inbox?.count ?? 0]]
+    : [["focus", "Urgent", needs.length], ["all", "Inbox", inbox?.count ?? 0], ["queued", "Agent Answered", queued.length]];
   const tabBtn = (k: typeof tab, label: string, n: number) => {
     const on = tab === k;
     return <button key={k} onClick={() => setTab(k)} style={{ cursor: "pointer", padding: "8px 16px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans, background: on ? C.gold : "transparent", color: on ? "#081627" : C.text3, border: `1px solid ${on ? C.gold : "rgba(var(--ink),.14)"}` }}>{label}{n > 0 ? ` ${n}` : ""}</button>;
@@ -310,12 +316,19 @@ function Brief({ go, onAsk }: { go: (s: Screen) => () => void; onAsk: () => void
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 18 }}>
         <div>
           <div style={{ fontFamily: FONT.serif, fontSize: 34, fontWeight: 500, color: C.text, letterSpacing: "-.015em", lineHeight: 1 }}>Emails</div>
-          <div style={{ marginTop: 9, fontSize: 14.5, color: C.text3 }}>{needs.length} need you · {(inbox?.count ?? 0).toLocaleString()} in the inbox · {queued.length} queued.</div>
+          <div style={{ marginTop: 9, fontSize: 14.5, color: C.text3 }}>{mailbox.isPrivate ? `${(inbox?.count ?? 0).toLocaleString()} in this private inbox · walled from the public record` : `${needs.length} need you · ${(inbox?.count ?? 0).toLocaleString()} in the inbox · ${queued.length} queued.`}</div>
         </div>
         <button onClick={onAsk} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "rgba(var(--ink),.05)", border: "1px solid rgba(var(--ink),.1)", color: C.muted, fontSize: 13.5, fontFamily: FONT.sans }}>
           <Ico d={ICON.search} w={16} sw={2} stroke={C.muted} /> Search every email…
         </button>
       </div>
+      <DMailboxSwitcher current={mailboxId} onChange={(id) => { setMailboxId(id); setTab(getMailbox(id)?.isPrivate ? "all" : "focus"); }} />
+      {mailbox.isPrivate && (
+        <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "11px 15px", borderRadius: 12, border: `1px solid ${mailbox.color}55`, background: `${mailbox.color}14`, marginBottom: 16, fontSize: 12.5, color: C.text3, lineHeight: 1.5 }}>
+          <Ico d={["M6 10V8a6 6 0 0 1 12 0v2", "M5 10h14v10H5z", "M12 14v3"]} w={15} sw={1.8} stroke={mailbox.color} />
+          <span><b style={{ color: C.text2 }}>Private business account.</b> Walled off from the public record — not FOIA-indexed and excluded from village AI Search.</span>
+        </div>
+      )}
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{tabs.map(([k, l, n]) => tabBtn(k, l, n))}</div>
 
       <div style={{ ...card, overflow: "hidden" }}>
@@ -345,6 +358,32 @@ function Brief({ go, onAsk }: { go: (s: Screen) => () => void; onAsk: () => void
           </div>
         )) : <div style={{ padding: 40, textAlign: "center", color: C.dim, fontSize: 13 }}>Nothing queued to send.</div>)}
       </div>
+    </div>
+  );
+}
+
+/* Desktop mailbox (source-system) switcher — Government (Outlook) vs walled Business (Gmail). */
+function DMailboxSwitcher({ current, onChange }: { current: string; onChange: (id: string) => void }) {
+  return (
+    <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+      {MAILBOXES.map((m) => {
+        const on = current === m.id;
+        return (
+          <button key={m.id} onClick={() => onChange(m.id)} style={{
+            cursor: "pointer", display: "flex", alignItems: "center", gap: 11, padding: "11px 16px", borderRadius: 13, textAlign: "left",
+            border: `1.5px solid ${on ? m.color : "rgba(var(--ink),.14)"}`, background: on ? `${m.color}1c` : "rgba(var(--ink),.03)", minWidth: 220,
+          }}>
+            <span style={{ width: 9, height: 9, borderRadius: 99, background: m.color, flexShrink: 0 }} />
+            <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: on ? C.text : C.text3 }}>{m.short}</span>
+                {m.isPrivate && <Ico d={["M6 10V8a6 6 0 0 1 12 0v2", "M5 10h14v10H5z"]} w={13} sw={1.8} stroke={m.color} />}
+              </span>
+              <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{PROVIDER_META[m.provider].badge} · {m.address}</span>
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

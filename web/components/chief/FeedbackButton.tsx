@@ -43,7 +43,7 @@ export default function FeedbackButton() {
 function FeedbackDialog({ onClose }: { onClose: () => void }) {
   const [text, setText] = useState("");
   const [rec, setRec] = useState<"idle" | "rec" | "busy">("idle");
-  const [sent, setSent] = useState<{ id: string; url: string } | null>(null);
+  const [sent, setSent] = useState<{ id: string; url: string; kind?: string } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const recRef = useRef<MediaRecorder | null>(null);
@@ -79,8 +79,8 @@ function FeedbackDialog({ onClose }: { onClose: () => void }) {
     setSending(true); setErr(null);
     try {
       const r = await fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: body, page: typeof location !== "undefined" ? location.pathname : "" }) });
-      const d = await r.json().catch(() => ({} as { ok?: boolean; id?: string; url?: string; error?: string }));
-      if (r.ok && d.ok && d.id && d.url) setSent({ id: d.id, url: d.url });
+      const d = await r.json().catch(() => ({} as { ok?: boolean; id?: string; url?: string; kind?: string; error?: string }));
+      if (r.ok && d.ok && d.id && d.url) setSent({ id: d.id, url: d.url, kind: d.kind });
       else setErr(d.error || "Couldn't send — try again.");
     } catch { setErr("Couldn't send — check your connection."); }
     finally { setSending(false); }
@@ -100,8 +100,8 @@ function FeedbackDialog({ onClose }: { onClose: () => void }) {
         {sent ? (
           <div style={{ padding: "8px 2px 4px" }}>
             <div style={{ fontSize: 15, color: C.text, fontWeight: 600 }}>Sent to the Chief of Staff team ✓</div>
-            <div style={{ fontSize: 13, color: C.text3, marginTop: 6, lineHeight: 1.5 }}>Logged as <b style={{ color: C.text2 }}>{sent.id}</b> — the dev team will see it in the project portal.</div>
-            <a href={sent.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: 12, color: C.blue, fontSize: 13.5, fontWeight: 700 }}>Open the project portal →</a>
+            <div style={{ fontSize: 13, color: C.text3, marginTop: 6, lineHeight: 1.5 }}>{sent.kind === "issue" ? <>Opened as a tracked issue (<b style={{ color: C.text2 }}>{sent.id}</b>) for the dev team.</> : <>Logged as <b style={{ color: C.text2 }}>{sent.id}</b> — the dev team will see it in the project portal.</>}</div>
+            <a href={sent.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: 12, color: C.blue, fontSize: 13.5, fontWeight: 700 }}>{sent.kind === "issue" ? "View the issue →" : "Open the project portal →"}</a>
             <div style={{ marginTop: 16 }}><button onClick={onClose} style={{ width: "100%", padding: 11, borderRadius: 11, border: 0, background: C.gold, color: "#081627", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: FONT.sans }}>Done</button></div>
           </div>
         ) : (<>

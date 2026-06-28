@@ -84,7 +84,23 @@ export default function TodayScreen({ onOpenEmail, onGo }: Props) {
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 16px 28px" }}>
-      {/* ── HERO: the "good morning" banner — its mood shifts with the time of day ── */}
+      {/* ── HERO ── plain neutral banner while the briefing loads; the time-of-day
+          "good morning" banner reveals only once it resolves (no greeting flash / swap) ── */}
+      {!summary ? (
+        <div style={{ ...card, borderRadius: 20, padding: "26px 24px 24px", marginTop: 16 }}>
+          <div style={{ ...eyebrow(C.dim), display: "flex", alignItems: "center", gap: 7 }}>
+            <span style={{ width: 7, height: 7, borderRadius: 99, background: C.dim2 }} /> Your Chief of Staff · {today}
+          </div>
+          <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 11, color: C.text3, fontSize: 15, fontFamily: FONT.serif }}>
+            <span style={{ display: "inline-flex", animation: "cosSpin .9s linear infinite", color: C.gold }}><svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M21 12a9 9 0 0 0-9-9" /></svg></span>
+            Preparing your briefing…
+          </div>
+          <div style={{ marginTop: 16, display: "grid", gap: 8 }}>
+            <div style={{ height: 11, width: "86%", borderRadius: 6, background: "rgba(var(--ink),.07)", animation: "bwPulse 1.3s ease-in-out infinite" }} />
+            <div style={{ height: 11, width: "68%", borderRadius: 6, background: "rgba(var(--ink),.07)", animation: "bwPulse 1.3s ease-in-out infinite" }} />
+          </div>
+        </div>
+      ) : (
       <div style={{
         position: "relative", overflow: "hidden", borderRadius: 20, padding: "26px 24px 22px", marginTop: 16,
         background: bn.grad,
@@ -149,6 +165,7 @@ export default function TodayScreen({ onOpenEmail, onGo }: Props) {
           </div>
         </div>
       </div>
+      )}
 
       {/* ── ON YOUR CALENDAR ── */}
       <Section title="On your calendar today" action={<GoLink label="Open calendar" onClick={() => onGo("calendar")} />}>

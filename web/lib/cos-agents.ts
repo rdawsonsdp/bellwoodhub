@@ -27,6 +27,13 @@ export const AUTONOMY_LABEL: Record<Autonomy, string> = {
 
 export const COS_AGENTS: CosAgent[] = [
   {
+    key: "chief", name: "Chief of Staff", autonomy: "R4", status: "active", powers: ["Today", "Morning briefing"],
+    role: "Greets the Mayor and runs his morning.",
+    job: "Reads the output of every other agent — email, calendar, drafting, history, search — and folds it into one spoken-style morning briefing: what happened overnight, what's new, and what's most important today. Surfaces the day's calendar and the drafts waiting to be signed, all on the first screen, in a configurable personal voice. States gaps honestly; never sends.",
+    produces: "The 'Good morning' Today briefing on the landing screen.",
+    recent: ["Briefed the Mayor — 11 need you, 3 to sign, 8 on the calendar · 6:40 AM", "Summarized overnight activity across 5 agent desks · 6:40 AM", "Flagged the most pressing item for your eyes · 6:40 AM"],
+  },
+  {
     key: "brief", name: "Morning Brief Agent", autonomy: "R4", status: "active", powers: ["Emails", "Brief"],
     role: "Tells the Mayor what needs them today.",
     job: "Scans overnight correspondence and folds it into a digest: newest inbound awaiting a reply, open issues, and high-sensitivity (FOIA / public-safety) mail. States empty sections rather than hiding them; every line cites its source.",

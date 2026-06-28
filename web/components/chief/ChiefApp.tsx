@@ -18,6 +18,7 @@ import type { NeedsYouToday } from "@/lib/capabilities";
 import type { MemoryDetail, EntityListItem, SourcesOverview, DraftRow } from "@/lib/screens";
 import AdminPanel from "./AdminPanel";
 import AgentsPage from "./AgentsPage";
+import TodayScreen from "./TodayScreen";
 import UploadSource from "./UploadSource";
 import { getRecentSearches, addRecentSearch } from "@/lib/recent-searches";
 import { getIngested, type IngestedRecord } from "@/lib/ingested-sources";
@@ -50,7 +51,7 @@ async function postJson<T>(url: string, body: unknown): Promise<T | null> {
   } catch { return null; }
 }
 
-type Screen = "brief" | "ask" | "track" | "memory" | "sources" | "settings" | "admin" | "agents";
+type Screen = "today" | "brief" | "ask" | "track" | "memory" | "sources" | "settings" | "admin" | "agents";
 type Filter = "all" | "open" | "late" | "broken" | "kept";
 
 /* ── tiny SVG helpers (stroke icons, 24×24) ── */
@@ -70,6 +71,7 @@ const Star = ({ w = 22, c = C.gold }: { w?: number; c?: string }) => (
 );
 
 const ICON = {
+  today: ["M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z", "M12 2v2M12 20v2M4 12H2M22 12h-2M5.6 5.6 4.2 4.2M19.8 19.8l-1.4-1.4M18.4 5.6l1.4-1.4M5.6 18.4l-1.4 1.4"],
   brief: ["M3 10.5 12 3l9 7.5", "M5 9.5V20h14V9.5"],
   track: ["M10 6h10M10 12h10M10 18h10", "M3.5 6 4.5 7 6 5M3.5 12l1 1 1.5-2M3.5 18l1 1 1.5-2"],
   memory: ["M12 8m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0", "M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"],
@@ -89,7 +91,7 @@ const ICON = {
 };
 
 export default function ChiefApp() {
-  const [screen, setScreen] = useState<Screen>("brief");
+  const [screen, setScreen] = useState<Screen>("today");
   const [asked, setAsked] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
@@ -132,6 +134,7 @@ export default function ChiefApp() {
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <Topbar onAsk={go("ask")} />
         <div className="scrl" style={{ flex: 1, overflowY: "auto" }}>
+          {screen === "today" && <TodayScreen onOpenEmail={() => setScreen("brief")} onGo={(d) => setScreen(d === "calendar" ? "track" : d === "approvals" ? "settings" : "brief")} />}
           {screen === "brief" && <Brief go={go} onAsk={() => runAsk("Every flooding conversation, in order — who promised what and whether it happened.")} />}
           {screen === "ask" && <Ask asked={asked} loading={loading} res={res} err={err} q={q} setQ={setQ} runAsk={runAsk} resetAsk={resetAsk} go={go} />}
           {screen === "track" && <Track filter={filter} setFilter={setFilter} />}
@@ -176,6 +179,7 @@ function Sidebar({ screen, go }: { screen: Screen; go: (s: Screen) => () => void
 
       <div className="scrl" style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 3 }}>
         <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".16em", padding: "4px 10px 8px" }}>Workspace</div>
+        {item("today", "Today", <Ico d={ICON.today} />, <Star w={13} c={C.gold} />)}
         {item("brief", "Emails", <Ico d={ICON.mail} />, <span style={{ width: 7, height: 7, borderRadius: 99, background: C.red }} />)}
         {item("ask", "Ask", <Star w={19} c="currentColor" />, <Kbd>⌘K</Kbd>)}
         {item("track", "Calendar", <Ico d={ICON.events ?? ICON.track} />, <Badge color={C.orange} bg="rgba(240,163,60,.14)">8</Badge>)}

@@ -12,8 +12,9 @@ import {
   MODEL_OPTIONS, ROUTER_DEFAULT, PIPELINE_MODELS, CAPABILITIES, AUTONOMY_LADDER,
   SOURCES_DEFAULT, COST_MODEL, type SourceDef,
 } from "@/lib/admin-config";
+import { COS_PERSONA_DEFAULT, COS_TONE_PRESETS, type CosPersona, type CosTone } from "@/lib/morning";
 
-type Section = "appearance" | "models" | "cost" | "rules" | "skills" | "sources" | "status";
+type Section = "appearance" | "cos" | "models" | "cost" | "rules" | "skills" | "sources" | "status";
 
 // Temporary: link to the live PM status dashboard (its own Vercel project).
 // Remove this tab once the project ships — it's a build-time convenience, not a product feature.
@@ -33,6 +34,7 @@ interface AdminState {
   skillsOff: string[];
   sources: Record<string, { enabled: boolean; schedule: string }>;
   extraSources: SourceDef[];
+  cos: CosPersona;
 }
 const DEFAULT_STATE: AdminState = {
   router: Object.fromEntries(ROUTER_DEFAULT.map((r) => [r.task, r.model])),
@@ -41,6 +43,7 @@ const DEFAULT_STATE: AdminState = {
   skillsOff: [],
   sources: {},
   extraSources: [],
+  cos: COS_PERSONA_DEFAULT,
 };
 const KEY = "bw-admin-config-v1";
 
@@ -74,7 +77,7 @@ export default function AdminPanel() {
   }
 
   const tabs: [Section, string][] = [
-    ["appearance", "Appearance"], ["models", "Models"], ["cost", "API Cost"],
+    ["appearance", "Appearance"], ["cos", "Chief of Staff"], ["models", "Models"], ["cost", "API Cost"],
     ["rules", "Agent Rules"], ["skills", "Skills"], ["sources", "Sources"],
     ["status", "Project Status"],
   ];
@@ -108,6 +111,7 @@ export default function AdminPanel() {
       </div>
 
       {section === "appearance" && <Appearance />}
+      {section === "cos" && <ChiefOfStaff st={st} update={update} />}
       {section === "models" && <Models st={st} update={update} />}
       {section === "cost" && <Cost st={st} />}
       {section === "rules" && <Rules st={st} update={update} />}
@@ -133,11 +137,69 @@ function ProjectStatus() {
           <a href={PROJECT_STATUS_URL} target="_blank" rel="noopener noreferrer" style={{
             cursor: "pointer", padding: "10px 18px", borderRadius: 10, background: C.gold, color: "#081627",
             border: `1px solid ${C.gold}`, fontSize: 13, fontWeight: 700, fontFamily: FONT.sans, textDecoration: "none",
-          }}>Open status dashboard ↗</a>
+          }}>Open full page ↗</a>
           <button onClick={() => { try { navigator.clipboard.writeText(PROJECT_STATUS_URL); } catch { /* */ } }} style={ghostBtn}>Copy link</button>
         </div>
       </div>
+      {/* Live dashboard embedded inline so it's visible inside the app, not just a link. */}
+      <iframe
+        src={PROJECT_STATUS_URL}
+        title="Project status dashboard"
+        loading="lazy"
+        style={{ width: "100%", height: "72vh", minHeight: 460, border: `1px solid ${C.cardBd}`, borderRadius: 14, background: "#fff" }}
+      />
       <div style={{ fontSize: 11.5, color: C.dim, fontFamily: FONT.mono }}>Auto-refreshes on each push to git · maintained by the Project Manager skill.</div>
+    </div>
+  );
+}
+
+/* ───────────────────────── CHIEF OF STAFF (persona) ───────────────────────── */
+function ChiefOfStaff({ st, update }: { st: AdminState; update: (n: Partial<AdminState>) => void }) {
+  const cos = st.cos ?? COS_PERSONA_DEFAULT;
+  const set = (patch: Partial<CosPersona>) => update({ cos: { ...cos, ...patch } });
+  const inputStyle: CSSProperties = {
+    width: "100%", padding: "10px 12px", borderRadius: 10, border: `1px solid ${C.cardBd}`,
+    background: "rgba(var(--ink),.04)", color: C.text, fontSize: 14, fontFamily: FONT.sans, outline: "none",
+  };
+  const labelStyle: CSSProperties = { ...eyebrow(C.dim), fontSize: 10.5, marginBottom: 7, display: "block" };
+  return (
+    <div style={{ display: "grid", gap: 16, maxWidth: 640 }}>
+      <Banner tone="gold" title="Your Chief of Staff"
+        body="The agent that greets the Mayor each morning and runs the Today screen. Set who he is and the voice he speaks in — it's injected into the briefing the Mayor reads first thing. Saved on this device." />
+      <div style={{ ...card, padding: 20, display: "grid", gap: 18 }}>
+        <div>
+          <span style={labelStyle}>Mayor&rsquo;s name</span>
+          <input style={inputStyle} value={cos.mayorName} onChange={(e) => set({ mayorName: e.target.value })} placeholder="Mayor Harvey" />
+        </div>
+        <div>
+          <span style={labelStyle}>Greeting</span>
+          <input style={inputStyle} value={cos.greeting} onChange={(e) => set({ greeting: e.target.value })} placeholder="Good morning, {name}." />
+          <div style={{ fontSize: 11.5, color: C.dim, marginTop: 6 }}><code>{"{name}"}</code> inserts the name · <code>{"{timeOfDay}"}</code> = morning / afternoon / evening</div>
+        </div>
+        <div>
+          <span style={labelStyle}>Tone</span>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {(Object.keys(COS_TONE_PRESETS) as CosTone[]).map((t) => {
+              const on = cos.tone === t;
+              return <button key={t} onClick={() => set({ tone: t })} style={{
+                cursor: "pointer", padding: "8px 16px", borderRadius: 99, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans,
+                background: on ? C.gold : "transparent", color: on ? "#081627" : C.text3, border: `1px solid ${on ? C.gold : "rgba(var(--ink),.14)"}`,
+              }}>{COS_TONE_PRESETS[t].label}</button>;
+            })}
+          </div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>{COS_TONE_PRESETS[cos.tone]?.prompt}</div>
+        </div>
+        <div>
+          <span style={labelStyle}>Personality instructions</span>
+          <textarea style={{ ...inputStyle, minHeight: 90, resize: "vertical", lineHeight: 1.5 }} value={cos.instructions}
+            onChange={(e) => set({ instructions: e.target.value })}
+            placeholder="e.g. Call me Mayor. Open with something upbeat. Keep it under four sentences. Always surface the most sensitive item first." />
+          <div style={{ fontSize: 11.5, color: C.dim, marginTop: 6 }}>Injected into the briefing prompt so the Mayor hears a consistent voice each morning.</div>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={() => set(COS_PERSONA_DEFAULT)} style={ghostBtn}>Reset persona</button>
+        </div>
+      </div>
     </div>
   );
 }

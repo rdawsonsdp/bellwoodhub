@@ -10,6 +10,7 @@ import { createContext, useContext, useEffect, useRef, useState, type CSSPropert
 import { C, FONT } from "@/lib/cos-design";
 import AdminPanel from "./AdminPanel";
 import AgentsPage from "./AgentsPage";
+import TodayScreen from "./TodayScreen";
 import UploadSource from "./UploadSource";
 import { getRecentSearches, addRecentSearch } from "@/lib/recent-searches";
 import { getEnabledTabs } from "@/lib/email-config";
@@ -48,6 +49,7 @@ async function postJson<T>(url: string, body: unknown): Promise<T | null> {
 
 /* ── icons ── */
 const I = {
+  today: "M12 4V2M12 22v-2M4 12H2M22 12h-2M5.6 5.6 4.2 4.2M19.8 19.8l-1.4-1.4M18.4 5.6l1.4-1.4M5.6 18.4l-1.4 1.4M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z",
   emails: "M3 7l9 6 9-6M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z",
   events: "M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z",
   history: "M12 7v5l3.5 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z",
@@ -68,7 +70,7 @@ function Svg({ d, w = 22, sw = 1.9, fill = "none" }: { d: string; w?: number; sw
   return <svg width={w} height={w} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d.split("M").filter(Boolean).map((p, i) => <path key={i} d={"M" + p} />)}</svg>;
 }
 
-type Screen = "emails" | "events" | "history" | "agents" | "sources" | "admin";
+type Screen = "today" | "emails" | "events" | "history" | "agents" | "sources" | "admin";
 const THEME_CYCLE = ["midnight", "dim", "daylight", "contrast"];
 
 const streamColor: Record<string, string> = {
@@ -92,7 +94,7 @@ function audioExt(mime: string): string {
 }
 
 export default function MobileApp() {
-  const [screen, setScreen] = useState<Screen>("emails");
+  const [screen, setScreen] = useState<Screen>("today");
   const [menuOpen, setMenuOpen] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
   const [emailMid, setEmailMid] = useState<string | null>(null);
@@ -110,6 +112,7 @@ export default function MobileApp() {
         <Header onMenu={() => setMenuOpen(true)} />
         <PullToRefresh onRefresh={doRefresh}>
           <div key={refreshKey} style={{ padding: "8px 0 20px" }}>
+            {screen === "today" && <TodayScreen onOpenEmail={setEmailMid} onGo={(d) => setScreen(d === "calendar" ? "events" : "emails")} />}
             {screen === "emails" && <EmailsScreen onAsk={() => setAskOpen(true)} />}
             {screen === "events" && <EventsScreen />}
             {screen === "history" && <HistoryScreen />}
@@ -130,6 +133,7 @@ export default function MobileApp() {
 
 const NAV_STAR = "M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z";
 const NAV_ITEMS: [Screen, string, string][] = [
+  ["today", I.today, "Today"],
   ["emails", I.emails, "Emails"],
   ["events", I.events, "Calendar"],
   ["history", I.history, "History"],

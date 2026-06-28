@@ -26,6 +26,11 @@ import events from "./data/events.json";
 import businessInbox from "./data/business-inbox.json";
 import corpusDocs from "./data/corpus-docs.json";
 import gmailCalendar from "./data/gmail-calendar.json";
+import { COS_AGENTS } from "../cos-agents";
+import {
+  COS_TONE_PRESETS, fillGreeting,
+  type CosPersona, type MorningSummary, type PressingItem, type BriefCalendarItem, type AgentNote,
+} from "../morning";
 
 /** A business-mailbox email (the walled Gmail account). Richer than the index
  *  rows so it can drill to a full body without the 31MB search index. */
@@ -91,6 +96,97 @@ export const demoDecideDraft = (draftId: string): DraftRow[] => {
   decided.add(draftId);
   return demoDrafts("pending");
 };
+
+// ── Chief of Staff "morning briefing" — the Today landing hero ───────────────
+// Hybrid: a deterministic baseline always renders (keyless); when an OpenAI key
+// is present the narrative is rewritten in the configured CoS persona/voice.
+const CURRENT_DATE = "2026-06-28"; // the demo's "today" — matches the seed window
+
+function todayEvents(): DemoEvent[] {
+  const all = demoEvents().events;
+  const today = all.filter((e) => e.date.slice(0, 10) === CURRENT_DATE);
+  if (today.length) return today;
+  // nothing dated exactly today → the soonest upcoming, still-open items
+  return all
+    .filter((e) => e.status !== "done" && e.date.slice(0, 10) >= CURRENT_DATE)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 4);
+}
+
+function baselineNarrative(tone: CosPersona["tone"], pressing: PressingItem[], calendar: BriefCalendarItem[], agents: AgentNote[], needYou: number): string {
+  const lead = tone === "brisk" ? "" : tone === "formal" ? "Here is where things stand. " : "Here's the lay of the land — fresh cup in hand. ";
+  const ball = `${needYou} thread${needYou === 1 ? "" : "s"} have the ball in your court.`;
+  const press = pressing[0] ? ` The one that needs you most is "${pressing[0].title}" (${pressing[0].tag}).` : " Nothing urgent is waiting on you.";
+  const ev = calendar.length ? ` You've got ${calendar.length} thing${calendar.length === 1 ? "" : "s"} on the calendar today${calendar[0] ? `, starting with ${calendar[0].title}` : ""}.` : " Your calendar is clear today.";
+  const ag = agents[0] ? ` Overnight your ${agents[0].name.toLowerCase()} ${agents[0].note.charAt(0).toLowerCase()}${agents[0].note.slice(1)}.` : "";
+  return `${lead}${ball}${press}${ev}${ag}`.trim();
+}
+
+/** Assemble the morning briefing from every other agent's output + inbox + calendar. */
+export async function demoMorningSummary(persona: CosPersona): Promise<MorningSummary> {
+  const b = demoBrief();
+  const evs = todayEvents();
+  const tone: CosPersona["tone"] = persona.tone === "formal" || persona.tone === "brisk" ? persona.tone : "warm";
+
+  // pressing = high-sensitivity → awaiting-reply → open issues, deduped, top 5
+  const pressing: PressingItem[] = [];
+  const seen = new Set<string>();
+  const add = (items: { messageId: string; subject: string | null; fromName: string | null; why: string }[], tag: string) => {
+    for (const it of items) {
+      const key = it.messageId || it.subject;
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      pressing.push({ title: it.subject || "(no subject)", why: it.why || (it.fromName ?? ""), tag, messageId: it.messageId });
+    }
+  };
+  add(b.highSensitivity ?? [], "sensitive");
+  add(b.awaitingReply ?? [], "needs reply");
+  add(b.openIssues ?? [], "open issue");
+  const top = pressing.slice(0, 5);
+
+  const calendar: BriefCalendarItem[] = evs.slice(0, 5).map((e) => ({
+    id: e.id, title: e.title, when: e.dueLabel || e.date.slice(0, 10), source: e.source,
+  }));
+
+  // the meta-summary: each active agent's latest activity (excluding the CoS itself)
+  const agents: AgentNote[] = COS_AGENTS
+    .filter((a) => a.key !== "chief" && a.status === "active" && a.recent.length > 0)
+    .slice(0, 5)
+    .map((a) => {
+      const [note, when] = (a.recent[0] || "").split(" · ");
+      return { name: a.name, note: note.trim(), when: when?.trim() };
+    });
+
+  const needYou = (b.awaitingReply?.length ?? 0) + (b.highSensitivity?.length ?? 0);
+  const counts = { needYou, eventsToday: evs.length };
+
+  let narrative = baselineNarrative(tone, top, calendar, agents, needYou);
+  let live = false;
+  if (HAS_OPENAI) {
+    try {
+      const { chat } = await import("../openai");
+      const sys =
+        `You are ${persona.mayorName}'s chief of staff, giving the morning briefing as the mayor walks into the office with his coffee. ` +
+        `${COS_TONE_PRESETS[tone].prompt} ${persona.instructions || ""} ` +
+        `Speak directly to the mayor in 2-4 sentences covering, in order: what happened overnight / what's new, what's most important today, and a nod to his calendar. ` +
+        `Do NOT greet him (the greeting is shown separately). Use ONLY the facts below — never invent items. Plain prose, no markdown, no lists.`;
+      const ctx = [
+        `Most pressing (${top.length}): ${top.map((p) => `${p.title} [${p.tag}]`).join("; ") || "nothing urgent"}.`,
+        `On the calendar today (${calendar.length}): ${calendar.map((c) => c.title + (c.when ? ` (${c.when})` : "")).join("; ") || "nothing scheduled"}.`,
+        `Overnight agent activity: ${agents.map((a) => `${a.name} — ${a.note}`).join("; ") || "quiet"}.`,
+        `${needYou} threads need your reply.`,
+      ].join("\n");
+      const out = await chat(sys, ctx);
+      if (out) { narrative = out.trim(); live = true; }
+    } catch { /* keep the deterministic baseline */ }
+  }
+
+  return {
+    greeting: fillGreeting(persona),
+    narrative, pressing: top, calendar, agents, counts, tone, live,
+    generatedAt: new Date().toISOString(),
+  };
+}
 
 export function demoMemoryDetail(value: string): MemoryDetail | null {
   const d = (entityDetails as Record<string, unknown>)[value.toLowerCase()];

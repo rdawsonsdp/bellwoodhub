@@ -8,7 +8,7 @@
 > This file is the durable copy that survives across sessions.
 
 **📡 Shareable status page (live):** https://project-status-ten.vercel.app — public, no login. Source: `project-status/index.html`. Redeploy: `vercel deploy --prod --yes --cwd project-status`.
-**Last updated:** 2026-06-26
+**Last updated:** 2026-06-28
 **Project:** AI Chief of Staff platform, built on the Bellwood municipal email RAG POC
 **Authoritative spec:** `cto-architecture-brief.md` (R. Dawson, SDP Chicago, 2026-06-24) — three-plane
 design (Ingestion → Canonical → Capability), 6 architectural decision records (AD-1…AD-6), 5-phase plan.
@@ -80,6 +80,7 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 | FEAT-10 | Agent-driven **Upload Source** ingestion | 🔵 Phase 1 done | **Phase 1 (demo-safe) shipped:** "Upload Source" button on Sources (mobile + desktop) → pick type → drop file → simulated agent draft → R3 review/categorize form → in-memory commit, surfaced as "Agent-ingested this session". Source-type registry: Fire/EMS, Police (restricted→secured store), Permit, General. Maps 1:1 to messages/entity_aliases/message_topics/chunks. **Next:** Phase 2 real OpenAI-vision parse · Phase 3 canonical writes · Phase 4 Voyage embed · Phase 5 FEAT-11 secured S3. |
 | FEAT-12 | **Multiple mailboxes** + source-system filter | 🔵 Phase 1 done | Mayor's Government (Outlook) + Business (Gmail) accounts as a filterable "source system" on the Emails screen. New `lib/mailboxes.ts` registry + `mailbox_id` dimension; demo splits seed = Government, adds a walled Gmail business fixture. **Business is walled (DEC-6):** private, not FOIA-indexed, excluded from default AI Search. **Next:** Phase 2 Outlook (Graph) connector · Phase 3 Gmail connector · per-mailbox OAuth (read-only) + canonical.mailboxes table. |
 | FEAT-11 | **Secured AWS document store** (S3, encrypted) | ⚪ pending | Per-source/sensitivity storage routing: `restricted` originals (e.g. police) go to a secured, access-controlled S3 bucket — `messages.raw_ref` points there; app holds only searchable metadata/RAG, not the file. `public/internal` may use Supabase Storage. Demo: restricted = memory-only. |
+| FEAT-13 | **Today screen + Chief of Staff agent** | 🔵 v1 shipped | "Good morning, Mayor Harvey" landing (mobile + desktop): persona-voiced briefing (what happened/new/important) + today's calendar + **sign-to-approve** agent drafts inline + inbox preview. New R4 Chief of Staff agent summarizes all other agents. Hybrid keyless/OpenAI (`/api/morning-summary`). Persona configurable in Admin → Chief of Staff. **Next:** the **Morning Agent** (configurable web-search query cards, Supabase `morning_agent_queries` + results, Claude live web search — spec in progress) · verbal/TTS phase. |
 
 **Known demo gaps (optional polish):** Commitments screen still uses static prototype content (not seed-wired); Brief mixes live data + a few hardcoded hero cards; "who emails most" surfaces institutional senders over residents.
 
@@ -132,6 +133,15 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Decisions log
 
+- **`DEC-7` Today screen = "see + act", persona-driven (2026-06-28)** — The Mayor's landing is a
+  **Chief-of-Staff Today screen**, not the inbox: greet → brief (what happened / new / important) →
+  calendar → **sign the checks (approve agent drafts inline)** → inbox preview. The metaphor is a human
+  chief of staff who greets the Mayor with coffee, runs his calendar, has him sign some drafts, then lets
+  him enjoy his morning. The briefing voice is a **configurable agent persona** (Admin → Chief of Staff:
+  name, greeting, tone, freeform instructions). Default greeting ships as "Good morning, Mayor Harvey."
+  *Decided by RD.* A later phase makes the agent **verbal** (TTS). Next: the **Morning Agent** — a
+  configurable list of web-search queries (e.g. "Illinois Senate this week") answered by Claude with live
+  web search, one card per query, Supabase-backed (`morning_agent_queries` + results); spec in progress.
 - **`VIS-1` Direction (2026-06-26)** — This becomes an **agent that connects to other agents**
   (agent-to-agent / MCP). The capability agents + MCP server are the foundation.
 - **`DEC-6` Multiple mailboxes; business walled (2026-06-27)** — The mayor's accounts are modeled as
@@ -164,6 +174,23 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Changelog
 
+- **2026-06-28 (Today screen + Chief of Staff agent)** — Built the Mayor's **landing screen**: a
+  "Good morning, Mayor Harvey" Chief-of-Staff briefing as the default Home view (mobile + desktop). A new
+  **R4 Chief of Staff agent** (`cos-agents.ts`) reads every other agent's output + the inbox + the
+  consolidated calendar and folds it into one **spoken-style briefing** — what happened / what's new /
+  what's important — then surfaces the day's calendar and the **drafts to sign (approve inline)** before
+  the Mayor ever opens the inbox (the "see + act" idea: greet → brief → calendar → sign the checks →
+  inbox). Sections link out to the full Emails/Calendar/Approvals pages. **Hybrid generation**
+  (`/api/morning-summary` + `demoMorningSummary`): a deterministic baseline always renders keyless; the
+  persona voice is synthesized via OpenAI when a key is present. **Persona is configurable** in
+  Admin → Chief of Staff (mayor name, greeting template, tone Warm/Formal/Brisk, freeform personality
+  instructions; saved to localStorage, passed to the API). New `lib/morning.ts` contract; new
+  `components/chief/TodayScreen.tsx` shared by both layouts. Also embedded the live PM status dashboard
+  inline in Admin → Project Status (was a link). Typecheck + build clean. Logged FEAT-13 + DEC-7.
+- **2026-06-28 (mobile nav polish + status page)** — Mobile navigation reworked: **hamburger menu** nav with a
+  single consolidated **Ask** button; **Staff Agents** promoted to a first-class mobile tab (was buried under
+  Source) with Agents + Admin surfaced at the top of the Source tab. PM **status page reformatted** as a light
+  report and `status.json` repaired. Polish pass — no scope change.
 - **2026-06-27 (Gmail business records + consolidated calendar)** — Expanded the walled Gmail account: added
   dispensary-business emails (Harbor Wellness Dispensary, Cary IL — IDFPR license, METRC, Brink's cash, Cresco
   wholesale, dispensary mgr) + social/charity invites (Ed Foundation gala, Rotary golf, Chamber awards, food

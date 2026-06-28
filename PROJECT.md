@@ -83,6 +83,7 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 | FEAT-13 | **Today screen + Chief of Staff agent** | 🔵 shipped+ | "Good morning, Mayor Harvey" landing (mobile + desktop): **agent-generated, time-aware persona greeting** (varied) + briefing + today's calendar + **editable sign-to-approve** drafts + inbox preview. Bright **time-of-day banner** (sunrise→midday→dusk→night) + seal + weather + on-this-day. New R4 Chief of Staff agent. Hybrid keyless/OpenAI. Persona configurable. **Next:** the **Morning Agent** (web-search query cards) · verbal/TTS. |
 | FEAT-14 | **Multi-customer / white-label** (per-tenant config) | ⚪ planned · post-launch | Shared repo + `lib/tenant.ts` (scaffold shipped) selected by `NEXT_PUBLIC_TENANT`; **one Vercel project + isolated Supabase per customer** (DEC-9). **Tasks:** (1) extend tenant config to branding/seal/title/persona/feedback-repo + wire all consumers; (2) per-tenant mailboxes + `SOURCES_DEFAULT`; (3) per-tenant demo fixtures + search index; (4) per-tenant live env (DATABASE_URL/keys/mailboxes); (5) add customer #2 + its Vercel project + write the "add a customer" runbook. **RD builds after Bellwood launch.** |
 | FEAT-15 | **User feedback → Supabase + portal section** | ⚪ planned | Persist in-app Quick Notes durably + surface them on the portal (DEC-8). **Tasks:** (1) `feedback` table migration in BellwoodHub (same DB connection); (2) `/api/feedback` writes to Supabase when connected, in-memory demo fallback; (3) app prod env gets the Supabase/DB connection (infra step); (4) **"User Feedback & Comments"** section on the Project Status portal (`build-status.mjs` reads the table); (5) triage `status` field + optional GitHub/Linear forward. |
+| FEAT-16 | **Routines** (scheduled agents) | 🔵 demo shipped | **Admin → Routines** tab + `lib/routines.ts` registry: each routine binds an agent to a **cron + scope + autonomy** (council minutes biweekly, permit files monthly, police/fire nightly, FOIA hourly, morning brief, grant scan) with enable toggles; lists on-demand agents for contrast. Architecture (DEC-10): agent = what/scope, routine = when/where; decoupled, many routines per agent. **Next (production scheduler):** `routines` table + **Vercel Cron / Supabase pg_cron → `/api/cron/tick` → run agent → Agent Activity log**; per-tenant; R-level gates autonomous vs human-gated runs. |
 
 **Known demo gaps (optional polish):** Commitments screen still uses static prototype content (not seed-wired); Brief mixes live data + a few hardcoded hero cards; "who emails most" surfaces institutional senders over residents.
 
@@ -135,6 +136,13 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Decisions log
 
+- **`DEC-10` Agent scheduling = a decoupled "Routine" layer (2026-06-28)** — Agents are scoped workers for the
+  Chief of Staff. **Scheduling is decoupled from the agent:** the agent defines *what + scope*; a **Routine**
+  binds it to a *schedule (cron) + parameters (directory/server/feed) + autonomy*. One agent → many routines.
+  Triggers: read-time, on-demand, **scheduled**. Production scheduler = **Vercel Cron / Supabase pg_cron →
+  `/api/cron/tick` → run the agent → log to Agent Activity**; the **R-level gates** what a scheduled run may do
+  (R1–R2 ingest/read autonomously; R3 drafts for human approval). Routines are **per-tenant config**. *Decided
+  by RD.* Demo shipped as Admin → Routines (FEAT-16); the real scheduler is the build that follows.
 - **`DEC-9` Multi-customer = shared repo + per-tenant config + isolated data (2026-06-28)** — One codebase
   on `main`; everything customer-specific (branding, persona, mailboxes, sources, demo fixtures) lives in
   `lib/tenant.ts`, selected by `NEXT_PUBLIC_TENANT` (default `bellwood`). **One Vercel project per customer**,

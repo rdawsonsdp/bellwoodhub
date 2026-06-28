@@ -25,12 +25,12 @@ function Ic({ d, w = 20, sw = 1.9 }: { d: string; w?: number; sw?: number }) {
   return <svg width={w} height={w} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d.split("M").filter(Boolean).map((p, i) => <path key={i} d={"M" + p} />)}</svg>;
 }
 
-export default function FeedbackButton() {
+export default function FeedbackButton({ raised }: { raised?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <button onClick={() => setOpen(true)} aria-label="Send feedback to the team" title="Send a quick note"
-        style={{ position: "fixed", right: "max(16px, env(safe-area-inset-right))", bottom: "calc(env(safe-area-inset-bottom) + 18px)", zIndex: 45,
+        style={{ position: "fixed", right: "max(16px, env(safe-area-inset-right))", bottom: raised ? "calc(env(safe-area-inset-bottom) + 90px)" : "calc(env(safe-area-inset-bottom) + 18px)", zIndex: 45,
           width: 46, height: 46, borderRadius: 99, border: `1px solid ${C.cardBd}`, background: "var(--c-appbg)", color: C.text2,
           boxShadow: "0 6px 18px rgba(0,0,0,.22)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
         <Ic d={BUBBLE} w={20} />

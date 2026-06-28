@@ -149,7 +149,16 @@ export default function ChiefApp() {
           {screen === "agents" && <AgentsPage />}
         </div>
       </div>
-      <FeedbackButton />
+      {/* Floating Ask (AI Search) — lower-right corner, with feedback lifted above it */}
+      <button onClick={go("ask")} aria-label="Ask — AI Search" style={{
+        position: "fixed", right: 28, bottom: 28, zIndex: 44, display: "flex", alignItems: "center", gap: 9,
+        height: 52, padding: "0 24px", borderRadius: 99, border: 0, cursor: "pointer",
+        background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322",
+        boxShadow: "0 10px 28px rgba(231,181,60,.45)", fontFamily: FONT.sans, fontWeight: 800, fontSize: 15.5,
+      }}>
+        <Star w={20} c="#0a1322" /> Ask
+      </button>
+      <FeedbackButton raised />
     </div>
   );
 }

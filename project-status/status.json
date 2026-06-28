@@ -32,7 +32,7 @@
       "title": "Post-demo product work",
       "rows": [
         { "t": "TASK-1 · Capture Outlook data for the Mayor's mailbox (Exchange/Graph)", "s": "pending", "detail": "Build a real Outlook/Exchange connector via Microsoft Graph API (Mail.Read) to ingest the Mayor's actual mailbox into the pipeline — implementing the 5-step contract in ingest/base.py (pull → normalize → resolve → classify → index+emit), replacing synthetic_email.py. Captures inbox + recovered/deleted items toward the ~70k corpus. Needs Azure app registration + admin consent. Concrete version of product task #3. Outlook is also the source for the Calendar (TASK-11)." },
-        { "t": "TASK-11 · Calendar view from MS Outlook calendar", "s": "pending", "detail": "The Calendar screen (renamed from Events) should be a true calendar view loading from the Mayor's MS Outlook calendar via Microsoft Graph (Calendars.Read) — events, times, locations, attendees — with a day/week/agenda UI, reconciled with the email-derived action items. Pairs with TASK-1 (Outlook is the source for both mail and calendar)." }
+        { "t": "TASK-11 · Calendar view from MS Outlook calendar", "s": "pending", "detail": "The Calendar screen (renamed from Events) should be a true calendar view loading from the Mayor's MS Outlook calendar via Microsoft Graph (Calendars.Read) — events, times, locations, attendees — with a day/week/agenda UI, reconciled with the email-derived action items. Pairs with TASK-1 (Outlook is the source for both mail and calendar)." },
         { "t": "Backfill + cut over to canonical", "s": "pending" },
         { "t": "First real email connector (IMAP)", "s": "pending" },
         { "t": "Send capability (R3)", "s": "pending" },

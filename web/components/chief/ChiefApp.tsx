@@ -138,7 +138,7 @@ export default function ChiefApp() {
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <Topbar onAsk={go("ask")} />
         <div className="scrl" style={{ flex: 1, overflowY: "auto" }}>
-          {screen === "today" && <TodayScreen onOpenEmail={() => setScreen("brief")} onGo={(d) => setScreen(d === "calendar" ? "track" : d === "approvals" ? "settings" : "brief")} />}
+          {screen === "today" && <TodayScreen onOpenEmail={(mid) => { if (typeof window !== "undefined") window.location.href = `/email?mid=${encodeURIComponent(mid)}`; }} onGo={(d) => setScreen(d === "calendar" ? "track" : d === "approvals" ? "settings" : "brief")} />}
           {screen === "brief" && <Brief go={go} onAsk={() => runAsk("Every flooding conversation, in order — who promised what and whether it happened.")} />}
           {screen === "ask" && <Ask asked={asked} loading={loading} res={res} err={err} q={q} setQ={setQ} runAsk={runAsk} resetAsk={resetAsk} go={go} />}
           {screen === "track" && <Track filter={filter} setFilter={setFilter} />}

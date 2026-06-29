@@ -180,7 +180,7 @@ function Sidebar({ screen, go }: { screen: Screen; go: (s: Screen) => () => void
     );
   };
   return (
-    <div style={{ width: 268, flexShrink: 0, display: "flex", flexDirection: "column", background: "rgba(6,13,24,.66)", borderRight: `1px solid ${C.line}`, backdropFilter: "blur(12px)" }}>
+    <div style={{ width: 268, flexShrink: 0, display: "flex", flexDirection: "column", background: "var(--c-sidebar, rgba(6,13,24,.66))", borderRight: `1px solid ${C.line}`, backdropFilter: "blur(12px)" }}>
       <div style={{ padding: "22px 22px 18px", display: "flex", alignItems: "center", gap: 12, borderBottom: `1px solid ${C.line2}` }}>
         <span style={{ width: 42, height: 42, borderRadius: 13, background: "linear-gradient(150deg,#F4CB63,#D7991C)", boxShadow: "0 6px 18px rgba(231,181,60,.35),inset 0 1.5px 0 rgba(var(--ink),.5)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="#0a1322"><path d="M12 1.5l2 6.5 6.5 2-6.5 2-2 6.5-2-6.5L3.5 10l6.5-2z" /></svg>

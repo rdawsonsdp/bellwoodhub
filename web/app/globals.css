@@ -43,6 +43,7 @@
   --c-blue: #1f6ed6; --c-green: #0c9760; --c-greentext: #0a8453;
   --c-orange: #b96f14; --c-orangetext: #9c5f15; --c-red: #d23a2d; --c-redtext: #b83228;
   --c-purple: #5d46d8; --c-purpletext: #4d3ac0; --c-cardbd: rgba(24, 33, 49, 0.14);
+  --c-sidebar: rgba(255, 255, 255, 0.72);
 }
 
 /* High contrast — maximum legibility (near-AAA). */
@@ -61,16 +62,17 @@
    The app lives with the day: bright warm morning → clean cool midday →
    warm dusk evening → deep calm night. Resolved by the hour in lib/theme.ts. */
 
-/* AM — bright, warm sunrise. Light, dark warm text. */
+/* AM — bright, engaging sunrise: luminous warm light, vivid accents, dark warm text. */
 [data-theme="am"] {
-  --ink: 58, 36, 21;
-  --c-bgbody: #fff6ec;
-  --c-appbg: radial-gradient(130% 100% at 18% -8%, #fff8ef 0%, #ffeede 45%, #ffe1cd 100%);
-  --c-text: #3a2415; --c-text2: #6a4a33; --c-text3: #7d5b42; --c-muted: #94715a; --c-dim: #ab8b73; --c-dim2: #c2a58e;
-  --c-gold: #b5740a; --c-goldhi: #9a6207; --c-goldlo: #cf9326;
-  --c-blue: #1f6ed6; --c-green: #0c9760; --c-greentext: #0a8453;
-  --c-orange: #c2691a; --c-orangetext: #a55915; --c-red: #d23a2d; --c-redtext: #b83228;
-  --c-purple: #6b4fd8; --c-purpletext: #563fc0; --c-cardbd: rgba(58, 36, 21, 0.13);
+  --ink: 64, 38, 16;
+  --c-bgbody: #fff7ee;
+  --c-appbg: radial-gradient(135% 115% at 10% -15%, #fffdf9 0%, #ffeed4 34%, #ffdcbb 66%, #ffc9a4 100%);
+  --c-text: #3a2410; --c-text2: #6b4828; --c-text3: #845d39; --c-muted: #9c7651; --c-dim: #b6926d; --c-dim2: #cda884;
+  --c-gold: #c2790a; --c-goldhi: #a76705; --c-goldlo: #e2a526;
+  --c-blue: #1666d6; --c-green: #0a9d5e; --c-greentext: #088a50;
+  --c-orange: #d4761a; --c-orangetext: #b8631a; --c-red: #e23a2a; --c-redtext: #c8362a;
+  --c-purple: #6b4fd8; --c-purpletext: #563fc0; --c-cardbd: rgba(64, 38, 16, 0.12);
+  --c-sidebar: rgba(255, 245, 231, 0.82);
 }
 
 /* Midday — clean, cool, productive "working" light. */
@@ -83,6 +85,7 @@
   --c-blue: #1f6ed6; --c-green: #0c9760; --c-greentext: #0a8453;
   --c-orange: #b96f14; --c-orangetext: #9c5f15; --c-red: #d23a2d; --c-redtext: #b83228;
   --c-purple: #5d46d8; --c-purpletext: #4d3ac0; --c-cardbd: rgba(22, 30, 44, 0.13);
+  --c-sidebar: rgba(255, 255, 255, 0.72);
 }
 
 /* Evening — warm dusk. Medium-dark plum/violet, warm gold, light text. */

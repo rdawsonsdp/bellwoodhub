@@ -16,6 +16,8 @@ export interface CosAgent {
   job: string;        // what work it actually does
   produces: string;   // its output
   recent: string[];   // recent activity (most recent first)
+  spec?: string;      // repo path to the full agent definition (.md) — the deep
+                      // jobs/roles live in the repo, not the UX, so the team scales.
 }
 
 export const AUTONOMY_LABEL: Record<Autonomy, string> = {
@@ -32,6 +34,22 @@ export const COS_AGENTS: CosAgent[] = [
     job: "Reads the output of every other agent — email, calendar, drafting, history, search — and folds it into one spoken-style morning briefing: what happened overnight, what's new, and what's most important today. Surfaces the day's calendar and the drafts waiting to be signed, all on the first screen, in a configurable personal voice. States gaps honestly; never sends.",
     produces: "The 'Good morning' Today briefing on the landing screen.",
     recent: ["Briefed the Mayor — 11 need you, 3 to sign, 8 on the calendar · 6:40 AM", "Summarized overnight activity across 5 agent desks · 6:40 AM", "Flagged the most pressing item for your eyes · 6:40 AM"],
+  },
+  {
+    key: "email-outlook", name: "Outlook Email Agent", autonomy: "R1", status: "active", powers: ["Emails · Government", "Sources"],
+    role: "Ingests the Mayor's government mailbox (Outlook).",
+    job: "Pulls the Bellwood Government mailbox (mayor@villageofbellwood.gov) via Microsoft Graph and runs the 5-step connector contract — pull → normalize → resolve identities → classify topic/stream → index + embed — landing every message as a canonical record. Public record: FOIA-scoped and part of AI Search. Read-only ingestion; it never sends.",
+    produces: "The Government inbox + searchable email corpus.",
+    recent: ["Pulled 38 new messages from Outlook · 7:02 AM", "Resolved 'G. Bennett' → Gloria Bennett on a new thread · 7:02 AM", "Classified 12 messages into Police / Fire / Resident streams · 7:02 AM"],
+    spec: "docs/agents/email-outlook-agent.md",
+  },
+  {
+    key: "email-gmail", name: "Gmail Email Agent", autonomy: "R1", status: "active", powers: ["Emails · Business", "Sources"],
+    role: "Ingests the Mayor's private business mailbox (Gmail).",
+    job: "Pulls the Bellwood Business mailbox (merrill.bellwood@gmail.com) via the Gmail API and runs the same 5-step contract. WALLED (DEC-6): this account is private — not FOIA-indexed and excluded from default AI Search. Read-only ingestion; never sends; keeps business mail separate from the public record.",
+    produces: "The walled Business inbox (private).",
+    recent: ["Pulled 4 new messages from Gmail · 7:02 AM", "Flagged a dispensary METRC compliance email · 7:02 AM", "Kept business mail out of the FOIA index · 7:02 AM"],
+    spec: "docs/agents/email-gmail-agent.md",
   },
   {
     key: "brief", name: "Morning Brief Agent", autonomy: "R4", status: "active", powers: ["Emails", "Brief"],

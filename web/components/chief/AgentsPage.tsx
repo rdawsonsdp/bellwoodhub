@@ -10,11 +10,20 @@ import { C, FONT, card, eyebrow, pill } from "@/lib/cos-design";
 import { COS_AGENTS, AUTONOMY_LABEL, type CosAgent } from "@/lib/cos-agents";
 
 const tone: Record<string, string> = { R1: C.blue, R2: C.orange, R3: C.purpleText, R4: C.green };
-const statusPill: Record<string, [string, string]> = {
-  active: [C.greenText, "rgba(52,201,139,.14)"],
-  partial: [C.orangeText, "rgba(240,163,60,.14)"],
-  planned: [C.dim, "rgba(var(--ink),.06)"],
-};
+
+// Agents read as Active (in use) or Inactive (not yet in use) — each its own colour.
+const isActive = (a: CosAgent) => a.status !== "planned";
+function StateBadge({ a }: { a: CosAgent }) {
+  const on = isActive(a);
+  const c = on ? C.greenText : C.dim;
+  const bg = on ? "rgba(52,201,139,.16)" : "rgba(var(--ink),.08)";
+  return (
+    <span style={{ ...pill(c, bg), display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
+      <span style={{ width: 7, height: 7, borderRadius: 99, background: on ? c : "transparent", border: on ? 0 : `1.5px solid ${c}` }} />
+      {on ? "Active" : "Inactive"}
+    </span>
+  );
+}
 
 export default function AgentsPage() {
   const [sel, setSel] = useState<CosAgent | null>(null);
@@ -54,12 +63,11 @@ function Metric({ n, label }: { n: string; label: string }) {
 }
 
 function AgentCard({ a, onClick }: { a: CosAgent; onClick: () => void }) {
-  const [sc, sb] = statusPill[a.status];
   return (
-    <button onClick={onClick} style={{ ...card, padding: 17, textAlign: "left", color: C.text, cursor: "pointer", display: "block", width: "100%", opacity: a.status === "planned" ? 0.66 : 1 }}>
+    <button onClick={onClick} style={{ ...card, padding: 17, textAlign: "left", color: C.text, cursor: "pointer", display: "block", width: "100%", opacity: isActive(a) ? 1 : 0.62 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 8 }}>
         <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{a.name}</span>
-        <span style={{ ...pill(sc, sb), marginLeft: "auto" }}>{a.status}</span>
+        <span style={{ marginLeft: "auto" }}><StateBadge a={a} /></span>
       </div>
       <div style={{ fontSize: 12.5, color: C.text3, lineHeight: 1.5, marginBottom: 11 }}>{a.role}</div>
       <div style={{ display: "flex", gap: 7, marginBottom: 11 }}>
@@ -80,13 +88,12 @@ function AgentCard({ a, onClick }: { a: CosAgent; onClick: () => void }) {
 }
 
 function AgentDetail({ a, onBack }: { a: CosAgent; onBack: () => void }) {
-  const [sc, sb] = statusPill[a.status];
   return (
     <div className="fu" style={{ padding: "24px 20px 56px", maxWidth: 760, margin: "0 auto" }}>
       <button onClick={onBack} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(var(--ink),.05)", border: "1px solid var(--c-cardbd)", borderRadius: 99, padding: "7px 14px", cursor: "pointer", color: C.text2, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans, marginBottom: 18 }}>← All agents</button>
       <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
         <span style={{ fontFamily: FONT.serif, fontSize: 26, fontWeight: 500, color: C.text }}>{a.name}</span>
-        <span style={pill(sc, sb)}>{a.status}</span>
+        <StateBadge a={a} />
       </div>
       <div style={{ fontSize: 14, color: C.text2, marginTop: 7, lineHeight: 1.55 }}>{a.role}</div>
 
@@ -95,6 +102,7 @@ function AgentDetail({ a, onBack }: { a: CosAgent; onBack: () => void }) {
         <Field k="Autonomy" v={<span><span style={{ ...pill(tone[a.autonomy], "rgba(var(--ink),.07)"), fontWeight: 700, marginRight: 7 }}>{a.autonomy}</span>{AUTONOMY_LABEL[a.autonomy]}</span>} />
         <Field k="Serves" v={a.powers.join(" · ")} />
         <Field k="Produces" v={a.produces} />
+        {a.spec && <Field k="Full spec" v={<span>Defined in <code style={{ fontFamily: FONT.mono, fontSize: 12, color: C.gold }}>{a.spec}</code> — versioned in the repo, not the UX.</span>} />}
       </div>
 
       <div style={{ ...eyebrow(C.dim), marginTop: 22, marginBottom: 11 }}>Recent activity</div>

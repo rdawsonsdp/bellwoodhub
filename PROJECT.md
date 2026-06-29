@@ -136,6 +136,13 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Decisions log
 
+- **`DEC-11` Agent definitions live in versioned `.md` specs (2026-06-29)** — Each agent's deep
+  jobs/roles/scope/guardrails are defined in `docs/agents/<key>-agent.md`, **not in the UX**. The
+  `web/lib/cos-agents.ts` registry holds only a lightweight read-only summary + a `spec` pointer. Keeps the
+  real contract in code review + git, lets the agent team scale, and gives Claude Code one source of truth per
+  agent. **Email ingestion = per-mailbox agents** (Outlook = Government/FOIA public record; Gmail = walled
+  Business/private) — the records wall is enforced at the *agent* boundary, not just the UI. Agents read
+  **Active / Inactive** (in use vs not-yet). *Decided by RD.*
 - **`DEC-10` Agent scheduling = a decoupled "Routine" layer (2026-06-28)** — Agents are scoped workers for the
   Chief of Staff. **Scheduling is decoupled from the agent:** the agent defines *what + scope*; a **Routine**
   binds it to a *schedule (cron) + parameters (directory/server/feed) + autonomy*. One agent → many routines.
@@ -197,6 +204,15 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Changelog
 
+- **2026-06-29 (Email agents · Active/Inactive · agent specs in repo)** — Email ingestion is now modeled as
+  **agents**: added the **Outlook Email Agent** (Government mailbox · Microsoft Graph · FOIA-scoped) and the
+  **Gmail Email Agent** (walled Business mailbox · private), both R1 read-only, with email-pull **routines**
+  (every 5 min). Staff Agents now read **Active / Inactive** with distinct colours — green ● Active vs grey ○
+  Inactive, inactive cards dimmed. Each agent's **deep jobs/roles live in versioned `.md` specs** under
+  `docs/agents/` (registry holds a lightweight summary + a `spec` pointer) so the team scales without bloating
+  the UI (DEC-11). Plus: Today hero shows a **plain loading banner** until the briefing resolves (no "Good
+  morning" flash), a **desktop Ask FAB** (lower-right) with the feedback button lifted above it, and the
+  **Routines** Admin tab (FEAT-16). Many prod deploys.
 - **2026-06-28 (Today polish · time-of-day life · feedback · planning)** — Iterated the Today screen on
   device: **bright sunrise banner** with a Village of Bellwood seal watermark, at-a-glance **weather** +
   **on-this-day**, tighter ~4-line briefing, and an **agent-generated persona greeting** that's varied each

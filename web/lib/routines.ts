@@ -27,6 +27,8 @@ export interface Routine {
 }
 
 export const ROUTINES: Routine[] = [
+  { id: "rt-outlook", agentKey: "email-outlook", agent: "Outlook Email Agent", name: "Pull the Government mailbox (Outlook)", schedule: "Every 5 minutes", cron: "*/5 * * * *", scope: "Microsoft Graph · mayor@villageofbellwood.gov", autonomy: "R1", lastRun: "3 min ago · 38 messages", nextRun: "in 2 min", status: "healthy" },
+  { id: "rt-gmail", agentKey: "email-gmail", agent: "Gmail Email Agent", name: "Pull the Business mailbox (Gmail)", schedule: "Every 5 minutes", cron: "*/5 * * * *", scope: "Gmail API · merrill.bellwood@gmail.com (walled)", autonomy: "R1", lastRun: "3 min ago · 4 messages", nextRun: "in 2 min", status: "healthy" },
   { id: "rt-council", agentKey: "resolver", agent: "Resolver & Ingestion Agent", name: "Fetch city council minutes", schedule: "Every 2 weeks · 1st & 3rd Mon, 6:00 AM", cron: "0 6 1-7,15-21 * 1", scope: "SFTP · /records/council/minutes/*.pdf", autonomy: "R1", lastRun: "Jun 16 · 14 documents", nextRun: "Jun 30 · in 2 days", status: "scheduled" },
   { id: "rt-permits", agentKey: "resolver", agent: "Resolver & Ingestion Agent", name: "Download monthly permit files", schedule: "Monthly · 1st, 2:00 AM", cron: "0 2 1 * *", scope: "https://permits.villageofbellwood.gov/exports", autonomy: "R1", lastRun: "Jun 1 · 312 files", nextRun: "Jul 1 · in 3 days", status: "scheduled" },
   { id: "rt-police", agentKey: "resolver", agent: "Resolver & Ingestion Agent", name: "Police RMS nightly batch", schedule: "Daily · 2:00 AM", cron: "0 2 * * *", scope: "Police RMS · nightly CSV (restricted)", autonomy: "R2", lastRun: "Today · 12 reports", nextRun: "Tomorrow · 2:00 AM", status: "healthy" },

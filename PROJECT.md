@@ -8,7 +8,7 @@
 > This file is the durable copy that survives across sessions.
 
 **📡 Shareable status page (live):** https://project-status-ten.vercel.app — public, no login. Source: `project-status/index.html`. Redeploy: `vercel deploy --prod --yes --cwd project-status`.
-**Last updated:** 2026-06-28
+**Last updated:** 2026-07-01
 **Project:** AI Chief of Staff platform, built on the Bellwood municipal email RAG POC
 **Authoritative spec:** `cto-architecture-brief.md` (R. Dawson, SDP Chicago, 2026-06-24) — three-plane
 design (Ingestion → Canonical → Capability), 6 architectural decision records (AD-1…AD-6), 5-phase plan.
@@ -67,6 +67,16 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 | 10 | Hybrid Ask (keyword + OpenAI) | ✅ done | curated + aggregates + live synth |
 | 11 | Voice search (mic → Whisper) | ✅ done | `/api/transcribe` |
 | 12 | Admin console (5 sections) | ✅ done | models/cost/rules/skills/sources |
+
+**Look · Act · Know rebuild (master prompt: `docs/rebuild/`; phases gate-by-gate):**
+| # | Phase | Status | Notes |
+|---|------|--------|-------|
+| RB-0 | Ground-truth map (`docs/rebuild/PHASE0_MAP.md`) | ✅ done | Screen/route/counts inventories + persona confirmation. **Gate: RD skim before RB-1** — 6 decisions queued in map §6 (persona naming, demo "today", walled calendar, keyless voice, /hub scope, routines collision) |
+| RB-1 | Domain-agent core (registry, deriveDomains, run contract, fixtures) | ✅ done | Gate 1 passed 2026-07-01 on branch `rebuild/phase-1-domain-agents`: tsc + build clean, 38 eval checks green, `/api/agents/run?demo=1` serves all 5 active agents |
+| RB-2 | LOOK: the Wall (getWall provider + WallScreen, replaces Today) | ⚪ pending | kills the hardcoded-badge/two-todays bug class by construction |
+| RB-3 | ACT: the Queue (approve / voice fix-it / skip, resumable) | ⚪ pending | |
+| RB-4 | KNOW + nav collapse (Wall·Queue·Ask + Operator toggle; in-app thread view) | ⚪ pending | |
+| RB-5 | Orchestrator + live runs + harbor-wellness config-only proof + usage instrumentation | ⚪ pending | |
 
 **Post-demo product work — pending:**
 | # | Task | Status | Notes |
@@ -203,6 +213,35 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 ---
 
 ## Changelog
+
+- **2026-07-01 (Rebuild Phase 1 — domain-agent core · Gate 1 passed)** — Built the lib layer for the
+  Mayor's cabinet on branch `rebuild/phase-1-domain-agents` (no UI yet): **`web/lib/domain-agents.ts`**
+  (7-agent registry — police/fire observe, council/schedule suggest, constituent draft-workhorse, hr +
+  harbor-wellness inactive; harbor-wellness walled with `scopeEntities`, the Phase 5 config-only proof);
+  **`deriveDomains()`** in `topics.ts` (multi-label stream→agent routing + clerk/agenda council rule +
+  entity-scope hits; `deriveStream` untouched); **`web/lib/agent-run.ts`** (zod-validated AgentRunOutput —
+  headline/urgency/cited digest/actItems/memoryOps; runner-enforced: actItems rejected unless autonomy
+  is `draft`, commitments close only by evidence or explicit mayor action); **`migrations/
+  002_domain_agents.sql`** (canonical.agent_memory + agent_runs, idempotent); DEMO fixtures
+  (`demo/data/domain-agents.ts` + `agent-memory.ts`) — one convincing run per active agent on the hero
+  scenarios, constituent actItems = the three seeded drafts **re-signed Mayor Merrill Bellwood** (Gate 0
+  decision), and the El Faro bar-noise blotter cited in BOTH police + constituent digests (the Phase 2
+  dedup proof); temp **`/api/agents/run?demo=1`** gate route that re-validates fixtures on serve.
+  **Gate 1:** `tsc --noEmit` clean · `npm run build` clean · `/chief` → 200 · 38 checks green in
+  `web/eval/derive-domains.test.ts` incl. every fixture citation resolving against the demo corpora.
+  Next: RB-2, the Wall.
+
+- **2026-07-01 (Look·Act·Know rebuild — Phase 0 ground-truth map)** — Started the rebuild of the Mayor-facing
+  app around three jobs (LOOK = Wall, ACT = Queue, KNOW = Ask) per the master prompt. Survey pass only, no code
+  changes: **`docs/rebuild/PHASE0_MAP.md`** inventories every reachable screen (mobile + desktop, with drift
+  notes) and maps each to Wall/Queue/Ask/Operator; every `/api` route × which rebuild phase touches it; every
+  count/date computation site (root cause of the coherence bugs: hardcoded literals — e.g. the sidebar Calendar
+  badge `8` at `ChiefApp.tsx:199` — plus two "todays": fixture `CURRENT_DATE=2026-06-28` vs real clock; both
+  "coffee this evening" code paths located). Persona set confirmed (Merrill Bellwood gov Outlook · Harbor
+  Wellness Dispensary, Cary IL walled Gmail — fixtured well enough to be the Phase 5 entity-scoped proof agent),
+  with two fixture discrepancies flagged: gov drafts signed "Mayor Daniel R. Okonkwo", and the
+  `bellwood-demo.gov` vs `villageofbellwood.gov` domain split that would misclassify registry-domain mail as
+  Resident in `deriveStream`. **Gate 0: awaiting RD skim of the map (6 decisions in §6) before Phase 1 begins.**
 
 - **2026-06-29 (Email agents · Active/Inactive · agent specs in repo)** — Email ingestion is now modeled as
   **agents**: added the **Outlook Email Agent** (Government mailbox · Microsoft Graph · FOIA-scoped) and the

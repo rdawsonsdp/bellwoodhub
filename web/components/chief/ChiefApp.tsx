@@ -11,8 +11,10 @@
  * "send/approve" is a human gate. R4 is visible: answers cite sources, order
  * events in time, and state what's missing.
  */
-import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { C, FONT, APP_BG, card, eyebrow, cite } from "@/lib/cos-design";
+import { ASK_SEEDS } from "@/lib/ask-seeds";
+import { loadOperatorMode, saveOperatorMode } from "@/lib/operator-mode";
 import type { AskResponse } from "@/lib/types";
 import type { NeedsYouToday } from "@/lib/capabilities";
 import type { MemoryDetail, EntityListItem, SourcesOverview, DraftRow } from "@/lib/screens";
@@ -20,6 +22,11 @@ import AdminPanel from "./AdminPanel";
 import AgentsPage from "./AgentsPage";
 import WallScreen from "./WallScreen";
 import QueueScreen from "./QueueScreen";
+import ThreadView from "./ThreadView";
+
+/** Open the actual source document from anywhere a message is referenced —
+ *  in-app (Phase 4), never the old standalone page. */
+const OpenEmailCtx = createContext<(mid: string) => void>(() => {});
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
 import { applyTheme, resolveTheme, watchAutoTheme } from "@/lib/theme";
@@ -94,6 +101,10 @@ const ICON = {
   admin: ["M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"],
 };
 
+/** Screens reachable in Mayor mode: the three destinations, plus History
+ *  detail (reached via citations/Ask only — never from the rail). */
+const MAYOR_SCREENS: Screen[] = ["today", "queue", "ask", "memory"];
+
 export default function ChiefApp() {
   const [screen, setScreen] = useState<Screen>("today");
   const [asked, setAsked] = useState(false);
@@ -102,9 +113,18 @@ export default function ChiefApp() {
   const [loading, setLoading] = useState(false);
   const [res, setRes] = useState<AskResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [emailMid, setEmailMid] = useState<string | null>(null);
+  const [historySel, setHistorySel] = useState<string | null>(null);
+  const [operator, setOperator] = useState(false);
 
   useEffect(() => watchAutoTheme(), []); // keep "auto" theme shifting through the day
+  useEffect(() => { setOperator(loadOperatorMode()); }, []);
+  // leaving Operator mode never strands the Mayor on an operator screen
+  useEffect(() => {
+    if (!operator && !MAYOR_SCREENS.includes(screen)) setScreen("today");
+  }, [operator, screen]);
   const go = (s: Screen) => () => { setScreen(s); setAsked(false); };
+  const openHistory = (name: string) => { setEmailMid(null); setHistorySel(name); setScreen("memory"); setAsked(false); };
 
   async function runAsk(question?: string) {
     const text = (question ?? q).trim();
@@ -132,41 +152,49 @@ export default function ChiefApp() {
   const resetAsk = () => { setAsked(false); setRes(null); setQ(""); setErr(null); };
 
   return (
+    <OpenEmailCtx.Provider value={setEmailMid}>
     <div style={{ height: "100vh", width: "100vw", display: "flex", overflow: "hidden", background: APP_BG, color: C.text, fontFamily: FONT.sans }}>
       <style>{KEYFRAMES}</style>
-      <Sidebar screen={screen} go={go} />
+      <Sidebar screen={screen} go={go} operator={operator} onToggleOperator={(on) => { saveOperatorMode(on); setOperator(on); }} />
 
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-        <Topbar onAsk={go("ask")} />
+        <Topbar />
         <div className="scrl" style={{ flex: 1, overflowY: "auto" }}>
-          {screen === "today" && <WallScreen variant="desktop" onOpenEmail={(mid) => { if (typeof window !== "undefined") window.location.href = `/email?mid=${encodeURIComponent(mid)}`; }} onGoApprovals={() => setScreen("queue")} />}
-          {screen === "queue" && <QueueScreen variant="desktop" onOpenEmail={(mid) => { if (typeof window !== "undefined") window.location.href = `/email?mid=${encodeURIComponent(mid)}`; }} />}
+          {screen === "today" && <WallScreen variant="desktop" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} />}
+          {screen === "queue" && <QueueScreen variant="desktop" onOpenEmail={setEmailMid} />}
           {screen === "brief" && <Brief go={go} onAsk={() => runAsk("Every flooding conversation, in order — who promised what and whether it happened.")} />}
           {screen === "ask" && <Ask asked={asked} loading={loading} res={res} err={err} q={q} setQ={setQ} runAsk={runAsk} resetAsk={resetAsk} go={go} />}
           {screen === "track" && <Track filter={filter} setFilter={setFilter} />}
-          {screen === "memory" && <Memory />}
+          {screen === "memory" && <Memory initial={historySel} />}
           {screen === "sources" && <Sources />}
           {screen === "settings" && <Approvals />}
           {screen === "admin" && <AdminPanel />}
           {screen === "agents" && <AgentsPage />}
         </div>
       </div>
-      {/* Floating Ask (AI Search) — lower-right corner, with feedback lifted above it */}
-      <button onClick={go("ask")} aria-label="Ask — AI Search" style={{
-        position: "fixed", right: 28, bottom: 28, zIndex: 44, display: "flex", alignItems: "center", gap: 9,
-        height: 52, padding: "0 24px", borderRadius: 99, border: 0, cursor: "pointer",
-        background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322",
-        boxShadow: "0 10px 28px rgba(231,181,60,.45)", fontFamily: FONT.sans, fontWeight: 800, fontSize: 15.5,
-      }}>
-        <Star w={20} c="#0a1322" /> Ask
-      </button>
+      {/* Ask is ONE destination in the rail — the floating pill and the topbar
+          pseudo-search are gone (Phase 4: one entry point for KNOW). */}
       <FeedbackButton raised />
+
+      {/* the source document, in-app (Phase 4 thread view) */}
+      {emailMid && (
+        <div onClick={() => setEmailMid(null)} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(0,0,0,.5)", backdropFilter: "blur(2px)" }}>
+          <div className="scrl" onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 560, maxWidth: "94vw", background: "var(--c-appbg)", borderLeft: `1px solid ${C.line}`, overflowY: "auto", padding: "14px 20px 30px" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+              <button onClick={() => setEmailMid(null)} aria-label="Close" style={{ background: "rgba(var(--ink),.06)", border: `1px solid ${C.line}`, borderRadius: 99, width: 30, height: 30, color: C.text2, cursor: "pointer", fontSize: 14, lineHeight: 1 }}>✕</button>
+            </div>
+            <ThreadView mid={emailMid} onOpenHistory={openHistory} onGoQueue={() => { setEmailMid(null); setScreen("queue"); }} />
+          </div>
+        </div>
+      )}
     </div>
+    </OpenEmailCtx.Provider>
   );
 }
 
 /* ════════════════════════ SIDEBAR ════════════════════════ */
-function Sidebar({ screen, go }: { screen: Screen; go: (s: Screen) => () => void }) {
+function Sidebar({ screen, go, operator, onToggleOperator }: { screen: Screen; go: (s: Screen) => () => void; operator: boolean; onToggleOperator: (on: boolean) => void }) {
+  const [menu, setMenu] = useState(false);
   const item = (s: Screen, label: string, icon: ReactNode, badge?: ReactNode) => {
     const on = screen === s;
     return (
@@ -194,27 +222,50 @@ function Sidebar({ screen, go }: { screen: Screen; go: (s: Screen) => () => void
       </div>
 
       <div className="scrl" style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 3 }}>
+        {/* Mayor mode: exactly three destinations. No hardcoded nav badges —
+            every count the Mayor sees traces to getWall() (invariant 9). */}
         <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".16em", padding: "4px 10px 8px" }}>Workspace</div>
-        {item("today", "Today", <Ico d={ICON.today} />, <Star w={13} c={C.gold} />)}
+        {item("today", "Wall", <Ico d={ICON.today} />, <Star w={13} c={C.gold} />)}
         {item("queue", "Queue", <Ico d={ICON.approvals} />)}
-        {item("brief", "Emails", <Ico d={ICON.mail} />)}
-        {item("ask", "Ask", <Star w={19} c="currentColor" />, <Kbd>⌘K</Kbd>)}
-        {/* No hardcoded nav badges: every count the Mayor sees traces to getWall()
-            (invariant 9) — a badge with no data source is how "8 vs 0 events" happened. */}
-        {item("track", "Calendar", <Ico d={ICON.events ?? ICON.track} />)}
-        {item("memory", "History", <Ico d={ICON.memory} />)}
-        {item("sources", "Sources", <Ico d={ICON.sources} />)}
-        {item("settings", "Approvals", <Ico d={ICON.approvals} />)}
-        {item("agents", "Staff Agents", <Star w={18} c="currentColor" />)}
-        {item("admin", "Admin", <Ico d={ICON.admin} />)}
+        {item("ask", "Ask", <Star w={19} c="currentColor" />)}
+        {operator && (
+          <>
+            <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".16em", padding: "14px 10px 8px" }}>Operator</div>
+            {item("brief", "Emails", <Ico d={ICON.mail} />)}
+            {item("track", "Calendar", <Ico d={ICON.events ?? ICON.track} />)}
+            {item("memory", "History", <Ico d={ICON.memory} />)}
+            {item("sources", "Sources", <Ico d={ICON.sources} />)}
+            {item("settings", "Approvals", <Ico d={ICON.approvals} />)}
+            {item("agents", "Staff Agents", <Star w={18} c="currentColor" />)}
+            {item("admin", "Admin", <Ico d={ICON.admin} />)}
+          </>
+        )}
       </div>
 
-      <div style={{ padding: "12px 14px", borderTop: `1px solid ${C.line2}`, display: "flex", alignItems: "center", gap: 11 }}>
-        <span style={{ width: 38, height: 38, borderRadius: 99, border: `2px solid ${C.gold}`, background: "linear-gradient(135deg,#1d3f6b,#0e2440)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 16, color: C.gold, flexShrink: 0 }}>M</span>
-        <div style={{ flex: 1, lineHeight: 1.2 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Mayor&apos;s view</div>
-          <div style={{ fontSize: 10.5, color: C.muted }}>Village of Bellwood</div>
-        </div>
+      {/* profile / persona menu — holds the Operator toggle (persisted) */}
+      <div style={{ position: "relative", padding: "12px 14px", borderTop: `1px solid ${C.line2}` }}>
+        {menu && (
+          <div style={{ position: "absolute", bottom: "calc(100% + 8px)", left: 12, right: 12, ...card, background: "var(--c-appbg)", padding: 13, zIndex: 30, boxShadow: "0 14px 34px rgba(0,0,0,.3)" }}>
+            <div style={{ fontSize: 12.5, fontWeight: 800, color: C.text, marginBottom: 9 }}>Workspace mode</div>
+            <button onClick={() => { onToggleOperator(!operator); setMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", cursor: "pointer", background: "none", border: 0, padding: "4px 0", textAlign: "left" }}>
+              <span style={{ width: 36, height: 21, borderRadius: 99, background: operator ? C.gold : "rgba(var(--ink),.18)", position: "relative", flexShrink: 0, transition: "background .15s" }}>
+                <span style={{ position: "absolute", top: 2, left: operator ? 17 : 2, width: 17, height: 17, borderRadius: 99, background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,.3)", transition: "left .15s" }} />
+              </span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Operator mode</span>
+            </button>
+            <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5, marginTop: 7 }}>
+              Reveals Emails, Calendar, History, Sources, Staff Agents, Approvals, and Admin. The Mayor&apos;s view is Wall · Queue · Ask.
+            </div>
+          </div>
+        )}
+        <button onClick={() => setMenu((m) => !m)} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", cursor: "pointer", background: "none", border: 0, padding: 0, textAlign: "left" }}>
+          <span style={{ width: 38, height: 38, borderRadius: 99, border: `2px solid ${C.gold}`, background: "linear-gradient(135deg,#1d3f6b,#0e2440)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 16, color: C.gold, flexShrink: 0 }}>M</span>
+          <span style={{ flex: 1, lineHeight: 1.2 }}>
+            <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: C.text }}>{operator ? "Operator view" : "Mayor's view"}</span>
+            <span style={{ display: "block", fontSize: 10.5, color: C.muted }}>Village of Bellwood</span>
+          </span>
+          <span style={{ color: C.dim, fontSize: 15, letterSpacing: "1px" }}>⋯</span>
+        </button>
       </div>
     </div>
   );
@@ -245,17 +296,12 @@ function ThemeToggle() {
   );
 }
 
-function Topbar({ onAsk }: { onAsk: () => void }) {
+function Topbar() {
+  // One entry point for KNOW (Phase 4): the pseudo-search bar is gone — Ask
+  // lives in the rail. The topbar keeps only ambient controls.
   return (
-    <div style={{ flexShrink: 0, height: 66, display: "flex", alignItems: "center", gap: 16, padding: "0 28px", borderBottom: `1px solid ${C.line2}`, background: "rgba(var(--ink),.035)", backdropFilter: "blur(14px)" }}>
-      <button onClick={onAsk} style={{ flex: 1, maxWidth: 560, cursor: "text", textAlign: "left", display: "flex", alignItems: "center", gap: 11, background: "rgba(var(--ink),.045)", border: "1px solid rgba(var(--ink),.1)", borderRadius: 12, padding: "11px 15px" }}>
-        <Ico d={ICON.search} w={17} sw={2} stroke={C.muted} />
-        <span style={{ flex: 1, fontSize: 13.5, color: C.muted }}>Ask your institutional memory anything…</span>
-        <Kbd>⌘K</Kbd>
-      </button>
-      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-        <ThemeToggle />
-      </div>
+    <div style={{ flexShrink: 0, height: 58, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, padding: "0 22px", borderBottom: `1px solid ${C.line2}`, background: "rgba(var(--ink),.035)", backdropFilter: "blur(14px)" }}>
+      <ThemeToggle />
     </div>
   );
 }
@@ -265,10 +311,11 @@ interface InboxItem { messageId: string; fromName: string | null; subject: strin
 const fmtD = (iso: string) => { try { return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" }); } catch { return iso.slice(5, 10); } };
 const STREAMC: Record<string, string> = { Police: C.blue, "Fire/EMS": C.red, Business: C.purpleText, Interdepartmental: C.gold, "Civic/FOIA": C.orange, Regional: C.greenText, Resident: C.green };
 
-function DInboxRow({ href, from, time, subject, snippet, dot, tag, tagColor, border }:
-  { href: string; from: string; time: string; subject: string; snippet: string; dot?: string; tag?: string; tagColor?: string; border?: boolean }) {
+function DInboxRow({ href, onOpen, from, time, subject, snippet, dot, tag, tagColor, border }:
+  { href: string; onOpen?: () => void; from: string; time: string; subject: string; snippet: string; dot?: string; tag?: string; tagColor?: string; border?: boolean }) {
   return (
-    <a href={href} style={{ textDecoration: "none", display: "flex", gap: 14, padding: "13px 18px", borderBottom: border ? `1px solid ${C.line2}` : undefined, alignItems: "flex-start" }}>
+    // href kept for middle-click/new-tab; a plain click opens the in-app thread view
+    <a href={href} onClick={onOpen ? (e) => { e.preventDefault(); onOpen(); } : undefined} style={{ textDecoration: "none", cursor: "pointer", display: "flex", gap: 14, padding: "13px 18px", borderBottom: border ? `1px solid ${C.line2}` : undefined, alignItems: "flex-start" }}>
       <span style={{ width: 8, height: 8, borderRadius: 99, background: dot || "transparent", flexShrink: 0, marginTop: 6 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
@@ -286,6 +333,7 @@ function DInboxRow({ href, from, time, subject, snippet, dot, tag, tagColor, bor
 }
 
 function Brief({ go, onAsk }: { go: (s: Screen) => () => void; onAsk: () => void }) {
+  const openEmail = useContext(OpenEmailCtx);
   const [mailboxId, setMailboxId] = useState("gov");
   const mailbox = getMailbox(mailboxId)!;
   const { data: brief } = useApi<NeedsYouToday>("/api/brief");
@@ -321,19 +369,19 @@ function Brief({ go, onAsk }: { go: (s: Screen) => () => void; onAsk: () => void
       {mailbox.isPrivate && (
         <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "11px 15px", borderRadius: 12, border: `1px solid ${mailbox.color}55`, background: `${mailbox.color}14`, marginBottom: 16, fontSize: 12.5, color: C.text3, lineHeight: 1.5 }}>
           <Ico d={["M6 10V8a6 6 0 0 1 12 0v2", "M5 10h14v10H5z", "M12 14v3"]} w={15} sw={1.8} stroke={mailbox.color} />
-          <span><b style={{ color: C.text2 }}>Private business account.</b> Walled off from the public record — not FOIA-indexed and excluded from village AI Search.</span>
+          <span><b style={{ color: C.text2 }}>Private business account.</b> Walled off from the public record — not FOIA-indexed and excluded from Ask, the village search.</span>
         </div>
       )}
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{tabs.map(([k, l, n]) => tabBtn(k, l, n))}</div>
 
       <div style={{ ...card, overflow: "hidden" }}>
         {tab === "focus" && (needs.length ? needs.map((b, i) => (
-          <DInboxRow key={b.messageId} href={mid(b.messageId)} from={b.fromName || "—"} time={fmtD(b.date)} subject={b.subject || ""} snippet={b.why}
+          <DInboxRow key={b.messageId} href={mid(b.messageId)} onOpen={() => openEmail(b.messageId)} from={b.fromName || "—"} time={fmtD(b.date)} subject={b.subject || ""} snippet={b.why}
             dot={sensitive.has(b.messageId) ? C.red : C.blue} tag={sensitive.has(b.messageId) ? "⚑ sensitive" : "↩ needs reply"} tagColor={sensitive.has(b.messageId) ? C.redText : C.blue} border={i < needs.length - 1} />
         )) : <div style={{ padding: 40, textAlign: "center", color: C.dim, fontSize: 13 }}>{brief ? "Nothing needs you right now." : "Loading…"}</div>)}
 
         {tab === "all" && ((inbox?.emails ?? []).map((e, i) => (
-          <DInboxRow key={e.messageId} href={mid(e.messageId)} from={e.fromName || "—"} time={fmtD(e.date)} subject={e.subject || ""} snippet={e.snippet}
+          <DInboxRow key={e.messageId} href={mid(e.messageId)} onOpen={() => openEmail(e.messageId)} from={e.fromName || "—"} time={fmtD(e.date)} subject={e.subject || ""} snippet={e.snippet}
             tag={e.stream} tagColor={STREAMC[e.stream] || C.muted} border={i < (inbox?.emails.length ?? 0) - 1} />
         )))}
         {tab === "all" && !inbox && <div style={{ padding: 40, textAlign: "center", color: C.dim, fontSize: 13 }}>Loading inbox…</div>}
@@ -414,9 +462,17 @@ function Ask({ asked, loading, res, err, q, setQ, runAsk, resetAsk, go }:
   if (!asked) {
     return (
       <div className="fu" style={{ padding: "48px 36px", maxWidth: 920, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Star /><span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim, letterSpacing: ".04em" }}>70,431 records indexed · email + documents · every answer cites its sources</span></div>
-        <div style={{ fontFamily: FONT.serif, fontSize: 40, fontWeight: 400, color: C.text, lineHeight: 1.18, letterSpacing: "-.01em" }}>AI Search</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Star /><span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim, letterSpacing: ".04em" }}>the whole village record · email + documents · every answer cites its sources</span></div>
+        <div style={{ fontFamily: FONT.serif, fontSize: 40, fontWeight: 400, color: C.text, lineHeight: 1.18, letterSpacing: "-.01em" }}>Ask</div>
         <AskInput q={q} setQ={setQ} runAsk={runAsk} big />
+        <div style={{ ...eyebrow(C.dim) }}>Try one of these</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: -12 }}>
+          {ASK_SEEDS.map((s) => (
+            <button key={s} onClick={() => runAsk(s)} style={{ ...card, textAlign: "left", cursor: "pointer", padding: "12px 14px", fontSize: 13.5, color: C.text2, lineHeight: 1.4, fontFamily: FONT.sans }}>
+              <span style={{ color: C.gold, marginRight: 7 }}>✦</span>{s}
+            </button>
+          ))}
+        </div>
         <div style={{ ...eyebrow(C.dim) }}>Recent searches</div>
         {recent.length ? (
           <div style={{ ...card, overflow: "hidden" }}>
@@ -545,6 +601,7 @@ function AskInput({ q, setQ, runAsk, big }: { q: string; setQ: (s: string) => vo
 
 /** Render the grounded answer with inline [n] citations linking to source cards. */
 function AnswerBody({ res }: { res: AskResponse }) {
+  const openEmail = useContext(OpenEmailCtx);
   const sources = res.sources || [];
   // open_items / who modes render their own lede; rag renders answer + timeline of sources.
   const text = res.answer || (res.openItems ? "Here's what's still open." : "");
@@ -562,7 +619,7 @@ function AnswerBody({ res }: { res: AskResponse }) {
       <div style={{ ...eyebrow(C.dim), marginBottom: 12 }}>Sources · newest first</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {sources.map((s) => (
-          <a key={s.index} id={`src-${s.index}`} href={`/email?mid=${encodeURIComponent(s.messageId)}`} style={{ textDecoration: "none", ...card, padding: "14px 16px", display: "flex", gap: 14 }}>
+          <a key={s.index} id={`src-${s.index}`} href={`/email?mid=${encodeURIComponent(s.messageId)}`} onClick={(e) => { e.preventDefault(); openEmail(s.messageId); }} style={{ textDecoration: "none", cursor: "pointer", ...card, padding: "14px 16px", display: "flex", gap: 14 }}>
             <span style={{ ...cite, height: "fit-content", fontWeight: 700 }}>[{s.index}]</span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -674,9 +731,10 @@ function dayRangeD(start: string, end: string): string[] {
 }
 const addDaysD = (iso: string, n: number) => { const d = new Date(iso + "T00:00:00"); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 function EventRowD({ e }: { e: EventItem }) {
+  const openEmail = useContext(OpenEmailCtx);
   const sm = SRCD[e.source ?? "gov"];
   return (
-    <a href={`/email?mid=${encodeURIComponent(e.messageId)}`} style={{ textDecoration: "none", display: "flex", gap: 13, padding: "13px 18px", borderBottom: `1px solid ${C.line2}`, alignItems: "flex-start" }}>
+    <a href={`/email?mid=${encodeURIComponent(e.messageId)}`} onClick={(ev) => { ev.preventDefault(); openEmail(e.messageId); }} style={{ textDecoration: "none", cursor: "pointer", display: "flex", gap: 13, padding: "13px 18px", borderBottom: `1px solid ${C.line2}`, alignItems: "flex-start" }}>
       <span style={{ width: 9, height: 9, borderRadius: 99, background: sm.color, flexShrink: 0, marginTop: 6 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
@@ -817,23 +875,44 @@ function CommitCard({ sem, semLabel, right, rightColor = C.muted, title, who, wh
 /* ════════════════════════ MEMORY (live) ════════════════════════ */
 const initialsOf = (n: string) => n.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
-function Memory() {
+function Memory({ initial }: { initial?: string | null }) {
+  const openEmail = useContext(OpenEmailCtx);
   const { data } = useApi<{ entities: EntityListItem[] }>("/api/memory");
   const [selected, setSelected] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const [kindF, setKindF] = useState("all");
   const entities = data?.entities ?? [];
   const { data: detail } = useApi<MemoryDetail>(selected ? `/api/memory?value=${encodeURIComponent(selected)}` : null);
+  useEffect(() => { if (initial) setSelected(initial); }, [initial]);
   useEffect(() => { if (!selected && entities.length) setSelected(entities[0].name); }, [entities, selected]);
 
   if (!entities.length) return <MemoryRepresentative />; // fall back to prototype content while canonical is empty
+
+  const kinds = [...new Set(entities.map((e) => e.kind))];
+  const filtered = entities.filter(
+    (e) => (kindF === "all" || e.kind === kindF) && (!q || e.name.toLowerCase().includes(q.toLowerCase())),
+  );
 
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
       <div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1, marginBottom: 18 }}>History</div>
       <div style={{ display: "flex", gap: 26, alignItems: "flex-start" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ ...eyebrow(C.dim), fontSize: 10.5, marginBottom: 10 }}>Resolved entities · {entities.length}</div>
+          <div style={{ ...eyebrow(C.dim), fontSize: 10.5, marginBottom: 10 }}>Resolved entities · {filtered.length}</div>
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search people, places, organizations…"
+            style={{ width: "100%", boxSizing: "border-box", marginBottom: 9, background: "rgba(var(--ink),.05)", border: `1px solid ${C.line}`, borderRadius: 11, padding: "10px 13px", color: C.text, fontSize: 13.5, fontFamily: FONT.sans, outline: "none" }} />
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 11 }}>
+            {["all", ...kinds].map((k) => {
+              const on = kindF === k;
+              return (
+                <button key={k} onClick={() => setKindF(k)} style={{ cursor: "pointer", padding: "5px 12px", borderRadius: 99, fontSize: 11.5, fontWeight: 700, fontFamily: FONT.sans, background: on ? C.gold : "transparent", color: on ? "#081627" : C.text3, border: `1px solid ${on ? C.gold : "rgba(var(--ink),.14)"}` }}>
+                  {k === "all" ? "All" : k}
+                </button>
+              );
+            })}
+          </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {entities.slice(0, 14).map((e) => {
+            {filtered.slice(0, 14).map((e) => {
               const on = selected === e.name;
               const parcel = e.kind === "parcel";
               return (
@@ -871,7 +950,7 @@ function Memory() {
               <div style={{ ...eyebrow(C.dim), fontSize: 10.5, padding: "4px 2px 0" }}>Recent interactions</div>
               <div style={{ ...card, overflow: "hidden" }}>
                 {detail.timeline.slice(0, 10).map((m, i, arr) => (
-                  <Interaction key={m.id} date={new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "2-digit" }).toUpperCase()} title={m.subject ?? "(no subject)"} tags={[[m.topic ?? m.stream, C.gold, "rgba(231,181,60,.12)"], [m.direction, "#9fb2c8", "rgba(var(--ink),.06)"]]} border={i < Math.min(10, arr.length) - 1} />
+                  <Interaction key={m.id} onClick={() => openEmail(m.messageId)} date={new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "2-digit" }).toUpperCase()} title={m.subject ?? "(no subject)"} tags={[[m.topic ?? m.stream, C.gold, "rgba(231,181,60,.12)"], [m.direction, "#9fb2c8", "rgba(var(--ink),.06)"]]} border={i < Math.min(10, arr.length) - 1} />
                 ))}
               </div>
             </>
@@ -1156,8 +1235,8 @@ function EntityRow({ initials, icon, name, sub, right, rightColor = C.gold, acti
     </div>
   );
 }
-function Interaction({ date, title, tags, border }: { date: string; title: string; tags: [string, string, string][]; border?: boolean }) {
-  return <div style={{ padding: "14px 16px", borderBottom: border ? `1px solid ${C.line2}` : 0, display: "flex", gap: 13, alignItems: "flex-start" }}><span style={{ fontFamily: FONT.mono, fontSize: 9.5, color: C.dim, width: 48, flexShrink: 0, paddingTop: 1 }}>{date}</span><div style={{ flex: 1 }}><div style={{ fontSize: 13.5, color: C.text, fontWeight: 600 }}>{title}</div><div style={{ display: "flex", gap: 6, marginTop: 6 }}>{tags.map((t, i) => <span key={i} style={{ padding: "2px 8px", borderRadius: 999, background: t[2], color: t[1], fontFamily: FONT.mono, fontSize: 9 }}>{t[0]}</span>)}</div></div></div>;
+function Interaction({ date, title, tags, border, onClick }: { date: string; title: string; tags: [string, string, string][]; border?: boolean; onClick?: () => void }) {
+  return <div onClick={onClick} role={onClick ? "button" : undefined} style={{ padding: "14px 16px", borderBottom: border ? `1px solid ${C.line2}` : 0, display: "flex", gap: 13, alignItems: "flex-start", cursor: onClick ? "pointer" : undefined }}><span style={{ fontFamily: FONT.mono, fontSize: 9.5, color: C.dim, width: 48, flexShrink: 0, paddingTop: 1 }}>{date}</span><div style={{ flex: 1 }}><div style={{ fontSize: 13.5, color: C.text, fontWeight: 600 }}>{title}</div><div style={{ display: "flex", gap: 6, marginTop: 6 }}>{tags.map((t, i) => <span key={i} style={{ padding: "2px 8px", borderRadius: 999, background: t[2], color: t[1], fontFamily: FONT.mono, fontSize: 9 }}>{t[0]}</span>)}</div></div>{onClick && <span style={{ color: C.dim, fontSize: 14, alignSelf: "center" }}>›</span>}</div>;
 }
 function Connector({ name, kind, dot, pct, meta, count, degraded, syncing }: { name: string; kind: string; dot: string; pct?: number; meta: string; count?: string; degraded?: boolean; syncing?: boolean }) {
   return (

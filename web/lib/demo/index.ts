@@ -65,7 +65,14 @@ export const HAS_OPENAI = !!process.env.OPENAI_API_KEY;
 
 // ── small fixtures: static import (tiny) ──
 export const demoBrief = (): NeedsYouToday => brief as unknown as NeedsYouToday;
-export const demoEntities = (): EntityListItem[] => entities as unknown as EntityListItem[];
+
+// Entity kinds: the seed mislabels external organizations as "person" —
+// normalize at the provider (one place) so History never calls IDOT a person.
+const ORG_NAME = /\b(dept|department|district|county|metra|idot|township|assessor|commission|authority|bureau|association|chamber|club|foundation|company|inc|llc|utility|utilities)\b/i;
+export const normalizeEntityKind = (name: string, kind: string): string =>
+  ORG_NAME.test(name) && kind !== "department" ? "organization" : kind;
+export const demoEntities = (): EntityListItem[] =>
+  (entities as unknown as EntityListItem[]).map((e) => ({ ...e, kind: normalizeEntityKind(e.name, e.kind) }));
 export const demoSources = (): SourcesOverview => sources as unknown as SourcesOverview;
 export const demoDashboard = () => dashboard;
 
@@ -229,8 +236,9 @@ export async function demoMorningSummary(persona: CosPersona, hour?: number): Pr
 }
 
 export function demoMemoryDetail(value: string): MemoryDetail | null {
-  const d = (entityDetails as Record<string, unknown>)[value.toLowerCase()];
-  return (d as MemoryDetail) ?? null;
+  const d = (entityDetails as Record<string, unknown>)[value.toLowerCase()] as MemoryDetail | undefined;
+  if (!d) return null;
+  return { ...d, kind: normalizeEntityKind(d.value, d.kind) };
 }
 
 /** Full source email by message_id. Falls back to the seed snippet when the DB

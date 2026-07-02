@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { needsYouToday } from "@/lib/capabilities";
+import { DEMO } from "@/lib/demo";
+import { getWall, wallPushLine } from "@/lib/wall";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,8 +22,21 @@ async function handle(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    // Read-only capability: build the digest from canonical (R1). Never sends
-    // anything (R3); empty sections are returned explicitly (R4).
+    // Phase 4: the notification payload is the Wall's top line + queue size —
+    // "1 urgent: {headline} · {n} drafts ready · ≈{eta} min" → deep-link /chief.
+    if (DEMO) {
+      const wall = getWall({ hour: new Date().getHours() });
+      return NextResponse.json({
+        line: wallPushLine(wall),
+        urgent: wall.needsYouNow.filter((i) => i.urgency === "red").length,
+        waiting: wall.footer.waiting,
+        etaMinutes: wall.footer.etaMinutes,
+        deepLink: "/chief",
+        generatedAt: wall.generatedAt,
+      });
+    }
+    // Live (until Phase 5 wires agent runs): the legacy canonical digest.
+    // Read-only (R1); never sends (R3); empty sections stated (R4).
     const brief = await needsYouToday();
     return NextResponse.json(brief);
   } catch (err) {

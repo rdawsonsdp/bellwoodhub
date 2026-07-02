@@ -41,7 +41,7 @@ export const ROUTINES: Routine[] = [
 /** Agents that run ON DEMAND (no schedule) — the contrast to scheduled routines. */
 export const ON_DEMAND_AGENTS: { agent: string; note: string }[] = [
   { agent: "Drafting Agent", note: "drafts a reply when an email needs one" },
-  { agent: "AI Search Agent", note: "answers a question over the record when you ask" },
+  { agent: "Ask Agent", note: "answers a question over the record when you ask" },
   { agent: "History Agent", note: "builds a person/property timeline when you open one" },
   { agent: "Chief of Staff", note: "briefs you when you open the Today screen" },
 ];

@@ -75,8 +75,9 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 | RB-1 | Domain-agent core (registry, deriveDomains, run contract, fixtures) | ✅ done | Gate 1 passed 2026-07-01 on branch `rebuild/phase-1-domain-agents`: tsc + build clean, 38 eval checks green, `/api/agents/run?demo=1` serves all 5 active agents |
 | RB-2 | LOOK: the Wall (getWall provider + WallScreen, replaces Today) | ✅ done | Gate 2 passed 2026-07-01: one `/api/wall` call behind everything visible; dual-domain dedup proven; hardcoded badges deleted; 28+38 eval checks green; RD to confirm look on phone |
 | RB-3 | ACT: the Queue (approve / voice fix-it / skip, resumable) | ✅ done | Gate 3 passed 2026-07-01: 17 queue checks green; localStorage resumability; RD to time the phone run-through |
-| RB-4 | KNOW + nav collapse (Wall·Queue·Ask + Operator toggle; in-app thread view) | ⚪ pending | |
+| RB-4 | KNOW + nav collapse (Wall·Queue·Ask + Operator toggle; in-app thread view) | ✅ done | Gate 4 passed 2026-07-02: 3 destinations in Mayor mode, one Ask entry + 5 seeds + hold-to-talk, in-app ThreadView (light /email page gone), entity kinds fixed, cron payload = Wall top line; 15 know-checks green |
 | RB-5 | Orchestrator + live runs + harbor-wellness config-only proof + usage instrumentation | ⚪ pending | |
+| RB-6 | **Agent Factory** — agents create agents via interview onboarding (`docs/rebuild/AGENT_FACTORY.md`, DEC-12) | ⚪ design logged | RD direction 2026-07-02; builds on the registry-as-data architecture; sequenced after RB-5 (6a demo wizard → 6b live Builder+OAuth → 6c novel types) |
 
 **Post-demo product work — pending:**
 | # | Task | Status | Notes |
@@ -146,6 +147,16 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 
 ## Decisions log
 
+- **`DEC-12` Agents are configuration, created by an agent (2026-07-02)** — Users add agents of **defined
+  types** (email-ingest, domain-desk, entity-scope, commitments, doc-connector — distilled from today's
+  roster) through an **interview** run by an Agent Builder agent; the answers become a registry row
+  (`canonical.agent_registry`), never code. Two-layer rules: a fixed code-enforced **constitution**
+  (autonomy ceiling ≤ draft, citations required, commitment close-by-evidence, walls, observe-first
+  activation) that binds every type including ones not yet conceived, plus growable **type templates**
+  (interview script + config schema + connections) that the Builder itself can author for novel types.
+  Credentials are requested via a connections checklist (OAuth/keys → secret store, never the registry).
+  A new agent is a human-gated draft: charter sign-off before activation, promotion only on evidence.
+  Full design: `docs/rebuild/AGENT_FACTORY.md`. Sequenced after RB-5. *Decided by RD.*
 - **`DEC-11` Agent definitions live in versioned `.md` specs (2026-06-29)** — Each agent's deep
   jobs/roles/scope/guardrails are defined in `docs/agents/<key>-agent.md`, **not in the UX**. The
   `web/lib/cos-agents.ts` registry holds only a lightweight read-only summary + a `spec` pointer. Keeps the
@@ -213,6 +224,25 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 ---
 
 ## Changelog
+
+- **2026-07-02 (Rebuild Phase 4 — KNOW + nav collapse · Gate 4 passed · Agent Factory logged)** — **Mayor
+  mode ships**: mobile bottom tabs and a minimal desktop rail with exactly three destinations — **Wall ·
+  Queue · Ask** — plus a profile menu holding the persisted **Operator toggle** (reveals Emails, Calendar,
+  History, Sources, Staff Agents, Approvals, Admin — everything relocated, nothing deleted; leaving
+  Operator mode can't strand you on an operator screen). **Ask**: one entry point (FAB + topbar
+  pseudo-search + duplicate bars removed), named "Ask" everywhere (AI Search label killed), 5 seeded
+  questions that all land curated/mode answers, and **hold-to-talk** as the primary mobile control.
+  **Thread view in-app**: new `ThreadView` renders citations inside the shell (desktop right panel, mobile
+  sheet) with entity chips, "View sender in History", and an honest reply path ("reply drafted → open
+  Queue" for hero threads; otherwise states that live drafting lands in Phase 5); the light-theme /email
+  page replaced by the same component + theme (deep links + MCP intact). **History**: entity kinds
+  normalized at the provider (IDOT/county orgs are no longer "person"), type filter + search on both
+  operator lists, desktop timeline rows now open the source. **Push layer**: /api/cron/needs-you payload
+  repointed to `getWall()` — "1 urgent: {headline} · 3 drafts ready · ≈5 min" + /chief deep link.
+  **Gate 4:** tsc + build clean · /chief and /email → 200 · eval 15 know + 17 queue + 29 wall + 38 routing
+  checks green · RD confirms the 3-tab feel on phone. **Also:** RD's agent-creation direction captured as
+  **DEC-12 + `docs/rebuild/AGENT_FACTORY.md`** (RB-6): interview-onboarded, registry-row agents built by an
+  Agent Builder agent under a fixed constitution + growable type templates.
 
 - **2026-07-01 (Rebuild Phase 3 — ACT: the Queue · Gate 3 passed + design pass)** — **The Queue** ships on
   both shells: `web/lib/queue.ts` (union of agent actItems + pending drafts store, deduped by thread — 3

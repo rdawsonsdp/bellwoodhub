@@ -38,7 +38,7 @@ export const COS_AGENTS: CosAgent[] = [
   {
     key: "email-outlook", name: "Outlook Email Agent", autonomy: "R1", status: "active", powers: ["Emails · Government", "Sources"],
     role: "Ingests the Mayor's government mailbox (Outlook).",
-    job: "Pulls the Bellwood Government mailbox (mayor@villageofbellwood.gov) via Microsoft Graph and runs the 5-step connector contract — pull → normalize → resolve identities → classify topic/stream → index + embed — landing every message as a canonical record. Public record: FOIA-scoped and part of AI Search. Read-only ingestion; it never sends.",
+    job: "Pulls the Bellwood Government mailbox (mayor@villageofbellwood.gov) via Microsoft Graph and runs the 5-step connector contract — pull → normalize → resolve identities → classify topic/stream → index + embed — landing every message as a canonical record. Public record: FOIA-scoped and part of Ask. Read-only ingestion; it never sends.",
     produces: "The Government inbox + searchable email corpus.",
     recent: ["Pulled 38 new messages from Outlook · 7:02 AM", "Resolved 'G. Bennett' → Gloria Bennett on a new thread · 7:02 AM", "Classified 12 messages into Police / Fire / Resident streams · 7:02 AM"],
     spec: "docs/agents/email-outlook-agent.md",
@@ -46,7 +46,7 @@ export const COS_AGENTS: CosAgent[] = [
   {
     key: "email-gmail", name: "Gmail Email Agent", autonomy: "R1", status: "active", powers: ["Emails · Business", "Sources"],
     role: "Ingests the Mayor's private business mailbox (Gmail).",
-    job: "Pulls the Bellwood Business mailbox (merrill.bellwood@gmail.com) via the Gmail API and runs the same 5-step contract. WALLED (DEC-6): this account is private — not FOIA-indexed and excluded from default AI Search. Read-only ingestion; never sends; keeps business mail separate from the public record.",
+    job: "Pulls the Bellwood Business mailbox (merrill.bellwood@gmail.com) via the Gmail API and runs the same 5-step contract. WALLED (DEC-6): this account is private — not FOIA-indexed and excluded from default Ask. Read-only ingestion; never sends; keeps business mail separate from the public record.",
     produces: "The walled Business inbox (private).",
     recent: ["Pulled 4 new messages from Gmail · 7:02 AM", "Flagged a dispensary METRC compliance email · 7:02 AM", "Kept business mail out of the FOIA index · 7:02 AM"],
     spec: "docs/agents/email-gmail-agent.md",
@@ -87,10 +87,10 @@ export const COS_AGENTS: CosAgent[] = [
     recent: ["Resolved 'G. Bennett' → Gloria Bennett (alias) · today", "Built the timeline for 1733 Frederick Ave · yesterday", "Queued an ambiguous merge for review · 2d ago"],
   },
   {
-    key: "retrieval", name: "AI Search Agent", autonomy: "R1", status: "active", powers: ["AI Search"],
+    key: "retrieval", name: "Ask Agent", autonomy: "R1", status: "active", powers: ["Ask"],
     role: "Answers any question over the record, with citations.",
     job: "Decomposes the question (aggregate vs. RAG), retrieves the complete candidate set, ranks it, and synthesizes a grounded answer using only the retrieved sources — every claim carries an [n] citation; flags cross-source answers.",
-    produces: "Cited answers + source cards in AI Search.",
+    produces: "Cited answers + source cards in Ask.",
     recent: ["Answered 'history with Gloria Bennett' — 8 sources · just now", "Answered 'St. Charles noise precedent' — cross-source · 1h ago", "Flagged a gap: no records for that query · yesterday"],
   },
   {

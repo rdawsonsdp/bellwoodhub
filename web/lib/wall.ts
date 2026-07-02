@@ -245,6 +245,15 @@ export function assembleWall(runs: AgentRun[], now: string, opts: WallOpts = {})
   };
 }
 
+/** The push-notification one-liner (cron → phone): reads like
+ *  "1 urgent: Eleanor Meyer — Basement flooded AGAIN… · 3 drafts ready · ≈5 min". */
+export function wallPushLine(w: WallPayload): string {
+  const urgent = w.needsYouNow.filter((i) => i.urgency === "red");
+  const head = urgent.length ? `${urgent.length} urgent: ${urgent[0].line}` : "Nothing urgent";
+  if (!w.footer.waiting) return `${head}.`;
+  return `${head} · ${w.footer.waiting} draft${w.footer.waiting === 1 ? "" : "s"} ready · ≈${w.footer.etaMinutes} min`;
+}
+
 function relLabel(ranAt: string, now: string): string {
   const mins = Math.max(0, Math.round((new Date(now).getTime() - new Date(ranAt).getTime()) / 60000));
   if (mins < 60) return `updated ${mins}m ago`;

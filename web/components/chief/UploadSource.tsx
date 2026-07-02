@@ -149,8 +149,8 @@ function Committing({ draft, onComplete }: { draft: IngestDraft; onComplete: () 
     { label: "Writing canonical record", sub: "1 message" },
     { label: "Resolving people & places", sub: `${draft.entities.length} linked` },
     { label: "Classifying topic & stream", sub: `${draft.topic} → ${draft.stream}` },
-    { label: "Embedding for AI Search", sub: "Voyage · 1024-dim" },
-    { label: "Indexed — searchable", sub: "live in AI Search" },
+    { label: "Embedding for Ask", sub: "Voyage · 1024-dim" },
+    { label: "Indexed — searchable", sub: "live in Ask" },
   ];
   const [i, setI] = useState(0);
   useEffect(() => {
@@ -226,7 +226,7 @@ function ReviewForm({ draft, setDraft, onCommit }: { draft: IngestDraft; setDraf
           <Field label="Stream"><input style={inp} value={draft.stream} onChange={(e) => set({ stream: e.target.value as IngestDraft["stream"] })} /></Field>
           <Field label="Author / origin"><input style={inp} value={draft.author} onChange={(e) => set({ author: e.target.value })} /></Field>
         </Row2>
-        <Field label="Summary (embedded for AI Search)"><textarea style={{ ...inp, minHeight: 60, resize: "vertical" }} value={draft.summary} onChange={(e) => set({ summary: e.target.value })} /></Field>
+        <Field label="Summary (embedded for Ask)"><textarea style={{ ...inp, minHeight: 60, resize: "vertical" }} value={draft.summary} onChange={(e) => set({ summary: e.target.value })} /></Field>
       </Section>
 
       <Section label={`${t.label} — key fields`}>
@@ -281,7 +281,7 @@ function Done({ draft, onClose }: { draft: IngestDraft; onClose: () => void }) {
     ["Canonical record", "1 message written · searchable"],
     ["People & places", `${draft.entities.length} linked → History timelines`],
     ["Topic / stream", `${draft.topic} → ${draft.stream}`],
-    ["AI Search", "summary embedded · returns with citation"],
+    ["Ask", "summary embedded · returns with citation"],
     ["Original file", route.label],
   ];
   return (
@@ -289,7 +289,7 @@ function Done({ draft, onClose }: { draft: IngestDraft; onClose: () => void }) {
       <span style={{ width: 56, height: 56, borderRadius: 99, background: "rgba(79,180,119,.16)", color: C.green, display: "grid", placeItems: "center" }}><Svg d="M20 6 9 17l-5-5" w={26} sw={2.4} /></span>
       <div style={{ textAlign: "center" }}>
         <div style={{ fontFamily: FONT.serif, fontSize: 20 }}>Ingested & searchable</div>
-        <div style={{ fontSize: 13, color: C.text3, marginTop: 5, maxWidth: 300, lineHeight: 1.5 }}>“{draft.title}” is now part of the record — findable in AI Search and on the linked timelines.</div>
+        <div style={{ fontSize: 13, color: C.text3, marginTop: 5, maxWidth: 300, lineHeight: 1.5 }}>“{draft.title}” is now part of the record — findable in Ask and on the linked timelines.</div>
       </div>
       <div style={{ width: "100%", border: "1px solid var(--c-cardbd)", borderRadius: 13, overflow: "hidden" }}>
         {rows.map(([k, v], i) => (

@@ -12,6 +12,9 @@ import AdminPanel from "./AdminPanel";
 import AgentsPage from "./AgentsPage";
 import WallScreen from "./WallScreen";
 import QueueScreen from "./QueueScreen";
+import ThreadView from "./ThreadView";
+import { ASK_SEEDS } from "@/lib/ask-seeds";
+import { loadOperatorMode, saveOperatorMode } from "@/lib/operator-mode";
 import DraftCard from "./DraftCard";
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
@@ -74,7 +77,9 @@ function Svg({ d, w = 22, sw = 1.9, fill = "none" }: { d: string; w?: number; sw
   return <svg width={w} height={w} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d.split("M").filter(Boolean).map((p, i) => <path key={i} d={"M" + p} />)}</svg>;
 }
 
-type Screen = "today" | "queue" | "emails" | "events" | "history" | "agents" | "sources" | "admin";
+type Screen = "today" | "queue" | "ask" | "emails" | "events" | "history" | "agents" | "sources" | "admin";
+/** Mayor mode = exactly these three destinations (Phase 4 nav collapse). */
+const MAYOR_SCREENS: Screen[] = ["today", "queue", "ask"];
 const THEME_CYCLE = ["auto", "midnight", "dim", "daylight", "contrast"];
 
 const streamColor: Record<string, string> = {
@@ -100,10 +105,17 @@ function audioExt(mime: string): string {
 export default function MobileApp() {
   const [screen, setScreen] = useState<Screen>("today");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [askOpen, setAskOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [operator, setOperator] = useState(false);
   const [emailMid, setEmailMid] = useState<string | null>(null);
+  const [historyValue, setHistoryValue] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   useEffect(() => watchAutoTheme(), []); // keep "auto" theme shifting through the day
+  useEffect(() => { setOperator(loadOperatorMode()); }, []);
+  // leaving Operator mode never strands the Mayor on an operator screen
+  useEffect(() => {
+    if (!operator && !MAYOR_SCREENS.includes(screen)) setScreen("today");
+  }, [operator, screen]);
 
   // Swipe-down to refresh: remount the active screen so its useApi hooks refetch.
   async function doRefresh() {
@@ -113,13 +125,14 @@ export default function MobileApp() {
 
   return (
     <EmailCtx.Provider value={setEmailMid}>
-      <div style={{ minHeight: "100dvh", background: "var(--c-appbg)", color: C.text, fontFamily: FONT.sans, paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}>
-        <Header onMenu={() => setMenuOpen(true)} />
+      <div style={{ minHeight: "100dvh", background: "var(--c-appbg)", color: C.text, fontFamily: FONT.sans, paddingBottom: "calc(88px + env(safe-area-inset-bottom))" }}>
+        <Header operator={operator} onMenu={() => setMenuOpen(true)} onProfile={() => setProfileOpen(true)} />
         <PullToRefresh onRefresh={doRefresh}>
           <div key={refreshKey} style={{ padding: "8px 0 20px" }}>
             {screen === "today" && <WallScreen variant="mobile" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} />}
             {screen === "queue" && <QueueScreen variant="mobile" onOpenEmail={setEmailMid} />}
-            {screen === "emails" && <EmailsScreen onAsk={() => setAskOpen(true)} />}
+            {screen === "ask" && <AskScreen />}
+            {screen === "emails" && <EmailsScreen onAsk={() => setScreen("ask")} />}
             {screen === "events" && <EventsScreen />}
             {screen === "history" && <HistoryScreen />}
             {screen === "agents" && <AgentsPage />}
@@ -128,20 +141,87 @@ export default function MobileApp() {
           </div>
         </PullToRefresh>
 
-        <AskFab onAsk={() => setAskOpen(true)} />
-        <FeedbackButton />
-        {menuOpen && <NavMenu current={screen} go={(s) => { setScreen(s); setMenuOpen(false); }} onClose={() => setMenuOpen(false)} />}
-        {askOpen && <AskSheet onClose={() => setAskOpen(false)} />}
-        {emailMid && <EmailSheet mid={emailMid} onClose={() => setEmailMid(null)} />}
+        {/* Mayor mode nav: three thumb-zone tabs. The Ask FAB is gone — Ask is
+            a destination, and scroll containers keep bottom padding clear. */}
+        <TabBar current={screen} go={setScreen} />
+        <FeedbackButton raised />
+        {operator && menuOpen && <NavMenu current={screen} go={(s) => { setScreen(s); setMenuOpen(false); }} onClose={() => setMenuOpen(false)} />}
+        {profileOpen && (
+          <ProfileSheet
+            operator={operator}
+            onToggle={(on) => { saveOperatorMode(on); setOperator(on); }}
+            onClose={() => setProfileOpen(false)}
+          />
+        )}
+        {emailMid && (
+          <EmailSheet
+            mid={emailMid}
+            onClose={() => setEmailMid(null)}
+            onOpenHistory={(name) => setHistoryValue(name)}
+            onGoQueue={() => { setEmailMid(null); setScreen("queue"); }}
+          />
+        )}
+        {historyValue && <MemoryDetailSheet value={historyValue} onClose={() => setHistoryValue(null)} />}
       </div>
     </EmailCtx.Provider>
   );
 }
 
-const NAV_STAR = "M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z";
-const NAV_ITEMS: [Screen, string, string][] = [
-  ["today", I.today, "Today"],
+/* Mayor-mode bottom tabs — Wall · Queue · Ask, thumb zone. */
+const TABS: [Screen, string, string][] = [
+  ["today", I.today, "Wall"],
   ["queue", I.approvals, "Queue"],
+  ["ask", I.search, "Ask"],
+];
+function TabBar({ current, go }: { current: Screen; go: (s: Screen) => void }) {
+  return (
+    <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 40, display: "flex", background: "var(--c-sidebar, rgba(255,253,246,.88))", backdropFilter: "blur(16px)", borderTop: "1px solid var(--c-cardbd)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+      {TABS.map(([s, d, label]) => {
+        const on = current === s;
+        return (
+          <button key={s} onClick={() => go(s)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "10px 0 8px", background: "none", border: 0, cursor: "pointer", color: on ? C.gold : C.muted }}>
+            <Svg d={d} w={22} sw={on ? 2.2 : 1.8} />
+            <span style={{ fontSize: 10.5, fontWeight: on ? 800 : 600, fontFamily: FONT.sans }}>{label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* Profile / persona sheet — holds the persisted Operator toggle. */
+function ProfileSheet({ operator, onToggle, onClose }: { operator: boolean; onToggle: (on: boolean) => void; onClose: () => void }) {
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "flex-end" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", background: "var(--c-appbg)", borderRadius: "18px 18px 0 0", borderTop: "1px solid var(--c-cardbd)", padding: "18px 18px calc(env(safe-area-inset-bottom) + 20px)", animation: "sheetUp .2s ease-out" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <span style={{ width: 42, height: 42, borderRadius: 99, border: `2px solid ${C.gold}`, background: "linear-gradient(135deg,#1d3f6b,#0e2440)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 18, color: C.gold }}>M</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>{operator ? "Operator view" : "Mayor's view"}</div>
+            <div style={{ fontSize: 11.5, color: C.muted }}>Village of Bellwood</div>
+          </div>
+        </div>
+        <button onClick={() => onToggle(!operator)} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", cursor: "pointer", background: "rgba(var(--ink),.04)", border: "1px solid var(--c-cardbd)", borderRadius: 13, padding: "13px 14px", textAlign: "left" }}>
+          <span style={{ width: 38, height: 22, borderRadius: 99, background: operator ? C.gold : "rgba(var(--ink),.18)", position: "relative", flexShrink: 0, transition: "background .15s" }}>
+            <span style={{ position: "absolute", top: 2, left: operator ? 18 : 2, width: 18, height: 18, borderRadius: 99, background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,.3)", transition: "left .15s" }} />
+          </span>
+          <span style={{ flex: 1 }}>
+            <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: C.text }}>Operator mode</span>
+            <span style={{ display: "block", fontSize: 11.5, color: C.muted, marginTop: 2, lineHeight: 1.45 }}>Reveals Emails, Calendar, History, Sources, Staff Agents, and Admin behind the menu button.</span>
+          </span>
+        </button>
+        <button onClick={onClose} style={{ display: "block", width: "100%", marginTop: 12, padding: "13px 14px", borderRadius: 13, border: 0, cursor: "pointer", background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322", fontWeight: 800, fontSize: 14.5, fontFamily: FONT.sans }}>Done</button>
+      </div>
+    </div>
+  );
+}
+
+const NAV_STAR = "M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z";
+// Operator-mode menu — everything that existed before, relocated (never deleted).
+const NAV_ITEMS: [Screen, string, string][] = [
+  ["today", I.today, "Wall"],
+  ["queue", I.approvals, "Queue"],
+  ["ask", I.search, "Ask"],
   ["emails", I.emails, "Emails"],
   ["events", I.events, "Calendar"],
   ["history", I.history, "History"],
@@ -180,17 +260,6 @@ function NavMenu({ current, go, onClose }: { current: Screen; go: (s: Screen) =>
         <div style={{ padding: "12px 18px calc(env(safe-area-inset-bottom) + 14px)", borderTop: "1px solid var(--c-cardbd)", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>Tap ✦ Ask anytime to search the record</div>
       </div>
       <div onClick={onClose} style={{ flex: 1, background: "rgba(0,0,0,.45)" }} />
-    </div>
-  );
-}
-
-/* The single persistent bottom action — Ask (AI Search). */
-function AskFab({ onAsk }: { onAsk: () => void }) {
-  return (
-    <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 30, display: "flex", justifyContent: "center", pointerEvents: "none", paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}>
-      <button onClick={onAsk} aria-label="Ask — AI Search" style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 10, height: 56, padding: "0 26px 0 22px", borderRadius: 99, border: "3px solid var(--c-appbg)", background: "linear-gradient(135deg,var(--c-goldhi),var(--c-goldlo))", color: "#0a1322", boxShadow: "0 8px 24px rgba(231,181,60,.45)", fontFamily: FONT.sans, fontWeight: 800, fontSize: 16 }}>
-        <Svg d={I.search} w={22} sw={2.2} /> Ask
-      </button>
     </div>
   );
 }
@@ -265,25 +334,28 @@ function ingestedDetail(mid: string): EmailDetail | null {
     direction: "inbound", topic: r.topic, stream: r.stream as EmailDetail["stream"], date: r.ingestedAt,
     bodyRaw: body, bodyClean: body } as unknown as EmailDetail;
 }
-function EmailSheet({ mid, onClose }: { mid: string; onClose: () => void }) {
+function EmailSheet({ mid, onClose, onOpenHistory, onGoQueue }: { mid: string; onClose: () => void; onOpenHistory?: (name: string) => void; onGoQueue?: () => void }) {
   const local = mid.startsWith("ing-") ? ingestedDetail(mid) : null;
-  const { data: fetched } = useApi<EmailDetail>(local ? null : `/api/email?mid=${encodeURIComponent(mid)}`);
-  const data = local ?? fetched;
-  return (
-    <Sheet title={data?.subject || "Source email"} onClose={onClose}>
-      {!data ? <Loading label="Opening the source document…" /> : (
+  if (local) {
+    // session uploads live only in the client store — render locally
+    return (
+      <Sheet title={local.subject || "Uploaded document"} onClose={onClose}>
         <div style={{ padding: "0 16px 32px" }}>
           <div style={{ ...cardS, padding: 14, marginBottom: 14 }}>
-            <Row k="From" v={`${data.fromName ?? ""}${data.fromEmail ? ` · ${data.fromEmail}` : ""}`} />
-            <Row k="To" v={data.toEmail} />
-            {data.cc && <Row k="Cc" v={data.cc} />}
-            <Row k="Date" v={new Date(data.date).toLocaleString()} />
-            <Row k="Stream" v={`${data.stream}${data.topic ? ` · ${data.topic}` : ""}`} />
+            <Row k="From" v={local.fromName} />
+            <Row k="Date" v={new Date(local.date).toLocaleString()} />
+            <Row k="Stream" v={`${local.stream}${local.topic ? ` · ${local.topic}` : ""}`} />
           </div>
-          <div style={{ fontFamily: FONT.serif, fontSize: 20, fontWeight: 500, lineHeight: 1.3, marginBottom: 14 }}>{data.subject || "(no subject)"}</div>
-          <div style={{ fontSize: 14.5, lineHeight: 1.7, color: C.text2, whiteSpace: "pre-wrap" }}>{data.bodyRaw || data.bodyClean}</div>
+          <div style={{ fontSize: 14.5, lineHeight: 1.7, color: C.text2, whiteSpace: "pre-wrap" }}>{local.bodyRaw || local.bodyClean}</div>
         </div>
-      )}
+      </Sheet>
+    );
+  }
+  return (
+    <Sheet title="Source document" onClose={onClose}>
+      <div style={{ padding: "0 16px 32px" }}>
+        <ThreadView mid={mid} onOpenHistory={onOpenHistory} onGoQueue={onGoQueue} />
+      </div>
     </Sheet>
   );
 }
@@ -298,7 +370,7 @@ function Row({ k, v }: { k: string; v: string | null }) {
 }
 
 /* ── header ── */
-function Header({ onMenu }: { onMenu: () => void }) {
+function Header({ operator, onMenu, onProfile }: { operator: boolean; onMenu: () => void; onProfile: () => void }) {
   const [theme, setTheme] = useState("auto");
   useEffect(() => { try { setTheme(localStorage.getItem("bw-theme") || "auto"); } catch { /* */ } }, []);
   function cycle() {
@@ -309,9 +381,11 @@ function Header({ onMenu }: { onMenu: () => void }) {
   const light = ["daylight", "am", "midday"].includes(resolveTheme(theme, new Date().getHours()));
   return (
     <div style={{ position: "sticky", top: 0, zIndex: 10, display: "flex", alignItems: "center", gap: 11, padding: "calc(env(safe-area-inset-top) + 12px) 16px 12px", background: "rgba(var(--ink),.04)", backdropFilter: "blur(14px)", borderBottom: "1px solid var(--c-cardbd)" }}>
-      <button onClick={onMenu} aria-label="Menu" style={{ width: 38, height: 38, borderRadius: 11, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
-      </button>
+      {operator && (
+        <button onClick={onMenu} aria-label="Menu" style={{ width: 38, height: 38, borderRadius: 11, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+        </button>
+      )}
       <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(135deg,var(--c-goldhi),var(--c-goldlo))", display: "flex", alignItems: "center", justifyContent: "center", color: "#0a1322", flexShrink: 0 }}>
         <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z" /></svg>
       </div>
@@ -324,6 +398,7 @@ function Header({ onMenu }: { onMenu: () => void }) {
           ? <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="4.2" /><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M5 5l1.8 1.8M17.2 17.2l1.8 1.8M19 5l-1.8 1.8M6.8 17.2 5 19" /></svg>
           : <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>}
       </button>
+      <button onClick={onProfile} aria-label="Profile & workspace mode" style={{ width: 36, height: 36, borderRadius: 99, border: `1.5px solid ${C.gold}`, background: "linear-gradient(135deg,#1d3f6b,#0e2440)", color: C.gold, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 15, flexShrink: 0 }}>M</button>
     </div>
   );
 }
@@ -387,7 +462,7 @@ function EmailsScreen({ onAsk }: { onAsk: () => void }) {
       {mailbox.isPrivate && (
         <div style={{ margin: "0 16px 4px", padding: "9px 12px", borderRadius: 11, border: `1px solid ${mailbox.color}55`, background: `${mailbox.color}14`, display: "flex", gap: 9, alignItems: "flex-start" }}>
           <span style={{ color: mailbox.color, marginTop: 1 }}><Svg d="M6 10V8a6 6 0 0 1 12 0v2M5 10h14v10H5zM12 14v3" w={15} /></span>
-          <div style={{ fontSize: 11.5, color: C.text3, lineHeight: 1.5 }}><b style={{ color: C.text2 }}>Private business account.</b> Walled off from the public record — not FOIA-indexed and excluded from village AI Search.</div>
+          <div style={{ fontSize: 11.5, color: C.text3, lineHeight: 1.5 }}><b style={{ color: C.text2 }}>Private business account.</b> Walled off from the public record — not FOIA-indexed and excluded from village Ask.</div>
         </div>
       )}
 
@@ -551,13 +626,27 @@ function HistoryScreen() {
   const { data } = useApi<{ entities: EntityListItem[] }>("/api/memory");
   const [sel, setSel] = useState<string | null>(null);
   const [q, setQ] = useState("");
-  const list = (data?.entities || []).filter((e) => e.name.toLowerCase().includes(q.toLowerCase()));
+  const [kindF, setKindF] = useState("all");
+  const kinds = [...new Set((data?.entities || []).map((e) => e.kind))];
+  const list = (data?.entities || []).filter(
+    (e) => (kindF === "all" || e.kind === kindF) && e.name.toLowerCase().includes(q.toLowerCase()),
+  );
   return (
     <div>
       <ScreenHead title="History" sub="The full record on every person and property." />
       <div style={{ padding: "0 16px 8px" }}>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search people & places…"
           style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text, fontSize: 15, outline: "none", fontFamily: FONT.sans }} />
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 9 }}>
+          {["all", ...kinds].map((k) => {
+            const on = kindF === k;
+            return (
+              <button key={k} onClick={() => setKindF(k)} style={{ cursor: "pointer", padding: "5px 12px", borderRadius: 99, fontSize: 11.5, fontWeight: 700, fontFamily: FONT.sans, background: on ? C.gold : "transparent", color: on ? "#081627" : C.text3, border: `1px solid ${on ? C.gold : "rgba(var(--ink),.14)"}` }}>
+                {k === "all" ? "All" : k}
+              </button>
+            );
+          })}
+        </div>
       </div>
       <div style={{ display: "grid", gap: 8, padding: "0 16px" }}>
         {list.map((e) => (
@@ -723,8 +812,8 @@ function IngestedSection({ records }: { records: IngestedRecord[] }) {
     </div>
   );
 }
-/* ── ASK sheet (full screen + voice) ── */
-function AskSheet({ onClose }: { onClose: () => void }) {
+/* ── ASK — the KNOW tab (voice-first: hold-to-talk primary) ── */
+function AskScreen() {
   const [q, setQ] = useState("");
   const [res, setRes] = useState<AskResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -771,22 +860,36 @@ function AskSheet({ onClose }: { onClose: () => void }) {
     } catch { setErr("Microphone access was blocked."); setRec("idle"); }
   }
   const recent = getRecentSearches();
-  const status = rec === "rec" ? "Listening… tap the mic to stop" : rec === "busy" ? "Transcribing your voice…" : loading ? "Searching the record…" : null;
+  const status = rec === "rec" ? "Listening… release to search" : rec === "busy" ? "Transcribing your voice…" : loading ? "Searching the record…" : null;
+
+  // hold-to-talk: press starts recording, release stops → transcribe → search
+  const holdStart = () => { if (rec === "idle") mic(); };
+  const holdStop = () => { if (rec === "rec") mic(); };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "var(--c-appbg)", display: "flex", flexDirection: "column", animation: "sheetUp .22s ease-out" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "calc(env(safe-area-inset-top) + 12px) 16px 12px", borderBottom: "1px solid var(--c-cardbd)" }}>
-        <button onClick={onClose} aria-label="Close" style={{ width: 36, height: 36, borderRadius: 99, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, display: "flex", alignItems: "center", justifyContent: "center" }}><Svg d={I.close} w={18} /></button>
-        <span style={{ fontFamily: FONT.serif, fontSize: 18, fontWeight: 600 }}>AI Search</span>
-      </div>
-      <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
+    <div style={{ padding: "4px 0 20px" }}>
+      <ScreenHead title="Ask" sub="The whole village record — email and documents. Every answer cites its sources." />
+      <div style={{ padding: "0 16px" }}>
         <form onSubmit={(e) => { e.preventDefault(); run(); }} style={{ display: "flex", gap: 9, alignItems: "center", background: "rgba(var(--ink),.05)", border: "1.5px solid rgba(231,181,60,.4)", borderRadius: 14, padding: "6px 6px 6px 14px" }}>
-          <input value={q} onChange={(e) => setQ(e.target.value)} autoFocus placeholder="Ask anything…" style={{ flex: 1, background: "transparent", border: 0, outline: "none", fontSize: 16, color: C.text, fontFamily: FONT.sans }} />
-          <button type="button" onClick={mic} aria-label="Voice" style={{ width: 38, height: 38, borderRadius: 99, border: 0, background: rec === "rec" ? "rgba(255,107,94,.18)" : "rgba(var(--ink),.06)", color: rec === "rec" ? C.red : C.muted, display: "flex", alignItems: "center", justifyContent: "center", animation: rec === "rec" ? "cosPulse 1.1s infinite" : rec === "busy" ? "bwPulse 1s ease-in-out infinite" : undefined }}>
-            {rec === "busy" ? <span style={{ display: "inline-flex", animation: "cosSpin .8s linear infinite" }}><Svg d="M21 12a9 9 0 0 0-9-9" w={17} /></span> : <Svg d={I.mic} w={17} />}
-          </button>
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask anything…" style={{ flex: 1, minWidth: 0, background: "transparent", border: 0, outline: "none", fontSize: 16, color: C.text, fontFamily: FONT.sans }} />
           <button type="submit" disabled={loading || rec !== "idle"} style={{ padding: "9px 16px", borderRadius: 10, border: 0, background: loading ? "rgba(231,181,60,.85)" : C.gold, color: "#081627", fontWeight: 700, fontSize: 14, minWidth: loading ? 96 : undefined, animation: loading ? "bwPulse 1.2s ease-in-out infinite" : undefined }}>{loading ? "Searching…" : "Ask"}</button>
         </form>
+
+        {/* voice-first: the primary control is hold-to-talk */}
+        <button
+          type="button"
+          onPointerDown={(e) => { e.preventDefault(); holdStart(); }}
+          onPointerUp={holdStop}
+          onPointerCancel={holdStop}
+          onPointerLeave={holdStop}
+          onContextMenu={(e) => e.preventDefault()}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, width: "100%", marginTop: 10, padding: "16px 14px", borderRadius: 14, border: 0, cursor: "pointer", touchAction: "manipulation", WebkitUserSelect: "none", userSelect: "none", fontFamily: FONT.sans, fontWeight: 800, fontSize: 15.5, color: rec === "rec" ? "#fff" : "#0a1322", background: rec === "rec" ? "linear-gradient(135deg,#e8574a,#c23a2e)" : "linear-gradient(135deg,#F4CB63,#D7991C)", boxShadow: rec === "rec" ? "0 8px 22px rgba(210,58,45,.4)" : "0 8px 22px rgba(231,181,60,.35)", animation: rec === "rec" ? "cosPulse 1.1s infinite" : undefined }}
+        >
+          {rec === "busy"
+            ? <span style={{ display: "inline-flex", animation: "cosSpin .8s linear infinite" }}><Svg d="M21 12a9 9 0 0 0-9-9" w={18} /></span>
+            : <Svg d={I.mic} w={19} sw={2.2} />}
+          {rec === "rec" ? "Listening — release to search" : rec === "busy" ? "Transcribing…" : "Hold to talk"}
+        </button>
 
         {/* live progress — pulsing status while listening / transcribing / searching */}
         {status && (
@@ -803,6 +906,14 @@ function AskSheet({ onClose }: { onClose: () => void }) {
 
         {!res && !loading && (
           <div style={{ marginTop: 22 }}>
+            <div style={{ fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".1em", color: C.dim, textTransform: "uppercase", marginBottom: 10 }}>Try one of these</div>
+            <div style={{ display: "grid", gap: 8, marginBottom: 22 }}>
+              {ASK_SEEDS.map((s) => (
+                <button key={s} onClick={() => run(s)} style={{ ...cardS, padding: "12px 14px", textAlign: "left", cursor: "pointer", color: C.text2, fontSize: 14, lineHeight: 1.4, fontFamily: FONT.sans }}>
+                  <span style={{ color: C.gold, marginRight: 7 }}>✦</span>{s}
+                </button>
+              ))}
+            </div>
             <div style={{ fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".1em", color: C.dim, textTransform: "uppercase", marginBottom: 10 }}>Recent searches</div>
             {recent.length ? (
               <div style={{ display: "grid" }}>

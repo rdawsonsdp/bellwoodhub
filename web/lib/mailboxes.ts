@@ -6,7 +6,7 @@
  * carries its provider (Outlook / Gmail) and, importantly, a privacy posture:
  *
  *   - Government (Outlook) is the public record: FOIA-scoped, default-visible,
- *     part of AI Search by default.
+ *     part of Ask by default.
  *   - Business (Gmail) is WALLED (DEC-6): private, NOT FOIA-indexed, and excluded
  *     from default search — visible only when the mayor explicitly switches to it.
  *

@@ -12,7 +12,7 @@
  *   entities                              → canonical.entity_aliases + edges
  *   topic                                 → canonical.message_topics (→ stream, read-time)
  *   fields (Layer C)                      → messages.provenance (filterable facets)
- *   summary + narrative                   → canonical.chunks (Voyage-embedded → AI Search)
+ *   summary + narrative                   → canonical.chunks (Voyage-embedded → Ask)
  */
 import type { StreamKey } from "./types";
 

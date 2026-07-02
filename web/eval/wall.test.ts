@@ -72,6 +72,17 @@ check("runs payload carries the full digests", wall.runs.constituent?.actItems.l
 check("every citation chip has a label", Object.values(wall.runs).every((r) => r.digest.every((d) => d.sources.every((s) => s.label.length > 0))));
 check("dateLabel derives from the demo clock", wall.dateLabel.includes("June 28"), wall.dateLabel);
 
+console.log("anticipation loop — hourly freshness rotation");
+check("every card carries freshAt", wall.cabinet.every((c) => !!c.freshAt));
+const freshAt = (h: number) => getWall({ hour: h }).cabinet.find((c) => c.lastRunLabel === "updated just now")?.agentKey;
+check("exactly one gov desk reports in per hour", !!freshAt(9) && !!freshAt(10));
+check("the fresh desk varies by hour", freshAt(9) !== freshAt(10), `${freshAt(9)} vs ${freshAt(10)}`);
+check("deterministic for a given hour (evals + demo coherence)", freshAt(9) === freshAt(9));
+check(
+  "the walled desk NEVER reports in on the government rotation",
+  Array.from({ length: 24 }, (_, h) => freshAt(h)).every((k) => k !== "harbor-wellness"),
+);
+
 console.log("greeting — time-coherent, never playful");
 check("morning", getWall({ hour: 9 }).greeting === "Good morning, Mayor Harvey.");
 check("evening", getWall({ hour: 19 }).greeting === "Good evening, Mayor Harvey.");

@@ -10,7 +10,7 @@ import { createContext, useContext, useEffect, useRef, useState, type CSSPropert
 import { C, FONT } from "@/lib/cos-design";
 import AdminPanel from "./AdminPanel";
 import AgentsPage from "./AgentsPage";
-import TodayScreen from "./TodayScreen";
+import WallScreen from "./WallScreen";
 import DraftCard from "./DraftCard";
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
@@ -116,7 +116,7 @@ export default function MobileApp() {
         <Header onMenu={() => setMenuOpen(true)} />
         <PullToRefresh onRefresh={doRefresh}>
           <div key={refreshKey} style={{ padding: "8px 0 20px" }}>
-            {screen === "today" && <TodayScreen onOpenEmail={setEmailMid} onGo={(d) => setScreen(d === "calendar" ? "events" : "emails")} />}
+            {screen === "today" && <WallScreen variant="mobile" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("emails")} />}
             {screen === "emails" && <EmailsScreen onAsk={() => setAskOpen(true)} />}
             {screen === "events" && <EventsScreen />}
             {screen === "history" && <HistoryScreen />}

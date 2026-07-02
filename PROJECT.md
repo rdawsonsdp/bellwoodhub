@@ -73,7 +73,7 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 |---|------|--------|-------|
 | RB-0 | Ground-truth map (`docs/rebuild/PHASE0_MAP.md`) | ✅ done | Screen/route/counts inventories + persona confirmation. **Gate: RD skim before RB-1** — 6 decisions queued in map §6 (persona naming, demo "today", walled calendar, keyless voice, /hub scope, routines collision) |
 | RB-1 | Domain-agent core (registry, deriveDomains, run contract, fixtures) | ✅ done | Gate 1 passed 2026-07-01 on branch `rebuild/phase-1-domain-agents`: tsc + build clean, 38 eval checks green, `/api/agents/run?demo=1` serves all 5 active agents |
-| RB-2 | LOOK: the Wall (getWall provider + WallScreen, replaces Today) | ⚪ pending | kills the hardcoded-badge/two-todays bug class by construction |
+| RB-2 | LOOK: the Wall (getWall provider + WallScreen, replaces Today) | ✅ done | Gate 2 passed 2026-07-01: one `/api/wall` call behind everything visible; dual-domain dedup proven; hardcoded badges deleted; 28+38 eval checks green; RD to confirm look on phone |
 | RB-3 | ACT: the Queue (approve / voice fix-it / skip, resumable) | ⚪ pending | |
 | RB-4 | KNOW + nav collapse (Wall·Queue·Ask + Operator toggle; in-app thread view) | ⚪ pending | |
 | RB-5 | Orchestrator + live runs + harbor-wellness config-only proof + usage instrumentation | ⚪ pending | |
@@ -213,6 +213,24 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 ---
 
 ## Changelog
+
+- **2026-07-01 (Rebuild Phase 2 — LOOK: the Wall · Gate 2 passed)** — The Mayor's default screen is now
+  **the Wall** on mobile AND desktop (same commit series): **`web/lib/wall.ts` `getWall()`** — the ONE
+  provider behind everything visible (invariant 9). needsYouNow: global rank red→yellow by recency, MAX 3,
+  **deduped by thread overlap** — the Pawlak bar-noise thread renders once with merged police+constituent
+  chips (dual-domain proof); primary caption prefers the constituent's inbound message over the department
+  reply. Cabinet cards (status dot / headline / "X new · Y need you" / "updated Nm ago") → tap opens
+  **`AgentDigestSheet`** (bottom sheet mobile, right panel desktop) with cited digest bullets → source
+  drill-in, ending in "N drafts ready → Approve". Footer: "22 handled · 3 waiting · ≈5 min". **Single demo
+  clock** (Gate-0 decision #2): `DEMO_NOW`/`demoToday()` anchored to the fixture window; `CURRENT_DATE`
+  now derives from it; greeting is one sober time-coherent line (no weather, no coffee, no exclamations).
+  **Deleted the fake-count class:** sidebar Calendar "8", Approvals "3", Emails red dot, "70,431 messages /
+  4/6 connectors" card, topbar "synced 4m ago", Approvals `|| 3` fallback. Walled rule enforced in the
+  provider: walled agents never enter needsYouNow or the footer (eval-proven on the Phase-5 flip path).
+  TodayScreen retired from both shells (weather/on-this-day/inbox preview off the Mayor's default; the
+  component + /api/morning-summary remain for the Phase-4 cron repoint). **Gate 2:** tsc + build clean ·
+  `/chief` → 200 · eval `wall.test.ts` 28 checks + `derive-domains.test.ts` 38 checks green · RD confirms
+  look-and-feel on phone (tool can't screenshot mobile). Next: RB-3, the Queue.
 
 - **2026-07-01 (Rebuild Phase 1 — domain-agent core · Gate 1 passed)** — Built the lib layer for the
   Mayor's cabinet on branch `rebuild/phase-1-domain-agents` (no UI yet): **`web/lib/domain-agents.ts`**

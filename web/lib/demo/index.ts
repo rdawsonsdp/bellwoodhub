@@ -26,6 +26,7 @@ import events from "./data/events.json";
 import businessInbox from "./data/business-inbox.json";
 import corpusDocs from "./data/corpus-docs.json";
 import gmailCalendar from "./data/gmail-calendar.json";
+import { DEMO_RUN_AT } from "./data/domain-agents";
 import { COS_AGENTS } from "../cos-agents";
 import {
   COS_TONE_PRESETS, fillGreeting,
@@ -112,7 +113,13 @@ export const demoSaveDraft = (draftId: string, patch: { subject?: string; body?:
 // ── Chief of Staff "morning briefing" — the Today landing hero ───────────────
 // Hybrid: a deterministic baseline always renders (keyless); when an OpenAI key
 // is present the narrative is rewritten in the configured CoS persona/voice.
-const CURRENT_DATE = "2026-06-28"; // the demo's "today" — matches the seed window
+// The demo's single clock (Gate-0 decision #2): "now" is anchored to the newest
+// fixture moment — 25 minutes after the cabinet's 6:40 AM briefing pass — so every
+// demo date computation shares one "today" and no two screens can disagree about
+// what day it is. Real-clock `new Date()` remains only for greeting/theme hours.
+export const DEMO_NOW = new Date(new Date(DEMO_RUN_AT).getTime() + 25 * 60 * 1000).toISOString();
+export const demoToday = (): string => DEMO_NOW.slice(0, 10);
+const CURRENT_DATE = demoToday(); // = "2026-06-28" — matches the seed window
 
 // Demo "at a glance" extras (keyless). Live weather / Wikipedia "on this day"
 // can replace these later; fixtures keep the demo bulletproof.
@@ -493,4 +500,36 @@ async function synthesize(question: string, sources: Source[]): Promise<string> 
   // deterministic, still-grounded fallback
   const top = sources[0];
   return `Across ${sources.length} records in the village archive, the most relevant is a ${top.docKind ?? "message"} from ${top.fromName ?? "a sender"} on ${top.date.slice(0, 10)} — "${top.subject ?? ""}" [1]. See the cited sources below.`;
+}
+
+// ── message meta lookup (Wall items + citation chips) ────────────────────────
+/** Minimal per-message metadata for the Wall provider. Resolves across the
+ *  search index, the walled business fixture, and the corpus docs; records
+ *  without a thread (biz-/doc- prefixed ids) use their messageId as the key. */
+export interface MessageMeta {
+  messageId: string;
+  threadId: string;
+  subject: string | null;
+  fromName: string | null;
+  date: string;
+  direction: "inbound" | "outbound";
+}
+export function demoMessageMeta(ids: string[]): Map<string, MessageMeta> {
+  const want = new Set(ids);
+  const map = new Map<string, MessageMeta>();
+  if (!want.size) return map;
+  for (const r of searchIndex()) {
+    if (want.has(r.messageId) && !map.has(r.messageId))
+      map.set(r.messageId, { messageId: r.messageId, threadId: r.threadId || r.messageId, subject: r.subject, fromName: r.fromName, date: r.date, direction: r.direction });
+  }
+  for (const b of BUSINESS) {
+    if (want.has(b.messageId) && !map.has(b.messageId))
+      map.set(b.messageId, { messageId: b.messageId, threadId: b.messageId, subject: b.subject, fromName: b.fromName, date: b.date, direction: b.direction });
+  }
+  for (const d of DOCS) {
+    // corpus documents are records, not correspondence — treat as inbound
+    if (want.has(d.messageId) && !map.has(d.messageId))
+      map.set(d.messageId, { messageId: d.messageId, threadId: d.messageId, subject: d.subject, fromName: d.fromName, date: d.date, direction: "inbound" });
+  }
+  return map;
 }

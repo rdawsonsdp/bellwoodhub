@@ -18,7 +18,7 @@ import type { NeedsYouToday } from "@/lib/capabilities";
 import type { MemoryDetail, EntityListItem, SourcesOverview, DraftRow } from "@/lib/screens";
 import AdminPanel from "./AdminPanel";
 import AgentsPage from "./AgentsPage";
-import TodayScreen from "./TodayScreen";
+import WallScreen from "./WallScreen";
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
 import { applyTheme, resolveTheme, watchAutoTheme } from "@/lib/theme";
@@ -138,7 +138,7 @@ export default function ChiefApp() {
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <Topbar onAsk={go("ask")} />
         <div className="scrl" style={{ flex: 1, overflowY: "auto" }}>
-          {screen === "today" && <TodayScreen onOpenEmail={(mid) => { if (typeof window !== "undefined") window.location.href = `/email?mid=${encodeURIComponent(mid)}`; }} onGo={(d) => setScreen(d === "calendar" ? "track" : d === "approvals" ? "settings" : "brief")} />}
+          {screen === "today" && <WallScreen variant="desktop" onOpenEmail={(mid) => { if (typeof window !== "undefined") window.location.href = `/email?mid=${encodeURIComponent(mid)}`; }} onGoApprovals={() => setScreen("settings")} />}
           {screen === "brief" && <Brief go={go} onAsk={() => runAsk("Every flooding conversation, in order — who promised what and whether it happened.")} />}
           {screen === "ask" && <Ask asked={asked} loading={loading} res={res} err={err} q={q} setQ={setQ} runAsk={runAsk} resetAsk={resetAsk} go={go} />}
           {screen === "track" && <Track filter={filter} setFilter={setFilter} />}
@@ -194,29 +194,16 @@ function Sidebar({ screen, go }: { screen: Screen; go: (s: Screen) => () => void
       <div className="scrl" style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 3 }}>
         <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".16em", padding: "4px 10px 8px" }}>Workspace</div>
         {item("today", "Today", <Ico d={ICON.today} />, <Star w={13} c={C.gold} />)}
-        {item("brief", "Emails", <Ico d={ICON.mail} />, <span style={{ width: 7, height: 7, borderRadius: 99, background: C.red }} />)}
+        {item("brief", "Emails", <Ico d={ICON.mail} />)}
         {item("ask", "Ask", <Star w={19} c="currentColor" />, <Kbd>⌘K</Kbd>)}
-        {item("track", "Calendar", <Ico d={ICON.events ?? ICON.track} />, <Badge color={C.orange} bg="rgba(240,163,60,.14)">8</Badge>)}
+        {/* No hardcoded nav badges: every count the Mayor sees traces to getWall()
+            (invariant 9) — a badge with no data source is how "8 vs 0 events" happened. */}
+        {item("track", "Calendar", <Ico d={ICON.events ?? ICON.track} />)}
         {item("memory", "History", <Ico d={ICON.memory} />)}
-        {item("sources", "Sources", <Ico d={ICON.sources} />, <Badge color={C.orange} bg="rgba(240,163,60,.14)">!</Badge>)}
-        {item("settings", "Approvals", <Ico d={ICON.approvals} />, <Badge color={C.purpleText} bg="rgba(157,139,255,.16)">3</Badge>)}
+        {item("sources", "Sources", <Ico d={ICON.sources} />)}
+        {item("settings", "Approvals", <Ico d={ICON.approvals} />)}
         {item("agents", "Staff Agents", <Star w={18} c="currentColor" />)}
         {item("admin", "Admin", <Ico d={ICON.admin} />)}
-
-        <div style={{ marginTop: "auto", padding: "14px 12px 4px" }}>
-          <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".14em", marginBottom: 9 }}>History store</div>
-          <div style={{ background: "rgba(var(--ink),.035)", border: `1px solid ${C.line}`, borderRadius: 13, padding: 12 }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-              <span style={{ fontFamily: FONT.serif, fontSize: 22, color: C.text, lineHeight: 1 }}>70,431</span>
-              <span style={{ fontSize: 11, color: C.muted }}>messages</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 9 }}>
-              <span style={{ width: 6, height: 6, borderRadius: 99, background: C.green }} />
-              <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.greenText, flex: 1 }}>4 / 6 connectors healthy</span>
-              <button onClick={go("sources")} style={{ background: "none", border: 0, color: C.blue, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: FONT.sans }}>View</button>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div style={{ padding: "12px 14px", borderTop: `1px solid ${C.line2}`, display: "flex", alignItems: "center", gap: 11 }}>
@@ -265,10 +252,6 @@ function Topbar({ onAsk }: { onAsk: () => void }) {
       </button>
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
         <ThemeToggle />
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "7px 13px", borderRadius: 99, background: "rgba(52,201,139,.1)", border: "1px solid rgba(52,201,139,.24)" }}>
-          <span style={{ width: 6, height: 6, borderRadius: 99, background: C.green, animation: "pulseDot 2.4s infinite" }} />
-          <span style={{ fontFamily: FONT.mono, fontSize: 11, color: C.greenText }}>synced 4m ago</span>
-        </span>
       </div>
     </div>
   );
@@ -1103,7 +1086,7 @@ function Approvals() {
       <div style={{ marginBottom: 20 }}><div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Approvals</div><div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>Staff Agents draft. You decide.</div></div>
       <div style={{ display: "flex", gap: 28, alignItems: "flex-start" }}>
         <div style={{ flex: 1.5, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}><span style={{ ...eyebrow(C.dim), fontSize: 10.5 }}>Awaiting you</span><Badge color={C.purpleText} bg="rgba(157,139,255,.16)">{drafts.length || 3} draft{(drafts.length || 3) === 1 ? "" : "s"}</Badge></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}><span style={{ ...eyebrow(C.dim), fontSize: 10.5 }}>Awaiting you</span><Badge color={C.purpleText} bg="rgba(157,139,255,.16)">{drafts.length} draft{drafts.length === 1 ? "" : "s"}</Badge></div>
           {drafts.length ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
               {drafts.map((d) => (

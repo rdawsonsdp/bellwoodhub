@@ -151,14 +151,20 @@ body {
   padding: 0;
 }
 
+/* Stop iOS Safari from auto-inflating text in wide/scrollable blocks — it must
+   live on <html> to hold inside horizontal carousels (the cabinet deck); the
+   body-only rule let card headlines render oversized on phones. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background: #eef1f5;
   color: #1e1c20;
   font-family: "Inter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  /* Stop iOS Safari from auto-inflating text in wide blocks (it made the Today
-     briefing + draft bodies render oversized on phones). */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }

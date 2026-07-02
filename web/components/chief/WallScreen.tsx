@@ -120,11 +120,11 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
           className={mobile ? "scrl" : undefined}
           style={
             mobile
-              ? { display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", margin: "0 -16px", padding: "2px 16px 8px", WebkitOverflowScrolling: "touch" }
-              : { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 12 }
+              ? { display: "flex", alignItems: "flex-start", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", margin: "0 -16px", padding: "2px 16px 8px", WebkitOverflowScrolling: "touch" }
+              : { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 12, alignItems: "start" }
           }
         >
-          {!wall && [0, 1, 2].map((i) => <div key={i} style={{ ...card, height: 118, minWidth: mobile ? "74%" : undefined, scrollSnapAlign: "start", animation: "bwPulse 1.3s ease-in-out infinite" }} />)}
+          {!wall && [0, 1, 2].map((i) => <div key={i} style={{ ...card, height: 118, flex: mobile ? "0 0 78%" : undefined, maxWidth: mobile ? "78%" : undefined, scrollSnapAlign: "start", animation: "bwPulse 1.3s ease-in-out infinite" }} />)}
           {wall?.cabinet.map((c) =>
             c.agentKey === "schedule" ? (
               <ScheduleCardView key={c.agentKey} c={c} schedule={wall.schedule} mobile={mobile} onOpen={() => openDigest(c.agentKey)} />
@@ -159,16 +159,48 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
   );
 }
 
+/** One deck slide / grid cell: FIXED basis on mobile (content must never size
+ *  the card — that's how a long headline once blew a card open on a phone),
+ *  natural height, and a 2-line clamped headline instead of a hard ellipsis. */
+const cardShell = (mobile: boolean): CSSProperties => ({
+  ...card,
+  textAlign: "left",
+  cursor: "pointer",
+  padding: "14px 15px",
+  flex: mobile ? "0 0 78%" : undefined,
+  maxWidth: mobile ? "78%" : undefined,
+  minWidth: 0,
+  scrollSnapAlign: mobile ? "start" : undefined,
+  display: "flex",
+  flexDirection: "column",
+  gap: 8,
+  color: C.text,
+  fontFamily: FONT.sans,
+});
+
+const headlineClamp: CSSProperties = {
+  fontFamily: FONT.serif,
+  fontSize: 14.5,
+  color: C.text2,
+  lineHeight: 1.35,
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical",
+  overflow: "hidden",
+  minHeight: "2.7em", // two lines — keeps card rhythm even for short headlines
+  overflowWrap: "anywhere",
+};
+
 function CabinetCardView({ c, mobile, onOpen }: { c: CabinetCard; mobile: boolean; onOpen: () => void }) {
   return (
-    <button onClick={onOpen} style={{ ...card, textAlign: "left", cursor: "pointer", padding: "14px 15px", minWidth: mobile ? "74%" : undefined, scrollSnapAlign: mobile ? "start" : undefined, display: "flex", flexDirection: "column", gap: 8, color: C.text, fontFamily: FONT.sans }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+    <button onClick={onOpen} style={cardShell(mobile)}>
+      <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
         <AgentAvatar agentKey={c.agentKey} size={26} />
         <span style={{ fontSize: 14, fontWeight: 800, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{shortName(c.name)}</span>
         {c.walled && <span style={privatePill}>Private</span>}
         <span style={{ width: 9, height: 9, borderRadius: 99, background: URGENCY_C[c.statusDot], flexShrink: 0, boxShadow: c.statusDot !== "clear" ? `0 0 0 3px ${URGENCY_C[c.statusDot]}22` : undefined }} />
       </div>
-      <div style={{ fontFamily: FONT.serif, fontSize: 14.5, color: C.text2, lineHeight: 1.35, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.headline}</div>
+      <div style={headlineClamp}>{c.headline}</div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: "auto" }}>
         <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: c.counts.needsYou ? C.goldHi : C.muted }}>
           {c.counts.newItems} new{c.counts.needsYou > 0 && ` · ${c.counts.needsYou} need you`}
@@ -185,7 +217,7 @@ function CabinetCardView({ c, mobile, onOpen }: { c: CabinetCard; mobile: boolea
 function ScheduleCardView({ c, schedule, mobile, onOpen }: { c: CabinetCard; schedule: WallSchedule; mobile: boolean; onOpen: () => void }) {
   const SRC: Record<string, string> = { gov: C.gold, gmail: C.purpleText }; // gold ticks (gov) / violet (personal gmail)
   return (
-    <div role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => e.key === "Enter" && onOpen()} style={{ ...card, textAlign: "left", cursor: "pointer", padding: "14px 15px", minWidth: mobile ? "74%" : undefined, scrollSnapAlign: mobile ? "start" : undefined, display: "flex", flexDirection: "column", gap: 10, color: C.text, fontFamily: FONT.sans }}>
+    <div role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => e.key === "Enter" && onOpen()} style={{ ...cardShell(mobile), gap: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
         <AgentAvatar agentKey={c.agentKey} size={26} />
         <span style={{ fontSize: 14, fontWeight: 800, flex: 1, minWidth: 0 }}>{shortName(c.name)}</span>
@@ -235,7 +267,7 @@ function ScheduleCardView({ c, schedule, mobile, onOpen }: { c: CabinetCard; sch
 /** The growth story, visible: a new cabinet seat is one interview away. */
 function AddAgentCard({ mobile, onOpen }: { mobile: boolean; onOpen: () => void }) {
   return (
-    <button onClick={onOpen} style={{ minWidth: mobile ? "56%" : undefined, minHeight: 118, scrollSnapAlign: mobile ? "start" : undefined, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, padding: "20px 15px", borderRadius: 16, border: "1.5px dashed rgba(var(--ink),.28)", background: "transparent", cursor: "pointer", color: C.muted, fontFamily: FONT.sans }}>
+    <button onClick={onOpen} style={{ flex: mobile ? "0 0 58%" : undefined, maxWidth: mobile ? "58%" : undefined, minWidth: 0, minHeight: 118, scrollSnapAlign: mobile ? "start" : undefined, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, padding: "20px 15px", borderRadius: 16, border: "1.5px dashed rgba(var(--ink),.28)", background: "transparent", cursor: "pointer", color: C.muted, fontFamily: FONT.sans }}>
       <span style={{ width: 34, height: 34, borderRadius: 99, border: "1.5px dashed rgba(var(--ink),.32)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, lineHeight: 1, fontWeight: 600 }}>+</span>
       <span style={{ fontSize: 13, fontWeight: 800, color: C.text2 }}>Add an agent</span>
       <span style={{ fontSize: 10.5, color: C.dim, textAlign: "center", lineHeight: 1.4 }}>Interview-onboarded · starts observe-only</span>

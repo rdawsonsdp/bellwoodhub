@@ -79,6 +79,16 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 | RB-5 | Orchestrator + live runs + harbor-wellness config-only proof + usage instrumentation | ✅ done | Gate 5 passed 2026-07-02: proof commit `09094a4` (4 files, zero UI); /api/cron/agent-runs + memory-aware runner (live SQL smoke-tests at canonical cutover); 4 adoption metrics wired + operator readout; phone tests (a)-(c) = RD's Fluency session |
 | RB-6 | **Agent Factory** — agents create agents via interview onboarding (`docs/rebuild/AGENT_FACTORY.md`, DEC-12) | ⚪ design logged | RD direction 2026-07-02; builds on the registry-as-data architecture; sequenced after RB-5 (6a demo wizard → 6b live Builder+OAuth → 6c novel types) |
 
+**Email ingestion (real mail — `docs/EMAIL_INGESTION.md`; absorbs TASK-1 + #3; spec'd 2026-07-02):**
+| # | Phase | Status | Notes |
+|---|------|--------|-------|
+| ING-0 | Spec + the 10-stage Connector Delivery Process | ✅ done | **Gate: RD decides §8 (backfill window, consent model, attachments, worker split, vault, test-mailbox-first)** |
+| ING-1 | Registrations, OAuth (Graph delegated Mail.Read / gmail.readonly), vault, dry-run pull CLI | ⚪ pending | blocked on §8 decisions + ISS-4/TASK-7 prep |
+| ING-2 | Backfill → RAW + Envelope normalize (clean_text parity evals on real formats) | ⚪ pending | |
+| ING-3 | Canonical writes: identity, topics, **the wall stamped at ingest**, RLS on, audit rows | ⚪ pending | ISS-4/ISS-5 enforced here |
+| ING-4 | Voyage embeddings + Ask over real mail; reconciliation counts; canonical read-path smoke (#2) | ⚪ pending | |
+| ING-5 | Cron routines (rt-outlook/rt-gmail real), live Sources health, 48h soak | ⚪ pending | |
+
 **Post-demo product work — pending:**
 | # | Task | Status | Notes |
 |---|------|--------|-------|
@@ -224,6 +234,19 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 ---
 
 ## Changelog
+
+- **2026-07-02 (SHIPPED — rebuild pushed to git + Vercel prod · email-ingestion workstream spec'd)** — RD
+  called "push": `main` fast-forwarded to `fad0e95` (52 files, +4,776 −382 across Phases 0–5), pushed to
+  GitHub with the `rebuild/phase-1-domain-agents` branch preserved; deployed to Vercel production (project
+  `web`, 41s build) — **https://web-seven-tawny-20.vercel.app/chief → 200**, prod verified serving the
+  rebuild (6-seat cabinet incl. walled Harbor Wellness, Meyer leading needsYouNow, "Coming up" schedule
+  card). Then spec'd the **email ingestion workstream** (`docs/EMAIL_INGESTION.md`): a reusable **10-stage
+  Connector Delivery Process** (spec → consent → pull → land → normalize → canonicalize → index → verify →
+  schedule → monitor, each gated) + Microsoft Graph (delegated Mail.Read) and Gmail (gmail.readonly)
+  connector designs mapped onto the existing 5-step contract, mailbox wall (DEC-6), sensitivity routing
+  (DEC-4), and Routines (DEC-10). Blocking prereqs called out (ISS-4 RLS, ISS-5 audit, TASK-7 rotation);
+  six §8 decisions queued for RD (backfill window, consent model, attachments, worker split, vault,
+  test-mailbox-first). ING-0…ING-5 board added; absorbs TASK-1 and backlog #3.
 
 - **2026-07-02 (Rebuild Phase 5 — orchestrator + config-only proof · Gate 5 passed · design refinements)** —
   **The proof landed first, isolated** (commit `09094a4`): Harbor Wellness activated by flipping

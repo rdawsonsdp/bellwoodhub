@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { DEMO } from "@/lib/demo";
 import { getQueue } from "@/lib/queue";
+import { logAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,6 +17,8 @@ export async function GET() {
         { status: 501 },
       );
     }
+    // actor: null until L0.1 threads the session email through
+    void logAudit({ actor: null, action: "queue.read" });
     return NextResponse.json(getQueue());
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";

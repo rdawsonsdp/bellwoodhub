@@ -3,6 +3,7 @@ import { DEMO } from "@/lib/demo";
 import { domainAgentByKey } from "@/lib/domain-agents";
 import { validateRunOutput } from "@/lib/agent-run";
 import { DEMO_AGENT_RUNS } from "@/lib/demo/data/domain-agents";
+import { logAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,6 +19,8 @@ export async function GET(req: NextRequest) {
         { status: 501 },
       );
     }
+    // actor: null until L0.1 threads the session email through
+    void logAudit({ actor: null, action: "agents.run.read" });
     const only = req.nextUrl.searchParams.get("agent");
     const agents = DEMO_AGENT_RUNS.filter((r) => (only ? r.agentKey === only : true)).map((r) => {
       const agent = domainAgentByKey(r.agentKey);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEmailByMessageId } from "@/lib/retrieval";
 import { DEMO, demoEmail } from "@/lib/demo";
+import { logAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,6 +16,8 @@ export async function GET(req: NextRequest) {
     if (!mid) {
       return NextResponse.json({ error: "Provide mid (message id)." }, { status: 400 });
     }
+    // actor: null until L0.1 threads the session email through
+    void logAudit({ actor: null, action: "email.open", objectType: "message", objectRef: mid });
     if (process.env.DATABASE_URL) {
       try {
         const full = await getEmailByMessageId(mid);

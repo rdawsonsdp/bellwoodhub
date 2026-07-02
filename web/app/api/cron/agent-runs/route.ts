@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DEMO } from "@/lib/demo";
 import { runAllAgents } from "@/lib/agent-runner";
+import { logAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,6 +30,8 @@ async function handle(req: NextRequest) {
     }
     const results = await runAllAgents();
     const failed = results.filter((r) => !r.ok);
+    // actor: null — cron pass, no session; L0.1 threads the session email through elsewhere
+    void logAudit({ actor: null, action: "agents.run.cron", meta: { ran: results.length } });
     return NextResponse.json({ ok: failed.length === 0, ran: results.length, results });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";

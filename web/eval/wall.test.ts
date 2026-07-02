@@ -12,6 +12,7 @@
 import { getWall, assembleWall } from "../lib/wall";
 import { DEMO_AGENT_RUNS, DEMO_RUN_AT } from "../lib/demo/data/domain-agents";
 import { DEMO_NOW, demoToday } from "../lib/demo";
+import { DOMAIN_AGENTS } from "../lib/domain-agents";
 import type { AgentRun } from "../lib/agent-run";
 
 let failures = 0;
@@ -46,9 +47,17 @@ check(
 check("…keeps max urgency (red) and the Approve verb", pawlak[0]?.urgency === "red" && pawlak[0]?.action === "Approve");
 
 console.log("getWall — cabinet & footer trace to the runs");
-check("one card per active agent, registry order", JSON.stringify(wall.cabinet.map((c) => c.agentKey)) === JSON.stringify(["police", "fire", "council", "constituent", "schedule"]));
-const expHandled = DEMO_AGENT_RUNS.reduce((n, r) => n + r.output.digest.length, 0);
-const expWaiting = DEMO_AGENT_RUNS.reduce((n, r) => n + r.output.actItems.length, 0);
+check(
+  "one card per active agent, registry order (incl. the walled seat)",
+  JSON.stringify(wall.cabinet.map((c) => c.agentKey)) ===
+    JSON.stringify(["police", "fire", "council", "constituent", "schedule", "harbor-wellness"]),
+  wall.cabinet.map((c) => c.agentKey).join(","),
+);
+// government-surface numbers exclude walled agents by construction
+const walledKeys = new Set(DOMAIN_AGENTS.filter((a) => a.walled).map((a) => a.key));
+const govRuns = DEMO_AGENT_RUNS.filter((r) => !walledKeys.has(r.agentKey));
+const expHandled = govRuns.reduce((n, r) => n + r.output.digest.length, 0);
+const expWaiting = govRuns.reduce((n, r) => n + r.output.actItems.length, 0);
 check(`footer.handled = Σ digest points (${expHandled})`, wall.footer.handled === expHandled, String(wall.footer.handled));
 check(`footer.waiting = Σ actItems (${expWaiting})`, wall.footer.waiting === expWaiting, String(wall.footer.waiting));
 check("eta present when drafts wait", wall.footer.etaMinutes >= 1);
@@ -68,21 +77,26 @@ check("morning", getWall({ hour: 9 }).greeting === "Good morning, Mayor Harvey."
 check("evening", getWall({ hour: 19 }).greeting === "Good evening, Mayor Harvey.");
 check("no coffee, no exclamation", !/coffee|!/i.test(getWall({ hour: 19 }).greeting));
 
-console.log("walled rule — the Phase 5 flip path");
-const harborRun: AgentRun = {
+console.log("walled rule — now live via the Phase 5 flip");
+check("harbor card is walled (Private)", wall.cabinet.some((c) => c.agentKey === "harbor-wellness" && c.walled));
+check("walled items NEVER enter needsYouNow", wall.needsYouNow.every((i) => !i.agentKeys.includes("harbor-wellness")));
+check("walled digest points stay out of 'handled'", wall.footer.handled === expHandled, String(wall.footer.handled));
+check("harbor's full digest still serves its own card", wall.runs["harbor-wellness"]?.digest.length === 5);
+
+// worst case: a RED walled run with a draft still can't cross the wall
+const harborRed: AgentRun = {
   agentKey: "harbor-wellness",
   ranAt: DEMO_RUN_AT,
   output: {
-    headline: "IDFPR license renewal is inside 30 days.",
+    headline: "IDFPR deadline inside 7 days.",
     urgency: "red",
-    digest: [{ point: "License renewal filing deadline July 31 — fee, surety bond, attestation.", sourceMessageIds: ["biz-015"] }],
+    digest: [{ point: "License renewal filing deadline — final week.", sourceMessageIds: ["biz-015"] }],
     actItems: [{ type: "draft_reply", threadId: "biz-015", draftSubject: "Re: license renewal", draftBody: "…", rationale: "deadline", citations: ["biz-015"] }],
     memoryOps: [],
   },
 };
-const walled = assembleWall([...DEMO_AGENT_RUNS, harborRun], DEMO_NOW, { hour: 9 });
-check("walled agent gets a cabinet card (Private)", walled.cabinet.some((c) => c.agentKey === "harbor-wellness" && c.walled));
-check("walled items NEVER enter needsYouNow", walled.needsYouNow.every((i) => !i.agentKeys.includes("harbor-wellness")));
+const walled = assembleWall([...govRuns, harborRed], DEMO_NOW, { hour: 9 });
+check("even a RED walled run never enters needsYouNow", walled.needsYouNow.every((i) => !i.agentKeys.includes("harbor-wellness")));
 check("walled drafts stay out of the government footer", walled.footer.waiting === expWaiting, String(walled.footer.waiting));
 
 if (failures) {

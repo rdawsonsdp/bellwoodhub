@@ -151,7 +151,9 @@ export const DOMAIN_AGENTS: DomainAgent[] = [
     name: "Harbor Wellness Agent",
     icon: "storefront",
     color: "#a983ea", // private violet — pairs with the walled "Private" purple
-    active: false, // Phase 5 proof: activated by flipping this flag + adding its fixture — zero UI changes
+    // Phase 5 proof, executed 2026-07-02: activation = this flag + a fixture.
+    // Zero UI files changed — see the commit diff.
+    active: true,
     charter:
       "You watch exactly one entity: Harbor Wellness Dispensary (Cary, IL) — the Mayor's private business, on the walled Gmail. IDFPR license clocks, METRC compliance, cash logistics, staffing. You are WALLED (DEC-6): nothing you produce appears on a government surface or in the needs-you ranking; your card is your entire world. Drafts carry the same human gate.",
     domains: ["Business"],

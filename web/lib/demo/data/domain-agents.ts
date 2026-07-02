@@ -267,6 +267,58 @@ export const DEMO_AGENT_RUNS: AgentRun[] = [
   },
 
   {
+    // The Phase-5 config-only proof: this fixture + the registry flag are the
+    // ENTIRE activation. Walled: renders only as its own Private card — never
+    // in needsYouNow, never in the government footer (provider-enforced).
+    agentKey: "harbor-wellness",
+    ranAt: DEMO_RUN_AT,
+    output: {
+      headline: "License renewal is on the clock; Brink's moved your cash pickup to Tuesday.",
+      urgency: "yellow",
+      digest: [
+        {
+          point:
+            "IDFPR annual dispensing-organization renewal is due July 31 — fee, surety bond, and compliance attestation. Whitfield CPA has the financials; the bond needs your signature.",
+          sourceMessageIds: ["biz-015"],
+        },
+        {
+          point:
+            "Brink's moved the armored pickup to Tuesday 10:30 AM — a manager with safe access must be on site for the new window.",
+          sourceMessageIds: ["biz-017"],
+        },
+        {
+          point: "METRC compliance notice received — inventory reconciliation is current; no action beyond the acknowledgment.",
+          sourceMessageIds: ["biz-016"],
+        },
+        {
+          point:
+            "Maya reports Saturday demand outpacing staffing again; budtender hiring and the security schedule are on Monday's P&L agenda.",
+          sourceMessageIds: ["biz-018"],
+        },
+        {
+          point: "Harbor Wellness is nominated for the Chamber's New Business of the Year (dinner July 9).",
+          sourceMessageIds: ["biz-022"],
+        },
+      ],
+      actItems: [], // draft ceiling, but walled drafts stay out of the gov Queue — none seeded
+      memoryOps: [
+        {
+          op: "upsert",
+          kind: "commitment",
+          title: "IDFPR license renewal — file by July 31",
+          sourceMessageIds: ["biz-015"],
+        },
+        {
+          op: "upsert",
+          kind: "pattern",
+          title: "Saturday demand outpacing staffing",
+          sourceMessageIds: ["biz-018"],
+        },
+      ],
+    },
+  },
+
+  {
     agentKey: "schedule",
     ranAt: DEMO_RUN_AT,
     output: {

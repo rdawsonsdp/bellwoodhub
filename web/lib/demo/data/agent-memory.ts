@@ -159,6 +159,31 @@ export const DEMO_AGENT_MEMORY: Record<string, AgentMemoryItem[]> = {
     },
   ],
 
+  "harbor-wellness": [
+    {
+      agentKey: "harbor-wellness",
+      kind: "commitment",
+      title: "IDFPR license renewal — file by July 31",
+      body: "Annual dispensing-org renewal: fee, surety bond, compliance attestation. CPA has financials; bond needs signature.",
+      status: "open",
+      occurrenceCount: 2,
+      sourceMessageIds: ["biz-015"],
+      firstSeen: "2026-06-18T00:00:00.000Z",
+      lastSeen: "2026-06-28T06:40:00.000Z",
+    },
+    {
+      agentKey: "harbor-wellness",
+      kind: "pattern",
+      title: "Saturday demand outpacing staffing",
+      body: "Third straight month; budtender hiring + security schedule on the Monday P&L agenda.",
+      status: "open",
+      occurrenceCount: 3,
+      sourceMessageIds: ["biz-018"],
+      firstSeen: "2026-05-02T00:00:00.000Z",
+      lastSeen: "2026-06-28T06:40:00.000Z",
+    },
+  ],
+
   schedule: [
     {
       agentKey: "schedule",

@@ -154,7 +154,15 @@ export default function MobileApp() {
             a destination, and scroll containers keep bottom padding clear. */}
         <TabBar current={screen} go={setScreen} />
         <FeedbackButton raised />
-        {operator && menuOpen && <NavMenu current={screen} go={(s) => { setScreen(s); setMenuOpen(false); }} onClose={() => setMenuOpen(false)} />}
+        {menuOpen && (
+          <NavMenu
+            current={screen}
+            operator={operator}
+            onToggleOperator={(on) => { saveOperatorMode(on); setOperator(on); }}
+            go={(s) => { setScreen(s); setMenuOpen(false); }}
+            onClose={() => setMenuOpen(false)}
+          />
+        )}
         {profileOpen && (
           <ProfileSheet
             operator={operator}
@@ -239,8 +247,10 @@ const NAV_ITEMS: [Screen, string, string][] = [
   ["admin", I.admin, "Admin"],
 ];
 
-/* Slide-in hamburger menu — holds every destination. */
-function NavMenu({ current, go, onClose }: { current: Screen; go: (s: Screen) => void; onClose: () => void }) {
+/* Slide-in menu — always reachable (RD 2026-07-02). Mayor mode lists the three
+ * destinations; the Operator switch in the footer reveals every desk. */
+function NavMenu({ current, operator, onToggleOperator, go, onClose }: { current: Screen; operator: boolean; onToggleOperator: (on: boolean) => void; go: (s: Screen) => void; onClose: () => void }) {
+  const items = NAV_ITEMS.filter(([s]) => operator || MAYOR_SCREENS.includes(s));
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 60, display: "flex", animation: "sheetUp .18s ease-out" }}>
       <div style={{ width: "78%", maxWidth: 320, background: "var(--c-appbg)", borderRight: "1px solid var(--c-cardbd)", display: "flex", flexDirection: "column", boxShadow: "2px 0 24px rgba(0,0,0,.3)" }}>
@@ -255,7 +265,7 @@ function NavMenu({ current, go, onClose }: { current: Screen; go: (s: Screen) =>
           <button onClick={onClose} aria-label="Close" style={{ width: 34, height: 34, borderRadius: 99, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, display: "flex", alignItems: "center", justifyContent: "center" }}><Svg d={I.close} w={17} /></button>
         </div>
         <div style={{ flex: 1, overflow: "auto", padding: "10px 12px" }}>
-          {NAV_ITEMS.map(([s, d, label]) => {
+          {items.map(([s, d, label]) => {
             const on = current === s;
             return (
               <button key={s} onClick={() => go(s)} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", padding: "14px 14px", borderRadius: 12, marginBottom: 2, border: 0, cursor: "pointer", background: on ? "rgba(231,181,60,.12)" : "transparent", color: on ? C.gold : C.text2 }}>
@@ -266,7 +276,19 @@ function NavMenu({ current, go, onClose }: { current: Screen; go: (s: Screen) =>
             );
           })}
         </div>
-        <div style={{ padding: "12px 18px calc(env(safe-area-inset-bottom) + 14px)", borderTop: "1px solid var(--c-cardbd)", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>Tap ✦ Ask anytime to search the record</div>
+        <div style={{ padding: "13px 18px calc(env(safe-area-inset-bottom) + 14px)", borderTop: "1px solid var(--c-cardbd)" }}>
+          <button onClick={() => onToggleOperator(!operator)} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", background: "none", border: 0, padding: 0, cursor: "pointer", textAlign: "left" }}>
+            <span style={{ width: 36, height: 21, borderRadius: 99, background: operator ? C.gold : "rgba(var(--ink),.18)", position: "relative", flexShrink: 0, transition: "background .15s" }}>
+              <span style={{ position: "absolute", top: 2, left: operator ? 17 : 2, width: 17, height: 17, borderRadius: 99, background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,.3)", transition: "left .15s" }} />
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 13.5, fontWeight: 700, color: C.text }}>Operator mode</span>
+              <span style={{ display: "block", fontSize: 10.5, color: C.muted, marginTop: 1, lineHeight: 1.4 }}>
+                {operator ? "Showing every desk" : "Show Emails, Calendar, History, Sources, Agents, Admin"}
+              </span>
+            </span>
+          </button>
+        </div>
       </div>
       <div onClick={onClose} style={{ flex: 1, background: "rgba(0,0,0,.45)" }} />
     </div>
@@ -390,11 +412,11 @@ function Header({ operator, onMenu, onProfile }: { operator: boolean; onMenu: ()
   const light = ["daylight", "am", "midday"].includes(resolveTheme(theme, new Date().getHours()));
   return (
     <div style={{ position: "sticky", top: 0, zIndex: 10, display: "flex", alignItems: "center", gap: 11, padding: "calc(env(safe-area-inset-top) + 12px) 16px 12px", background: "rgba(var(--ink),.04)", backdropFilter: "blur(14px)", borderBottom: "1px solid var(--c-cardbd)" }}>
-      {operator && (
-        <button onClick={onMenu} aria-label="Menu" style={{ width: 38, height: 38, borderRadius: 11, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
-        </button>
-      )}
+      {/* the menu is ALWAYS reachable (RD 2026-07-02) — Mayor mode lists its
+          three destinations; the Operator switch inside reveals the rest */}
+      <button onClick={onMenu} aria-label="Menu" style={{ width: 38, height: 38, borderRadius: 11, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+      </button>
       <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(135deg,var(--c-goldhi),var(--c-goldlo))", display: "flex", alignItems: "center", justifyContent: "center", color: "#0a1322", flexShrink: 0 }}>
         <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z" /></svg>
       </div>

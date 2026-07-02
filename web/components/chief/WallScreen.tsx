@@ -20,6 +20,7 @@ import { getCosPersona } from "@/lib/morning";
 import type { WallPayload, WallItem, CabinetCard, WallSchedule } from "@/lib/wall";
 import AgentDigestSheet from "./AgentDigestSheet";
 import AddAgentSheet from "./AddAgentSheet";
+import ComingUp from "./ComingUp";
 import { AgentAvatar, AgentChip } from "./AgentBadge";
 import { logUsage } from "@/lib/usage";
 
@@ -116,15 +117,17 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
       {/* ── THE CABINET ── */}
       <div style={{ marginTop: 26 }}>
         <div style={sectionHead}>The cabinet</div>
+        {/* Mobile is a two-column GRID — the whole cabinet visible in one
+            vertical scroll (horizontal decks fight the thumb; RD 2026-07-02).
+            The Schedule card spans full width for its calendar face. */}
         <div
-          className={mobile ? "scrl" : undefined}
           style={
             mobile
-              ? { display: "flex", alignItems: "flex-start", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", margin: "0 -16px", padding: "2px 16px 8px", WebkitOverflowScrolling: "touch" }
+              ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, alignItems: "start" }
               : { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 12, alignItems: "start" }
           }
         >
-          {!wall && [0, 1, 2].map((i) => <div key={i} style={{ ...card, height: 118, flex: mobile ? "0 0 78%" : undefined, maxWidth: mobile ? "78%" : undefined, scrollSnapAlign: "start", animation: "bwPulse 1.3s ease-in-out infinite" }} />)}
+          {!wall && [0, 1, 2, 3].map((i) => <div key={i} style={{ ...card, height: mobile ? 104 : 118, minWidth: 0, animation: "bwPulse 1.3s ease-in-out infinite" }} />)}
           {wall?.cabinet.map((c) =>
             c.agentKey === "schedule" ? (
               <ScheduleCardView key={c.agentKey} c={c} schedule={wall.schedule} mobile={mobile} onOpen={() => openDigest(c.agentKey)} />
@@ -149,6 +152,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
         <AgentDigestSheet
           run={wall.runs[openAgent]}
           card={wall.cabinet.find((c) => c.agentKey === openAgent)!}
+          schedule={openAgent === "schedule" ? wall.schedule : undefined}
           variant={variant}
           onClose={() => setOpenAgent(null)}
           onOpenMessage={(mid) => onOpenEmail?.(mid)}
@@ -159,18 +163,15 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
   );
 }
 
-/** One deck slide / grid cell: FIXED basis on mobile (content must never size
- *  the card — that's how a long headline once blew a card open on a phone),
- *  natural height, and a 2-line clamped headline instead of a hard ellipsis. */
+/** One grid cell: minWidth 0 so content can never size the card (a long
+ *  headline once blew a card open on a phone), natural height, and a clamped
+ *  headline instead of a hard ellipsis. Mobile cells are half-width → tighter. */
 const cardShell = (mobile: boolean): CSSProperties => ({
   ...card,
   textAlign: "left",
   cursor: "pointer",
-  padding: "14px 15px",
-  flex: mobile ? "0 0 78%" : undefined,
-  maxWidth: mobile ? "78%" : undefined,
+  padding: mobile ? "12px 13px" : "14px 15px",
   minWidth: 0,
-  scrollSnapAlign: mobile ? "start" : undefined,
   display: "flex",
   flexDirection: "column",
   gap: 8,
@@ -178,31 +179,30 @@ const cardShell = (mobile: boolean): CSSProperties => ({
   fontFamily: FONT.sans,
 });
 
-const headlineClamp: CSSProperties = {
+const headlineClamp = (mobile: boolean): CSSProperties => ({
   fontFamily: FONT.serif,
-  fontSize: 14.5,
+  fontSize: mobile ? 13 : 14.5,
   color: C.text2,
-  lineHeight: 1.35,
+  lineHeight: 1.38,
   display: "-webkit-box",
-  WebkitLineClamp: 2,
+  WebkitLineClamp: mobile ? 3 : 2,
   WebkitBoxOrient: "vertical",
   overflow: "hidden",
-  minHeight: "2.7em", // two lines — keeps card rhythm even for short headlines
   overflowWrap: "anywhere",
-};
+});
 
 function CabinetCardView({ c, mobile, onOpen }: { c: CabinetCard; mobile: boolean; onOpen: () => void }) {
   return (
     <button onClick={onOpen} style={cardShell(mobile)}>
-      <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
-        <AgentAvatar agentKey={c.agentKey} size={26} />
-        <span style={{ fontSize: 14, fontWeight: 800, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{shortName(c.name)}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: mobile ? 7 : 9, minWidth: 0 }}>
+        <AgentAvatar agentKey={c.agentKey} size={mobile ? 22 : 26} />
+        <span style={{ fontSize: mobile ? 13 : 14, fontWeight: 800, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{shortName(c.name)}</span>
         {c.walled && <span style={privatePill}>Private</span>}
         <span style={{ width: 9, height: 9, borderRadius: 99, background: URGENCY_C[c.statusDot], flexShrink: 0, boxShadow: c.statusDot !== "clear" ? `0 0 0 3px ${URGENCY_C[c.statusDot]}22` : undefined }} />
       </div>
-      <div style={headlineClamp}>{c.headline}</div>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: "auto" }}>
-        <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: c.counts.needsYou ? C.goldHi : C.muted }}>
+      <div style={headlineClamp(mobile)}>{c.headline}</div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: "auto", flexWrap: "wrap" }}>
+        <span style={{ fontFamily: FONT.mono, fontSize: mobile ? 10.5 : 11.5, color: c.counts.needsYou ? C.goldHi : C.muted }}>
           {c.counts.newItems} new{c.counts.needsYou > 0 && ` · ${c.counts.needsYou} need you`}
         </span>
         <span style={{ marginLeft: "auto", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{c.lastRunLabel}</span>
@@ -211,55 +211,18 @@ function CabinetCardView({ c, mobile, onOpen }: { c: CabinetCard; mobile: boolea
   );
 }
 
-/** The Schedule seat wears a calendar face: the next three days at a glance
- *  (a visual cue, not a calendar replacement) + links OUT to the real
- *  calendars — calendar work never happens in the app. */
+/** The Schedule seat wears a calendar face (the shared ComingUp component —
+ *  a visual cue, not a calendar replacement; links go OUT to the real ones). */
 function ScheduleCardView({ c, schedule, mobile, onOpen }: { c: CabinetCard; schedule: WallSchedule; mobile: boolean; onOpen: () => void }) {
-  const SRC: Record<string, string> = { gov: C.gold, gmail: C.purpleText }; // gold ticks (gov) / violet (personal gmail)
   return (
-    <div role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => e.key === "Enter" && onOpen()} style={{ ...cardShell(mobile), gap: 10 }}>
+    <div role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => e.key === "Enter" && onOpen()} style={{ ...cardShell(mobile), gap: 10, gridColumn: mobile ? "1 / -1" : undefined, padding: "14px 15px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
         <AgentAvatar agentKey={c.agentKey} size={26} />
         <span style={{ fontSize: 14, fontWeight: 800, flex: 1, minWidth: 0 }}>{shortName(c.name)}</span>
         <span style={{ width: 9, height: 9, borderRadius: 99, background: URGENCY_C[c.statusDot], flexShrink: 0, boxShadow: c.statusDot !== "clear" ? `0 0 0 3px ${URGENCY_C[c.statusDot]}22` : undefined }} />
       </div>
-      {/* the "Coming up" face: big serif numeral, month/weekday stacked, a dot
-          marking today; gold/violet tick bars; empty-today stated, not hidden */}
-      <div style={{ display: "grid", gap: 10 }}>
-        {schedule.days.map((d) => (
-          <div key={d.date} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-            <span style={{ display: "flex", gap: 5, alignItems: "flex-start", width: 52, flexShrink: 0 }}>
-              <span style={{ fontFamily: FONT.serif, fontSize: 23, fontWeight: 600, lineHeight: 1, color: C.text }}>{d.dayNum}</span>
-              <span style={{ paddingTop: 1 }}>
-                <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                  <span style={{ fontSize: 8.5, fontWeight: 700, color: C.muted, lineHeight: 1.2 }}>{d.month}</span>
-                  {d.isToday && <span style={{ width: 4, height: 4, borderRadius: 99, background: C.red }} />}
-                </span>
-                <span style={{ display: "block", fontSize: 8.5, color: C.dim, lineHeight: 1.2 }}>{d.weekday}</span>
-              </span>
-            </span>
-            <div style={{ flex: 1, minWidth: 0, display: "grid", gap: 6, paddingTop: 2 }}>
-              {d.events.length === 0 && (
-                <span style={{ fontSize: 12, color: C.dim, borderLeft: `2.5px solid ${C.line}`, paddingLeft: 8, lineHeight: 1.4 }}>No events today</span>
-              )}
-              {d.events.map((e, i) => (
-                <span key={i} style={{ display: "block", borderLeft: `2.5px solid ${SRC[e.source]}`, paddingLeft: 8, minWidth: 0 }}>
-                  <span style={{ display: "block", fontSize: 12.5, fontWeight: 650, lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.title}</span>
-                  {e.time && <span style={{ display: "block", fontFamily: FONT.mono, fontSize: 9.5, color: C.muted, marginTop: 1 }}>{e.time}</span>}
-                </span>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: "auto", flexWrap: "wrap" }}>
-        {schedule.links.map((l) => (
-          <a key={l.href} href={l.href} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} style={{ fontSize: 11, fontWeight: 700, color: C.blue, textDecoration: "none" }}>
-            {l.label} ↗
-          </a>
-        ))}
-        <span style={{ marginLeft: "auto", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{c.lastRunLabel}</span>
-      </div>
+      <ComingUp schedule={schedule} />
+      <div style={{ textAlign: "right", marginTop: "auto", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{c.lastRunLabel}</div>
     </div>
   );
 }
@@ -267,7 +230,7 @@ function ScheduleCardView({ c, schedule, mobile, onOpen }: { c: CabinetCard; sch
 /** The growth story, visible: a new cabinet seat is one interview away. */
 function AddAgentCard({ mobile, onOpen }: { mobile: boolean; onOpen: () => void }) {
   return (
-    <button onClick={onOpen} style={{ flex: mobile ? "0 0 58%" : undefined, maxWidth: mobile ? "58%" : undefined, minWidth: 0, minHeight: 118, scrollSnapAlign: mobile ? "start" : undefined, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, padding: "20px 15px", borderRadius: 16, border: "1.5px dashed rgba(var(--ink),.28)", background: "transparent", cursor: "pointer", color: C.muted, fontFamily: FONT.sans }}>
+    <button onClick={onOpen} style={{ minWidth: 0, minHeight: mobile ? 104 : 118, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7, padding: "16px 12px", borderRadius: 16, border: "1.5px dashed rgba(var(--ink),.28)", background: "transparent", cursor: "pointer", color: C.muted, fontFamily: FONT.sans }}>
       <span style={{ width: 34, height: 34, borderRadius: 99, border: "1.5px dashed rgba(var(--ink),.32)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, lineHeight: 1, fontWeight: 600 }}>+</span>
       <span style={{ fontSize: 13, fontWeight: 800, color: C.text2 }}>Add an agent</span>
       <span style={{ fontSize: 10.5, color: C.dim, textAlign: "center", lineHeight: 1.4 }}>Interview-onboarded · starts observe-only</span>

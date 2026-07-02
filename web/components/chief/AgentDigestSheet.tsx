@@ -11,12 +11,15 @@
  */
 import type { CSSProperties } from "react";
 import { C, FONT, card, cite, eyebrow } from "@/lib/cos-design";
-import type { WallRun, CabinetCard } from "@/lib/wall";
+import type { WallRun, CabinetCard, WallSchedule } from "@/lib/wall";
 import { AgentAvatar } from "./AgentBadge";
+import ComingUp from "./ComingUp";
 
 interface Props {
   run: WallRun;
   card: CabinetCard;
+  /** The Schedule agent's detail carries its calendar face too. */
+  schedule?: WallSchedule;
   variant: "mobile" | "desktop";
   onClose: () => void;
   onOpenMessage: (mid: string) => void;
@@ -25,7 +28,7 @@ interface Props {
 
 const URGENCY_C: Record<string, string> = { red: C.red, yellow: C.orange, clear: C.green };
 
-export default function AgentDigestSheet({ run, card: c, variant, onClose, onOpenMessage, onGoApprovals }: Props) {
+export default function AgentDigestSheet({ run, card: c, schedule, variant, onClose, onOpenMessage, onGoApprovals }: Props) {
   const mobile = variant === "mobile";
   const panel: CSSProperties = mobile
     ? { position: "absolute", left: 0, right: 0, bottom: 0, maxHeight: "86dvh", borderRadius: "18px 18px 0 0", borderTop: `1px solid ${C.line}` }
@@ -45,6 +48,16 @@ export default function AgentDigestSheet({ run, card: c, variant, onClose, onOpe
         </div>
 
         <div style={{ fontFamily: FONT.serif, fontSize: 19, fontWeight: 600, lineHeight: 1.25, margin: "14px 0 4px" }}>{run.headline}</div>
+
+        {/* the Schedule agent's calendar face — same ComingUp as its card */}
+        {schedule && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ ...eyebrow(C.dim), marginBottom: 9 }}>Coming up</div>
+            <div style={{ ...card, padding: "14px 15px" }}>
+              <ComingUp schedule={schedule} />
+            </div>
+          </div>
+        )}
 
         {/* digest — every point cited */}
         <div style={{ display: "grid", gap: 13, marginTop: 12 }}>

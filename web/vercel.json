@@ -8,6 +8,10 @@
       "schedule": "0 8 * * 1"
     },
     {
+      "path": "/api/cron/agent-runs",
+      "schedule": "30 11 * * 1-5"
+    },
+    {
       "path": "/api/cron/needs-you",
       "schedule": "0 12 * * 1-5"
     }

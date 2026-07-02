@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { C, FONT, card, eyebrow, pill } from "@/lib/cos-design";
 import { COS_AGENTS, AUTONOMY_LABEL, type CosAgent } from "@/lib/cos-agents";
+import UsagePanel from "./UsagePanel";
 
 const tone: Record<string, string> = { R1: C.blue, R2: C.orange, R3: C.purpleText, R4: C.green };
 
@@ -43,6 +44,8 @@ export default function AgentsPage() {
         <Metric n={String(COS_AGENTS.length)} label="on the team" />
         <Metric n={String(actions)} label="recent actions" />
       </div>
+
+      <UsagePanel />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(330px,1fr))", gap: 14, marginTop: 16 }}>
         {COS_AGENTS.map((a) => <AgentCard key={a.key} a={a} onClick={() => setSel(a)} />)}

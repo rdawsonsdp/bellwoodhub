@@ -15,6 +15,7 @@ import QueueScreen from "./QueueScreen";
 import ThreadView from "./ThreadView";
 import { ASK_SEEDS } from "@/lib/ask-seeds";
 import { loadOperatorMode, saveOperatorMode } from "@/lib/operator-mode";
+import { logUsage } from "@/lib/usage";
 import DraftCard from "./DraftCard";
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
@@ -112,6 +113,14 @@ export default function MobileApp() {
   const [refreshKey, setRefreshKey] = useState(0);
   useEffect(() => watchAutoTheme(), []); // keep "auto" theme shifting through the day
   useEffect(() => { setOperator(loadOperatorMode()); }, []);
+  // adoption metric #1: cold open → first tap (is the Wall legible in 5s?)
+  useEffect(() => {
+    logUsage("app_open");
+    const t0 = Date.now();
+    const onFirst = () => logUsage("first_tap", { ms: Date.now() - t0 });
+    window.addEventListener("pointerdown", onFirst, { once: true });
+    return () => window.removeEventListener("pointerdown", onFirst);
+  }, []);
   // leaving Operator mode never strands the Mayor on an operator screen
   useEffect(() => {
     if (!operator && !MAYOR_SCREENS.includes(screen)) setScreen("today");
@@ -870,9 +879,10 @@ function AskScreen() {
     <div style={{ padding: "4px 0 20px" }}>
       <ScreenHead title="Ask" sub="The whole village record — email and documents. Every answer cites its sources." />
       <div style={{ padding: "0 16px" }}>
-        <form onSubmit={(e) => { e.preventDefault(); run(); }} style={{ display: "flex", gap: 9, alignItems: "center", background: "rgba(var(--ink),.05)", border: "1.5px solid rgba(231,181,60,.4)", borderRadius: 14, padding: "6px 6px 6px 14px" }}>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask anything…" style={{ flex: 1, minWidth: 0, background: "transparent", border: 0, outline: "none", fontSize: 16, color: C.text, fontFamily: FONT.sans }} />
-          <button type="submit" disabled={loading || rec !== "idle"} style={{ padding: "9px 16px", borderRadius: 10, border: 0, background: loading ? "rgba(231,181,60,.85)" : C.gold, color: "#081627", fontWeight: 700, fontSize: 14, minWidth: loading ? 96 : undefined, animation: loading ? "bwPulse 1.2s ease-in-out infinite" : undefined }}>{loading ? "Searching…" : "Ask"}</button>
+        {/* the floating pill (design ref 2026-07-02) */}
+        <form onSubmit={(e) => { e.preventDefault(); run(); }} style={{ display: "flex", gap: 9, alignItems: "center", background: "var(--c-sidebar, rgba(var(--ink),.05))", border: "1px solid var(--c-cardbd)", borderRadius: 999, padding: "6px 6px 6px 18px", boxShadow: "0 6px 22px rgba(20,20,10,.08)" }}>
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask anything" style={{ flex: 1, minWidth: 0, background: "transparent", border: 0, outline: "none", fontSize: 16, color: C.text, fontFamily: FONT.sans }} />
+          <button type="submit" disabled={loading || rec !== "idle"} style={{ padding: "10px 18px", borderRadius: 999, border: 0, background: loading ? "rgba(231,181,60,.85)" : C.gold, color: "#081627", fontWeight: 700, fontSize: 14, minWidth: loading ? 96 : undefined, animation: loading ? "bwPulse 1.2s ease-in-out infinite" : undefined }}>{loading ? "Searching…" : "Ask"}</button>
         </form>
 
         {/* voice-first: the primary control is hold-to-talk */}

@@ -29,6 +29,7 @@ import {
   type QueueLocal, type ItemState,
 } from "@/lib/queue-state";
 import { AgentChip } from "./AgentBadge";
+import { logUsage } from "@/lib/usage";
 
 interface Props {
   variant: "mobile" | "desktop";
@@ -97,6 +98,23 @@ export default function QueueScreen({ variant, onOpenEmail }: Props) {
       .catch(() => setFailed(true));
   }, []);
 
+  // adoption metric #2: queue-clear duration — from the first render with live
+  // work to the moment nothing is pending/revising anymore. Fires once a visit.
+  const clearClock = useRef<{ start: number; items: number } | null>(null);
+  useEffect(() => {
+    if (!items || !local) return;
+    const liveCount = items.filter((i) => {
+      const s = itemState(local, i.id).state;
+      return s === "pending" || s === "revising";
+    }).length;
+    if (liveCount > 0 && !clearClock.current) {
+      clearClock.current = { start: Date.now(), items: liveCount };
+    } else if (liveCount === 0 && clearClock.current && clearClock.current.start > 0) {
+      logUsage("queue_clear", { ms: Date.now() - clearClock.current.start, items: clearClock.current.items });
+      clearClock.current = { start: -1, items: 0 };
+    }
+  }, [items, local]);
+
   // toast countdown → on expiry, record the decision (demo fake-send)
   useEffect(() => {
     if (!toast) return;
@@ -141,6 +159,7 @@ export default function QueueScreen({ variant, onOpenEmail }: Props) {
   const submitFix = (id: string) => {
     const n = note.trim();
     if (!n || !local) return;
+    logUsage("fixit_used", { id }); // adoption metric #3
     update(startRevision(local, id, n));
     setFixing(null);
     setNote("");

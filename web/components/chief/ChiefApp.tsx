@@ -15,6 +15,7 @@ import { createContext, useContext, useState, useEffect, useRef, type CSSPropert
 import { C, FONT, APP_BG, card, eyebrow, cite } from "@/lib/cos-design";
 import { ASK_SEEDS } from "@/lib/ask-seeds";
 import { loadOperatorMode, saveOperatorMode } from "@/lib/operator-mode";
+import { logUsage } from "@/lib/usage";
 import type { AskResponse } from "@/lib/types";
 import type { NeedsYouToday } from "@/lib/capabilities";
 import type { MemoryDetail, EntityListItem, SourcesOverview, DraftRow } from "@/lib/screens";
@@ -119,6 +120,14 @@ export default function ChiefApp() {
 
   useEffect(() => watchAutoTheme(), []); // keep "auto" theme shifting through the day
   useEffect(() => { setOperator(loadOperatorMode()); }, []);
+  // adoption metric #1: cold open → first tap
+  useEffect(() => {
+    logUsage("app_open");
+    const t0 = Date.now();
+    const onFirst = () => logUsage("first_tap", { ms: Date.now() - t0 });
+    window.addEventListener("pointerdown", onFirst, { once: true });
+    return () => window.removeEventListener("pointerdown", onFirst);
+  }, []);
   // leaving Operator mode never strands the Mayor on an operator screen
   useEffect(() => {
     if (!operator && !MAYOR_SCREENS.includes(screen)) setScreen("today");
@@ -587,14 +596,15 @@ function MicButton({ onText, big }: { onText: (t: string) => void; big?: boolean
   );
 }
 
+// The floating pill (design ref 2026-07-02): a clean rounded bar on an
+// elevated surface — quiet until you need it.
 function AskInput({ q, setQ, runAsk, big }: { q: string; setQ: (s: string) => void; runAsk: (s?: string) => void; big?: boolean }) {
   return (
-    <form onSubmit={(e) => { e.preventDefault(); runAsk(); }} style={{ display: "flex", alignItems: "center", gap: 13, background: "rgba(var(--ink),.05)", border: "1.5px solid rgba(231,181,60,.4)", borderRadius: 16, padding: big ? "18px 20px" : "12px 16px" }}>
-      <Star w={big ? 22 : 18} />
-      <input value={q} onChange={(e) => setQ(e.target.value)} autoFocus placeholder="Ask anything across the archive — or tap the mic…"
+    <form onSubmit={(e) => { e.preventDefault(); runAsk(); }} style={{ display: "flex", alignItems: "center", gap: 13, background: "var(--c-sidebar, rgba(var(--ink),.05))", border: `1px solid ${C.cardBd}`, borderRadius: 999, padding: big ? "14px 15px 14px 24px" : "9px 10px 9px 18px", boxShadow: "0 6px 22px rgba(20,20,10,.08)" }}>
+      <input value={q} onChange={(e) => setQ(e.target.value)} autoFocus placeholder="Ask anything"
         style={{ flex: 1, background: "transparent", border: 0, outline: "none", fontSize: big ? 16 : 14, color: C.text, fontFamily: FONT.sans }} />
       <MicButton big={big} onText={(t) => { setQ(t); runAsk(t); }} />
-      <button type="submit" style={{ cursor: "pointer", background: C.gold, color: "#081627", border: 0, borderRadius: 10, padding: "8px 14px", fontWeight: 700, fontSize: 13, fontFamily: FONT.sans }}>Ask</button>
+      <button type="submit" style={{ cursor: "pointer", background: C.gold, color: "#081627", border: 0, borderRadius: 999, padding: big ? "10px 20px" : "8px 16px", fontWeight: 700, fontSize: 13, fontFamily: FONT.sans }}>Ask</button>
     </form>
   );
 }

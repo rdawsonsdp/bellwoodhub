@@ -17,7 +17,7 @@
  */
 import { DOMAIN_AGENTS, domainAgentByKey, type Urgency } from "./domain-agents";
 import { URGENCY_RANK, type AgentRun } from "./agent-run";
-import { DEMO, DEMO_NOW, demoMessageMeta, type MessageMeta } from "./demo";
+import { DEMO, DEMO_NOW, demoEvents, demoMessageMeta, type MessageMeta } from "./demo";
 import { DEMO_AGENT_RUNS } from "./demo/data/domain-agents";
 
 export type WallAction = "Approve" | "Review" | "Read";
@@ -71,11 +71,33 @@ export interface WallRun {
   actItems: WallActItem[];
 }
 
+/** The Schedule card's calendar face — the "Coming up" idiom: today (even if
+ *  clear) plus the next few days that HAVE events. A visual cue, NOT a
+ *  calendar replacement — deep links go to the real calendars. */
+export interface ScheduleDayEvent {
+  title: string;
+  time: string | null;
+  source: "gov" | "gmail";
+}
+export interface ScheduleDay {
+  date: string; // ISO day
+  dayNum: number;
+  month: string; // "Jul"
+  weekday: string; // "Thu"
+  isToday: boolean;
+  events: ScheduleDayEvent[];
+}
+export interface WallSchedule {
+  days: ScheduleDay[];
+  links: { label: string; href: string }[]; // out to Outlook / Google Calendar
+}
+
 export interface WallPayload {
   greeting: string; // one sober, time-coherent line
   dateLabel: string; // derives from the SAME clock as the content
   needsYouNow: WallItem[];
   cabinet: CabinetCard[];
+  schedule: WallSchedule;
   footer: { handled: number; waiting: number; etaMinutes: number };
   runs: Record<string, WallRun>;
   generatedAt: string;
@@ -239,10 +261,56 @@ export function assembleWall(runs: AgentRun[], now: string, opts: WallOpts = {})
     dateLabel: new Date(now).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }),
     needsYouNow,
     cabinet,
+    schedule: buildSchedule(now),
     footer: { handled, waiting, etaMinutes },
     runs: runsOut,
     generatedAt: now,
   };
+}
+
+/** "Coming up" on ONE clock (the demo's): today first — "No events today" is
+ *  said, not hidden — then the next 3 days that HAVE events. The wall applies:
+ *  business-operational gmail items never surface on this government card;
+ *  personal/community holds do. */
+function buildSchedule(now: string): WallSchedule {
+  const today = now.slice(0, 10);
+  const upcoming = demoEvents()
+    .events.filter((e) => !(e.source === "gmail" && e.topic === "business"))
+    .filter((e) => e.status !== "done" && e.date.slice(0, 10) >= today)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const byDay = new Map<string, ScheduleDayEvent[]>();
+  for (const e of upcoming) {
+    const iso = e.date.slice(0, 10);
+    const list = byDay.get(iso) ?? [];
+    if (list.length < 3)
+      list.push({
+        title: e.title,
+        time: new Date(e.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "UTC" }),
+        source: (e.source === "gmail" ? "gmail" : "gov") as "gov" | "gmail",
+      });
+    byDay.set(iso, list);
+  }
+
+  const mkDay = (iso: string): ScheduleDay => {
+    const d = new Date(`${iso}T00:00:00Z`);
+    return {
+      date: iso,
+      dayNum: d.getUTCDate(),
+      month: d.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }),
+      weekday: d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }),
+      isToday: iso === today,
+      events: byDay.get(iso) ?? [],
+    };
+  };
+  const days = [mkDay(today), ...[...byDay.keys()].filter((d) => d > today).sort().slice(0, 3).map(mkDay)];
+
+  // Calendar WORK stays out of the app — these deep-link to the real calendars.
+  const links = [
+    { label: "Outlook Calendar", href: "https://outlook.office.com/calendar/" },
+    { label: "Google Calendar", href: "https://calendar.google.com/" },
+  ];
+  return { days, links };
 }
 
 /** The push-notification one-liner (cron → phone): reads like

@@ -76,7 +76,7 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 | RB-2 | LOOK: the Wall (getWall provider + WallScreen, replaces Today) | ✅ done | Gate 2 passed 2026-07-01: one `/api/wall` call behind everything visible; dual-domain dedup proven; hardcoded badges deleted; 28+38 eval checks green; RD to confirm look on phone |
 | RB-3 | ACT: the Queue (approve / voice fix-it / skip, resumable) | ✅ done | Gate 3 passed 2026-07-01: 17 queue checks green; localStorage resumability; RD to time the phone run-through |
 | RB-4 | KNOW + nav collapse (Wall·Queue·Ask + Operator toggle; in-app thread view) | ✅ done | Gate 4 passed 2026-07-02: 3 destinations in Mayor mode, one Ask entry + 5 seeds + hold-to-talk, in-app ThreadView (light /email page gone), entity kinds fixed, cron payload = Wall top line; 15 know-checks green |
-| RB-5 | Orchestrator + live runs + harbor-wellness config-only proof + usage instrumentation | ⚪ pending | |
+| RB-5 | Orchestrator + live runs + harbor-wellness config-only proof + usage instrumentation | ✅ done | Gate 5 passed 2026-07-02: proof commit `09094a4` (4 files, zero UI); /api/cron/agent-runs + memory-aware runner (live SQL smoke-tests at canonical cutover); 4 adoption metrics wired + operator readout; phone tests (a)-(c) = RD's Fluency session |
 | RB-6 | **Agent Factory** — agents create agents via interview onboarding (`docs/rebuild/AGENT_FACTORY.md`, DEC-12) | ⚪ design logged | RD direction 2026-07-02; builds on the registry-as-data architecture; sequenced after RB-5 (6a demo wizard → 6b live Builder+OAuth → 6c novel types) |
 
 **Post-demo product work — pending:**
@@ -224,6 +224,26 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 ---
 
 ## Changelog
+
+- **2026-07-02 (Rebuild Phase 5 — orchestrator + config-only proof · Gate 5 passed · design refinements)** —
+  **The proof landed first, isolated** (commit `09094a4`): Harbor Wellness activated by flipping
+  `active: true` + fixtures — 4 files, ZERO UI changes; the Private card, digest, identity avatar, and every
+  wall-exclusion rule lit up from existing components (new worst-case eval: a RED walled run with a draft
+  still can't reach needsYouNow or the footer). **Orchestrator**: `/api/cron/agent-runs` (CRON_SECRET-gated,
+  scheduled 11:30 UTC weekdays, demo no-op) + `lib/agent-runner.ts` — per active agent: slice via
+  deriveDomains → **memory-aware prompt** (charter/goals/urgency rules cached; open memory with occurrence
+  counts + evidence ids injected so digests can say "3rd complaint at this address" citing PRIOR sources) →
+  Claude (task `draft`/Sonnet; Opus behind eval evidence) → constitution validation + invented-citation
+  guard → writes `agent_runs` + folds memoryOps (002 migration: source_message_ids now `text[]` of
+  source_refs). Live SQL smoke-tests at canonical cutover (task #2). **Instrumentation** (the 4 numbers for
+  RD's weekly session): open→first-tap, queue-clear duration, fix-it uses, digest opens per agent —
+  localStorage ring buffer + console, surfaced as an operator readout on Staff Agents. **Design (RD refs)**:
+  Schedule card now wears the "Coming up" calendar face — serif day numerals, today marked, "No events
+  today" stated, then the next 3 EVENT days (walled business items provably absent) + links OUT to
+  Outlook/Google Calendar (no calendar work in-app); "+ Add an agent" card ends the cabinet → integration-
+  style type-picker grid (5 defined types, interview + connections preview, Builder arrives with RB-6);
+  Ask input restyled as the floating pill. **Gate 5:** tsc + build clean · /chief → 200 · 5 eval suites
+  green (26 orchestrator checks new) · (a)(b)(c) phone tests = RD's Fluency-session run with Mayor Harvey.
 
 - **2026-07-02 (Rebuild Phase 4 — KNOW + nav collapse · Gate 4 passed · Agent Factory logged)** — **Mayor
   mode ships**: mobile bottom tabs and a minimal desktop rail with exactly three destinations — **Wall ·

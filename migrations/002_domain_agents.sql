@@ -28,7 +28,10 @@ CREATE TABLE IF NOT EXISTS canonical.agent_memory (
     body                text,
     status              text NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed')),
     occurrence_count    int  NOT NULL DEFAULT 1,      -- "3rd complaint at this address this quarter"
-    source_message_ids  uuid[] NOT NULL DEFAULT '{}', -- canonical.messages ids (evidence trail)
+    -- Evidence trail. text[] of canonical.messages.source_ref (the RFC message
+    -- id) — the identity every agent output and app surface already speaks —
+    -- rather than internal uuids, so runs and memory join without a mapping hop.
+    source_message_ids  text[] NOT NULL DEFAULT '{}',
     first_seen          timestamptz NOT NULL DEFAULT now(),
     last_seen           timestamptz NOT NULL DEFAULT now(),
     UNIQUE (agent_key, kind, title)

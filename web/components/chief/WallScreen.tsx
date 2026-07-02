@@ -17,9 +17,11 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { C, FONT, card, eyebrow } from "@/lib/cos-design";
 import { getCosPersona } from "@/lib/morning";
-import type { WallPayload, WallItem, CabinetCard } from "@/lib/wall";
+import type { WallPayload, WallItem, CabinetCard, WallSchedule } from "@/lib/wall";
 import AgentDigestSheet from "./AgentDigestSheet";
+import AddAgentSheet from "./AddAgentSheet";
 import { AgentAvatar, AgentChip } from "./AgentBadge";
+import { logUsage } from "@/lib/usage";
 
 interface Props {
   variant: "mobile" | "desktop";
@@ -37,7 +39,12 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
   const [wall, setWall] = useState<WallPayload | null>(null);
   const [failed, setFailed] = useState(false);
   const [openAgent, setOpenAgent] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
   const mobile = variant === "mobile";
+  const openDigest = (agentKey: string) => {
+    logUsage("digest_open", { agentKey }); // adoption metric #4
+    setOpenAgent(agentKey);
+  };
 
   useEffect(() => {
     let live = true;
@@ -51,7 +58,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
 
   const act = (it: WallItem) => {
     if (it.target.kind === "queue") onGoApprovals();
-    else setOpenAgent(it.target.agentKey);
+    else openDigest(it.target.agentKey);
   };
 
   return (
@@ -118,9 +125,14 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
           }
         >
           {!wall && [0, 1, 2].map((i) => <div key={i} style={{ ...card, height: 118, minWidth: mobile ? "74%" : undefined, scrollSnapAlign: "start", animation: "bwPulse 1.3s ease-in-out infinite" }} />)}
-          {wall?.cabinet.map((c) => (
-            <CabinetCardView key={c.agentKey} c={c} mobile={mobile} onOpen={() => setOpenAgent(c.agentKey)} />
-          ))}
+          {wall?.cabinet.map((c) =>
+            c.agentKey === "schedule" ? (
+              <ScheduleCardView key={c.agentKey} c={c} schedule={wall.schedule} mobile={mobile} onOpen={() => openDigest(c.agentKey)} />
+            ) : (
+              <CabinetCardView key={c.agentKey} c={c} mobile={mobile} onOpen={() => openDigest(c.agentKey)} />
+            ),
+          )}
+          {wall && <AddAgentCard mobile={mobile} onOpen={() => setAddOpen(true)} />}
         </div>
       </div>
 
@@ -130,6 +142,8 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
           {wall.footer.handled} handled by your agents · <span style={{ color: C.goldHi }}>{wall.footer.waiting} waiting on you</span>{wall.footer.waiting > 0 && ` · ≈${wall.footer.etaMinutes} min`}
         </button>
       )}
+
+      {addOpen && <AddAgentSheet variant={variant} onClose={() => setAddOpen(false)} />}
 
       {openAgent && wall && wall.runs[openAgent] && (
         <AgentDigestSheet
@@ -161,6 +175,70 @@ function CabinetCardView({ c, mobile, onOpen }: { c: CabinetCard; mobile: boolea
         </span>
         <span style={{ marginLeft: "auto", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{c.lastRunLabel}</span>
       </div>
+    </button>
+  );
+}
+
+/** The Schedule seat wears a calendar face: the next three days at a glance
+ *  (a visual cue, not a calendar replacement) + links OUT to the real
+ *  calendars — calendar work never happens in the app. */
+function ScheduleCardView({ c, schedule, mobile, onOpen }: { c: CabinetCard; schedule: WallSchedule; mobile: boolean; onOpen: () => void }) {
+  const SRC: Record<string, string> = { gov: C.gold, gmail: C.purpleText }; // gold ticks (gov) / violet (personal gmail)
+  return (
+    <div role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => e.key === "Enter" && onOpen()} style={{ ...card, textAlign: "left", cursor: "pointer", padding: "14px 15px", minWidth: mobile ? "74%" : undefined, scrollSnapAlign: mobile ? "start" : undefined, display: "flex", flexDirection: "column", gap: 10, color: C.text, fontFamily: FONT.sans }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+        <AgentAvatar agentKey={c.agentKey} size={26} />
+        <span style={{ fontSize: 14, fontWeight: 800, flex: 1, minWidth: 0 }}>{shortName(c.name)}</span>
+        <span style={{ width: 9, height: 9, borderRadius: 99, background: URGENCY_C[c.statusDot], flexShrink: 0, boxShadow: c.statusDot !== "clear" ? `0 0 0 3px ${URGENCY_C[c.statusDot]}22` : undefined }} />
+      </div>
+      {/* the "Coming up" face: big serif numeral, month/weekday stacked, a dot
+          marking today; gold/violet tick bars; empty-today stated, not hidden */}
+      <div style={{ display: "grid", gap: 10 }}>
+        {schedule.days.map((d) => (
+          <div key={d.date} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+            <span style={{ display: "flex", gap: 5, alignItems: "flex-start", width: 52, flexShrink: 0 }}>
+              <span style={{ fontFamily: FONT.serif, fontSize: 23, fontWeight: 600, lineHeight: 1, color: C.text }}>{d.dayNum}</span>
+              <span style={{ paddingTop: 1 }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                  <span style={{ fontSize: 8.5, fontWeight: 700, color: C.muted, lineHeight: 1.2 }}>{d.month}</span>
+                  {d.isToday && <span style={{ width: 4, height: 4, borderRadius: 99, background: C.red }} />}
+                </span>
+                <span style={{ display: "block", fontSize: 8.5, color: C.dim, lineHeight: 1.2 }}>{d.weekday}</span>
+              </span>
+            </span>
+            <div style={{ flex: 1, minWidth: 0, display: "grid", gap: 6, paddingTop: 2 }}>
+              {d.events.length === 0 && (
+                <span style={{ fontSize: 12, color: C.dim, borderLeft: `2.5px solid ${C.line}`, paddingLeft: 8, lineHeight: 1.4 }}>No events today</span>
+              )}
+              {d.events.map((e, i) => (
+                <span key={i} style={{ display: "block", borderLeft: `2.5px solid ${SRC[e.source]}`, paddingLeft: 8, minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 12.5, fontWeight: 650, lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.title}</span>
+                  {e.time && <span style={{ display: "block", fontFamily: FONT.mono, fontSize: 9.5, color: C.muted, marginTop: 1 }}>{e.time}</span>}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: "auto", flexWrap: "wrap" }}>
+        {schedule.links.map((l) => (
+          <a key={l.href} href={l.href} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} style={{ fontSize: 11, fontWeight: 700, color: C.blue, textDecoration: "none" }}>
+            {l.label} ↗
+          </a>
+        ))}
+        <span style={{ marginLeft: "auto", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{c.lastRunLabel}</span>
+      </div>
+    </div>
+  );
+}
+
+/** The growth story, visible: a new cabinet seat is one interview away. */
+function AddAgentCard({ mobile, onOpen }: { mobile: boolean; onOpen: () => void }) {
+  return (
+    <button onClick={onOpen} style={{ minWidth: mobile ? "56%" : undefined, minHeight: 118, scrollSnapAlign: mobile ? "start" : undefined, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, padding: "20px 15px", borderRadius: 16, border: "1.5px dashed rgba(var(--ink),.28)", background: "transparent", cursor: "pointer", color: C.muted, fontFamily: FONT.sans }}>
+      <span style={{ width: 34, height: 34, borderRadius: 99, border: "1.5px dashed rgba(var(--ink),.32)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, lineHeight: 1, fontWeight: 600 }}>+</span>
+      <span style={{ fontSize: 13, fontWeight: 800, color: C.text2 }}>Add an agent</span>
+      <span style={{ fontSize: 10.5, color: C.dim, textAlign: "center", lineHeight: 1.4 }}>Interview-onboarded · starts observe-only</span>
     </button>
   );
 }

@@ -23,6 +23,7 @@ import AddAgentSheet from "./AddAgentSheet";
 import ComingUp from "./ComingUp";
 import { AgentAvatar, AgentChip } from "./AgentBadge";
 import { logUsage } from "@/lib/usage";
+import { loadSeen, markSeen, isUnseen, type SeenMap } from "@/lib/agent-seen";
 
 interface Props {
   variant: "mobile" | "desktop";
@@ -41,9 +42,14 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
   const [failed, setFailed] = useState(false);
   const [openAgent, setOpenAgent] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [seen, setSeen] = useState<SeenMap>({});
   const mobile = variant === "mobile";
+  useEffect(() => { setSeen(loadSeen()); }, []);
   const openDigest = (agentKey: string) => {
     logUsage("digest_open", { agentKey }); // adoption metric #4
+    // opening the box clears its notification — the anticipation loop resets
+    const card = wall?.cabinet.find((c) => c.agentKey === agentKey);
+    if (card) setSeen((s) => markSeen(s, agentKey, card.freshAt));
     setOpenAgent(agentKey);
   };
 
@@ -130,9 +136,9 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
           {!wall && [0, 1, 2, 3].map((i) => <div key={i} style={{ ...card, height: mobile ? 104 : 118, minWidth: 0, animation: "bwPulse 1.3s ease-in-out infinite" }} />)}
           {wall?.cabinet.map((c) =>
             c.agentKey === "schedule" ? (
-              <ScheduleCardView key={c.agentKey} c={c} schedule={wall.schedule} mobile={mobile} onOpen={() => openDigest(c.agentKey)} />
+              <ScheduleCardView key={c.agentKey} c={c} schedule={wall.schedule} mobile={mobile} unseen={isUnseen(seen, c.agentKey, c.freshAt)} onOpen={() => openDigest(c.agentKey)} />
             ) : (
-              <CabinetCardView key={c.agentKey} c={c} mobile={mobile} onOpen={() => openDigest(c.agentKey)} />
+              <CabinetCardView key={c.agentKey} c={c} mobile={mobile} unseen={isUnseen(seen, c.agentKey, c.freshAt)} onOpen={() => openDigest(c.agentKey)} />
             ),
           )}
           {wall && <AddAgentCard mobile={mobile} onOpen={() => setAddOpen(true)} />}
@@ -191,12 +197,13 @@ const headlineClamp = (mobile: boolean): CSSProperties => ({
   overflowWrap: "anywhere",
 });
 
-function CabinetCardView({ c, mobile, onOpen }: { c: CabinetCard; mobile: boolean; onOpen: () => void }) {
+function CabinetCardView({ c, mobile, unseen, onOpen }: { c: CabinetCard; mobile: boolean; unseen: boolean; onOpen: () => void }) {
   return (
-    <button onClick={onOpen} style={cardShell(mobile)}>
+    <button onClick={onOpen} style={{ ...cardShell(mobile), ...(unseen ? unseenRing : {}) }}>
       <div style={{ display: "flex", alignItems: "center", gap: mobile ? 7 : 9, minWidth: 0 }}>
         <AgentAvatar agentKey={c.agentKey} size={mobile ? 22 : 26} />
         <span style={{ fontSize: mobile ? 13 : 14, fontWeight: 800, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{shortName(c.name)}</span>
+        {unseen && <span style={newPill}>new</span>}
         {c.walled && <span style={privatePill}>Private</span>}
         <span style={{ width: 9, height: 9, borderRadius: 99, background: URGENCY_C[c.statusDot], flexShrink: 0, boxShadow: c.statusDot !== "clear" ? `0 0 0 3px ${URGENCY_C[c.statusDot]}22` : undefined }} />
       </div>
@@ -213,12 +220,13 @@ function CabinetCardView({ c, mobile, onOpen }: { c: CabinetCard; mobile: boolea
 
 /** The Schedule seat wears a calendar face (the shared ComingUp component —
  *  a visual cue, not a calendar replacement; links go OUT to the real ones). */
-function ScheduleCardView({ c, schedule, mobile, onOpen }: { c: CabinetCard; schedule: WallSchedule; mobile: boolean; onOpen: () => void }) {
+function ScheduleCardView({ c, schedule, mobile, unseen, onOpen }: { c: CabinetCard; schedule: WallSchedule; mobile: boolean; unseen: boolean; onOpen: () => void }) {
   return (
-    <div role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => e.key === "Enter" && onOpen()} style={{ ...cardShell(mobile), gap: 10, gridColumn: mobile ? "1 / -1" : undefined, padding: "14px 15px" }}>
+    <div role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => e.key === "Enter" && onOpen()} style={{ ...cardShell(mobile), gap: 10, gridColumn: mobile ? "1 / -1" : undefined, padding: "14px 15px", ...(unseen ? unseenRing : {}) }}>
       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
         <AgentAvatar agentKey={c.agentKey} size={26} />
         <span style={{ fontSize: 14, fontWeight: 800, flex: 1, minWidth: 0 }}>{shortName(c.name)}</span>
+        {unseen && <span style={newPill}>new</span>}
         <span style={{ width: 9, height: 9, borderRadius: 99, background: URGENCY_C[c.statusDot], flexShrink: 0, boxShadow: c.statusDot !== "clear" ? `0 0 0 3px ${URGENCY_C[c.statusDot]}22` : undefined }} />
       </div>
       <ComingUp schedule={schedule} />
@@ -246,6 +254,17 @@ function Empty({ text }: { text: string }) {
 const sectionHead: CSSProperties = {
   fontFamily: FONT.serif, fontSize: 20, fontWeight: 600, color: C.text,
   letterSpacing: "-.01em", marginBottom: 11,
+};
+
+/** The notification cue: a desk reported in since you last opened its box. */
+const newPill: CSSProperties = {
+  padding: "2px 9px", borderRadius: 99, fontSize: 9.5, fontWeight: 800, letterSpacing: ".08em",
+  fontFamily: FONT.mono, textTransform: "uppercase", color: "#0a1322",
+  background: "linear-gradient(135deg,#F4CB63,#D7991C)", flexShrink: 0,
+  animation: "bwPulse 1.6s ease-in-out infinite",
+};
+const unseenRing: CSSProperties = {
+  boxShadow: "0 0 0 2px rgba(231,181,60,.55), 0 6px 18px rgba(231,181,60,.18)",
 };
 
 const privatePill: CSSProperties = {

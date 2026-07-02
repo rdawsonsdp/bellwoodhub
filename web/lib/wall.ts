@@ -43,6 +43,8 @@ export interface CabinetCard {
   headline: string;
   counts: { newItems: number; needsYou: number };
   lastRunLabel: string; // "updated 25m ago"
+  freshAt: string; // the run this card currently shows — the client compares
+  //               against its per-agent "last seen" to light the new-badge
 }
 
 export interface WallCitation {
@@ -224,6 +226,7 @@ export function assembleWall(runs: AgentRun[], now: string, opts: WallOpts = {})
       headline: run.output.headline,
       counts: { newItems: run.output.digest.length, needsYou: run.output.actItems.length },
       lastRunLabel: relLabel(run.ranAt, now),
+      freshAt: run.ranAt,
     });
     runsOut[agent.key] = {
       agentKey: agent.key,
@@ -249,6 +252,18 @@ export function assembleWall(runs: AgentRun[], now: string, opts: WallOpts = {})
   const handled = govRuns.reduce((n, r) => n + r.output.digest.length, 0);
   const waiting = govRuns.reduce((n, r) => n + r.output.actItems.length, 0);
   const etaMinutes = waiting ? Math.max(1, Math.ceil(waiting * 1.5)) : 0;
+
+  // The anticipation loop (RD 2026-07-02): live, the hourly cron staggers real
+  // runs through the day; in DEMO one government desk "reports in" each hour so
+  // the cabinet varies visit to visit. Deterministic in `hour`, so evals hold
+  // and the demo stays coherent — content dates never move, only freshness.
+  const rotHour = opts.hour ?? 8;
+  const govCards = cabinet.filter((c) => !c.walled);
+  if (govCards.length) {
+    const fresh = govCards[((rotHour % govCards.length) + govCards.length) % govCards.length];
+    fresh.freshAt = `${now.slice(0, 11)}${String(((rotHour % 24) + 24) % 24).padStart(2, "0")}:00:00.000Z`;
+    fresh.lastRunLabel = "updated just now";
+  }
 
   // One sober, time-coherent line — same form whether the day is calm or on
   // fire (invariant: never playful when red exists; no weather, no coffee).

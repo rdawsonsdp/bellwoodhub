@@ -244,6 +244,22 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 
 ## Changelog
 
+- **2026-07-02 (L0 slice built by agent workflow · hourly cadence + cabinet notifications)** — Four parallel
+  agents (workflow `l0-lock-the-doors`, branch `live-pilot`) built the unblocked Phase-L0 pieces:
+  **`migrations/003_rls.sql`** (RLS + anon/authenticated revocation across all 21 project tables, verified
+  on local PG 17.5 incl. idempotent re-runs), **`004_audit.sql` + `lib/audit.ts`** (append-only
+  `app.audit_log`; `logAudit()` wired into ask/email/approvals/agents-run/cron/queue — console in DEMO,
+  never-throws INSERT live), **dormant Auth.js scaffold** (next-auth v5 beta; Entra ID + Google providers
+  whose sign-in grant carries the mail-ingest scopes; `ALLOWED_EMAILS` fail-closed allowlist; middleware is
+  a total no-op until `AUTH_ENABLED=1` — demo behavior verified unchanged), and **`005_user_state.sql`**
+  (cross-device state + usage-events tables, RLS-on). **Product (RD direction): the anticipation loop** —
+  agent-runs cron now hourly 7a–5p CT (`0 12-22 * * *` UTC; DST drift noted), and cabinet cards carry
+  per-desk notifications: `freshAt` on every card, a per-agent "seen" store (`lib/agent-seen.ts`), a
+  pulsing gold **new** pill + ring on unseen cards that clears when the digest opens; in DEMO one
+  government desk deterministically "reports in" each hour (never the walled desk — eval-proven) so the
+  cabinet varies visit to visit while content dates stay coherent. Notes published to Notion (Bellwood Hub
+  → "Go-Live Plan — Constraints & Phases"). tsc + build + 5 eval suites green.
+
 - **2026-07-02 (SHIPPED — rebuild pushed to git + Vercel prod · email-ingestion workstream spec'd)** — RD
   called "push": `main` fast-forwarded to `fad0e95` (52 files, +4,776 −382 across Phases 0–5), pushed to
   GitHub with the `rebuild/phase-1-domain-agents` branch preserved; deployed to Vercel production (project

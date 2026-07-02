@@ -62,11 +62,11 @@ export default async function EmailPage({
           }}
         >
           <Link
-            href="/hub"
+            href="/chief"
             style={{ display: "inline-flex", alignItems: "center", gap: 7, color: "#fff", textDecoration: "none", fontWeight: 600, fontSize: 14 }}
           >
             <Ms name="arrow_back" size={18} color="#fff" />
-            Back to the Hub
+            Back to Bellwood Hub
           </Link>
           <span style={{ flex: 1 }} />
           <span
@@ -96,8 +96,8 @@ export default async function EmailPage({
             <p style={{ fontSize: 16, color: C.muted, margin: "12px 0 0" }}>
               That email document could not be found.
             </p>
-            <Link href="/hub" style={{ color: C.blue, fontWeight: 600, fontSize: 14, textDecoration: "none" }}>
-              ← Back to the Hub
+            <Link href="/chief" style={{ color: C.blue, fontWeight: 600, fontSize: 14, textDecoration: "none" }}>
+              ← Back to Bellwood Hub
             </Link>
           </div>
         ) : (

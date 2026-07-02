@@ -11,6 +11,7 @@ import { C, FONT } from "@/lib/cos-design";
 import AdminPanel from "./AdminPanel";
 import AgentsPage from "./AgentsPage";
 import WallScreen from "./WallScreen";
+import QueueScreen from "./QueueScreen";
 import DraftCard from "./DraftCard";
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
@@ -73,7 +74,7 @@ function Svg({ d, w = 22, sw = 1.9, fill = "none" }: { d: string; w?: number; sw
   return <svg width={w} height={w} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d.split("M").filter(Boolean).map((p, i) => <path key={i} d={"M" + p} />)}</svg>;
 }
 
-type Screen = "today" | "emails" | "events" | "history" | "agents" | "sources" | "admin";
+type Screen = "today" | "queue" | "emails" | "events" | "history" | "agents" | "sources" | "admin";
 const THEME_CYCLE = ["auto", "midnight", "dim", "daylight", "contrast"];
 
 const streamColor: Record<string, string> = {
@@ -116,7 +117,8 @@ export default function MobileApp() {
         <Header onMenu={() => setMenuOpen(true)} />
         <PullToRefresh onRefresh={doRefresh}>
           <div key={refreshKey} style={{ padding: "8px 0 20px" }}>
-            {screen === "today" && <WallScreen variant="mobile" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("emails")} />}
+            {screen === "today" && <WallScreen variant="mobile" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} />}
+            {screen === "queue" && <QueueScreen variant="mobile" onOpenEmail={setEmailMid} />}
             {screen === "emails" && <EmailsScreen onAsk={() => setAskOpen(true)} />}
             {screen === "events" && <EventsScreen />}
             {screen === "history" && <HistoryScreen />}
@@ -139,6 +141,7 @@ export default function MobileApp() {
 const NAV_STAR = "M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z";
 const NAV_ITEMS: [Screen, string, string][] = [
   ["today", I.today, "Today"],
+  ["queue", I.approvals, "Queue"],
   ["emails", I.emails, "Emails"],
   ["events", I.events, "Calendar"],
   ["history", I.history, "History"],

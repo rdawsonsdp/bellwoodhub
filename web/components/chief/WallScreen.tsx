@@ -19,6 +19,7 @@ import { C, FONT, card, eyebrow } from "@/lib/cos-design";
 import { getCosPersona } from "@/lib/morning";
 import type { WallPayload, WallItem, CabinetCard } from "@/lib/wall";
 import AgentDigestSheet from "./AgentDigestSheet";
+import { AgentAvatar, AgentChip } from "./AgentBadge";
 
 interface Props {
   variant: "mobile" | "desktop";
@@ -29,26 +30,6 @@ interface Props {
 }
 
 const URGENCY_C: Record<string, string> = { red: C.red, yellow: C.orange, clear: C.green };
-
-/** Stroke icons per cabinet seat (house SVG idiom — Material names in the
- *  registry stay the spec; these are their local renderings). */
-const AGENT_ICON: Record<string, string[]> = {
-  police: ["M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"],
-  fire: ["M12 2c1 4-3 5.5-3 9.5a3 3 0 0 0 6 0c0-1.6-.8-2.8-.8-2.8s3.8 1.8 3.8 5.8a6 6 0 0 1-12 0c0-6 5-8 6-12.5z"],
-  council: ["M3 21h18", "M5 21V10M9 21V10M15 21V10M19 21V10", "M3 10l9-7 9 7"],
-  constituent: ["M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"],
-  schedule: ["M7 3v3M17 3v3M4 9h16", "M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"],
-  hr: ["M12 8m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0", "M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"],
-  "harbor-wellness": ["M4 9h16v11H4z", "M3 9l2-5h14l2 5", "M9 20v-6h6v6"],
-};
-function AgentIco({ agentKey, w = 17, color }: { agentKey: string; w?: number; color?: string }) {
-  const d = AGENT_ICON[agentKey] ?? ["M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z"];
-  return (
-    <svg width={w} height={w} viewBox="0 0 24 24" fill="none" stroke={color ?? "currentColor"} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-      {d.map((p, i) => <path key={i} d={p} />)}
-    </svg>
-  );
-}
 
 const shortName = (name: string) => name.replace(/ Agent$/, "");
 
@@ -75,17 +56,32 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
 
   return (
     <div style={{ maxWidth: mobile ? 760 : 1080, margin: "0 auto", padding: mobile ? "0 16px 28px" : "26px 32px 40px" }}>
-      {/* ── greeting: one sober line, dated by the SAME clock as the content ── */}
-      <div style={{ marginTop: mobile ? 14 : 0 }}>
-        <div style={eyebrow(C.dim)}>Your Chief of Staff · {wall?.dateLabel ?? "—"}</div>
-        <div style={{ fontFamily: FONT.serif, fontSize: "clamp(21px, 5vw, 30px)", fontWeight: 600, color: C.text, lineHeight: 1.12, marginTop: 8, letterSpacing: "-.01em" }}>
-          {wall?.greeting ?? (failed ? "The Wall is unavailable." : "Reading the cabinet…")}
+      {/* ── HERO: the morning letterhead — warm paper, navy serif greeting, and
+          the Village bell as a watermark bleeding off the right edge (the full
+          lockup is oversized + right-anchored so overflow:hidden clips the
+          wordmark and only the bell emblem shows). Fixed palette, like real
+          letterhead, so it reads in all four themes; dated by the SAME clock
+          as the content below it (invariant 9). ── */}
+      <div style={{ position: "relative", overflow: "hidden", borderRadius: 20, marginTop: mobile ? 14 : 0, padding: mobile ? "24px 20px 22px" : "30px 28px 26px", background: "linear-gradient(120deg,#FDFAF1 0%,#FAF3E2 55%,#F3E7CB 100%)", border: "1px solid rgba(180,140,60,.28)", boxShadow: "0 14px 36px rgba(20,40,80,.16)" }}>
+        {(() => {
+          const h = mobile ? 205 : 285; // logo is 400×170; bell ≈ left 37.5%
+          const w = h * (400 / 170);
+          return (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src="/bellwood.webp" alt="" aria-hidden style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", right: -(w * 0.605), height: h, opacity: 0.32, pointerEvents: "none", userSelect: "none" }} />
+          );
+        })()}
+        <div style={{ position: "relative", maxWidth: mobile ? "78%" : "72%" }}>
+          <div style={{ ...eyebrow("#8a6a1f"), fontWeight: 700 }}>Your Chief of Staff · {wall?.dateLabel ?? "—"}</div>
+          <div style={{ fontFamily: FONT.serif, fontSize: "clamp(21px, 5vw, 30px)", fontWeight: 600, color: "#14335c", lineHeight: 1.12, marginTop: 9, letterSpacing: "-.01em" }}>
+            {wall?.greeting ?? (failed ? "The Wall is unavailable." : "Reading the cabinet…")}
+          </div>
         </div>
       </div>
 
       {/* ── NEEDS YOU NOW ── */}
-      <div style={{ marginTop: 22 }}>
-        <div style={{ ...eyebrow(C.dim), marginBottom: 10 }}>Needs you now</div>
+      <div style={{ marginTop: 24 }}>
+        <div style={sectionHead}>Needs you now</div>
         <div style={{ ...card, overflow: "hidden" }}>
           {!wall && !failed && <Empty text="…" />}
           {failed && <Empty text="Couldn't reach your agents. Pull to refresh." />}
@@ -96,11 +92,11 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
             <div key={it.id} role="button" tabIndex={0} onClick={() => act(it)} onKeyDown={(e) => e.key === "Enter" && act(it)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 14px", borderTop: i ? `1px solid ${C.line2}` : undefined, cursor: "pointer" }}>
               <span style={{ width: 4, alignSelf: "stretch", borderRadius: 4, background: URGENCY_C[it.urgency], flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: mobile ? 13.5 : 14.5, fontWeight: 700, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.line}</div>
-                <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+                <div style={{ fontSize: mobile ? 14.5 : 15, fontWeight: 700, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.line}</div>
+                <div style={{ display: "flex", gap: 10, marginTop: 5, flexWrap: "wrap" }}>
                   {it.agentKeys.map((k) => {
                     const c = wall.cabinet.find((x) => x.agentKey === k);
-                    return <span key={k} style={agentChip}> <AgentIco agentKey={k} w={11} /> {c ? shortName(c.name) : k}</span>;
+                    return <AgentChip key={k} agentKey={k} label={c ? shortName(c.name) : k} />;
                   })}
                 </div>
               </div>
@@ -111,8 +107,8 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
       </div>
 
       {/* ── THE CABINET ── */}
-      <div style={{ marginTop: 24 }}>
-        <div style={{ ...eyebrow(C.dim), marginBottom: 10 }}>The cabinet</div>
+      <div style={{ marginTop: 26 }}>
+        <div style={sectionHead}>The cabinet</div>
         <div
           className={mobile ? "scrl" : undefined}
           style={
@@ -152,15 +148,15 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
 function CabinetCardView({ c, mobile, onOpen }: { c: CabinetCard; mobile: boolean; onOpen: () => void }) {
   return (
     <button onClick={onOpen} style={{ ...card, textAlign: "left", cursor: "pointer", padding: "14px 15px", minWidth: mobile ? "74%" : undefined, scrollSnapAlign: mobile ? "start" : undefined, display: "flex", flexDirection: "column", gap: 8, color: C.text, fontFamily: FONT.sans }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ color: C.text2, display: "inline-flex" }}><AgentIco agentKey={c.agentKey} /></span>
-        <span style={{ fontSize: 13.5, fontWeight: 800, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{shortName(c.name)}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+        <AgentAvatar agentKey={c.agentKey} size={26} />
+        <span style={{ fontSize: 14, fontWeight: 800, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{shortName(c.name)}</span>
         {c.walled && <span style={privatePill}>Private</span>}
         <span style={{ width: 9, height: 9, borderRadius: 99, background: URGENCY_C[c.statusDot], flexShrink: 0, boxShadow: c.statusDot !== "clear" ? `0 0 0 3px ${URGENCY_C[c.statusDot]}22` : undefined }} />
       </div>
-      <div style={{ fontFamily: FONT.serif, fontSize: 13.5, color: C.text2, lineHeight: 1.35, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.headline}</div>
+      <div style={{ fontFamily: FONT.serif, fontSize: 14.5, color: C.text2, lineHeight: 1.35, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.headline}</div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: "auto" }}>
-        <span style={{ fontFamily: FONT.mono, fontSize: 11, color: c.counts.needsYou ? C.goldHi : C.muted }}>
+        <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: c.counts.needsYou ? C.goldHi : C.muted }}>
           {c.counts.newItems} new{c.counts.needsYou > 0 && ` · ${c.counts.needsYou} need you`}
         </span>
         <span style={{ marginLeft: "auto", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{c.lastRunLabel}</span>
@@ -173,10 +169,10 @@ function Empty({ text }: { text: string }) {
   return <div style={{ padding: 22, textAlign: "center", color: C.dim, fontSize: 13.5 }}>{text}</div>;
 }
 
-const agentChip: CSSProperties = {
-  display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 99,
-  fontSize: 10.5, fontWeight: 700, fontFamily: FONT.mono, color: C.text3,
-  background: "rgba(var(--ink),.07)", border: `1px solid ${C.line}`, whiteSpace: "nowrap",
+/** Serif section heading — the "Coming up" idiom: quiet, readable, no caps. */
+const sectionHead: CSSProperties = {
+  fontFamily: FONT.serif, fontSize: 20, fontWeight: 600, color: C.text,
+  letterSpacing: "-.01em", marginBottom: 11,
 };
 
 const privatePill: CSSProperties = {

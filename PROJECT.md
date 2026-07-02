@@ -74,7 +74,7 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 | RB-0 | Ground-truth map (`docs/rebuild/PHASE0_MAP.md`) | ✅ done | Screen/route/counts inventories + persona confirmation. **Gate: RD skim before RB-1** — 6 decisions queued in map §6 (persona naming, demo "today", walled calendar, keyless voice, /hub scope, routines collision) |
 | RB-1 | Domain-agent core (registry, deriveDomains, run contract, fixtures) | ✅ done | Gate 1 passed 2026-07-01 on branch `rebuild/phase-1-domain-agents`: tsc + build clean, 38 eval checks green, `/api/agents/run?demo=1` serves all 5 active agents |
 | RB-2 | LOOK: the Wall (getWall provider + WallScreen, replaces Today) | ✅ done | Gate 2 passed 2026-07-01: one `/api/wall` call behind everything visible; dual-domain dedup proven; hardcoded badges deleted; 28+38 eval checks green; RD to confirm look on phone |
-| RB-3 | ACT: the Queue (approve / voice fix-it / skip, resumable) | ⚪ pending | |
+| RB-3 | ACT: the Queue (approve / voice fix-it / skip, resumable) | ✅ done | Gate 3 passed 2026-07-01: 17 queue checks green; localStorage resumability; RD to time the phone run-through |
 | RB-4 | KNOW + nav collapse (Wall·Queue·Ask + Operator toggle; in-app thread view) | ⚪ pending | |
 | RB-5 | Orchestrator + live runs + harbor-wellness config-only proof + usage instrumentation | ⚪ pending | |
 
@@ -213,6 +213,26 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 ---
 
 ## Changelog
+
+- **2026-07-01 (Rebuild Phase 3 — ACT: the Queue · Gate 3 passed + design pass)** — **The Queue** ships on
+  both shells: `web/lib/queue.ts` (union of agent actItems + pending drafts store, deduped by thread — 3
+  items not 6; stable ids = draftIds so approve/discard ride the existing /api/approvals) + `/api/queue` +
+  `QueueScreen` (mobile: one card at a time; desktop: list+detail). Three thumb actions: **Approve & send**
+  (optimistic, 15s undo toast, then demo fake-send), **Fix it** (typed or spoken note via the existing
+  /api/transcribe with the iOS audio/mp4 guard; demo simulation appends a visible "Mayor's revision note"
+  and returns the card to the top labeled *revised*), **Skip** (bottom, never deleted). Full body always
+  (invariant 6): long drafts start collapsed on mobile and Approve unlocks after one expansion. Resumability
+  (invariant 7): `lib/queue-state.ts` persists states/skips/revisions in localStorage `bw-queue-state`,
+  interrupted revision passes resume on reload, "While you were out" diffs item ids. Wall Approve rows +
+  digest sheets now deep-link to the Queue; Queue added to both navs. **Design pass (RD direction, Granola
+  reference):** default theme → **daylight, rewarmed to cream paper**; Wall hero = letterhead card with the
+  real Village bell logo (web/public/bellwood.webp) bleeding off the right edge; **agent identity system**
+  — each domain agent has a color + emblem (`domain-agents.ts color`, `AgentBadge.tsx` solid-circle
+  avatars/chips) used on cabinet cards, needs-you chips, digest sheets, and queue provenance — identity is
+  the recognition channel, urgency (red/yellow/green) stays the action channel; serif section headings;
+  reading sizes up. Also fixed `/email` "Back to the Hub" → now returns to `/chief`. **Gate 3:** tsc +
+  build clean · `/chief` → 200 · eval 17 queue + 29 wall + 38 routing checks green · RD to time the
+  end-to-end phone run (approve→fix-it→skip in under 2 min) and confirm refresh-mid-queue resume.
 
 - **2026-07-01 (Rebuild Phase 2 — LOOK: the Wall · Gate 2 passed)** — The Mayor's default screen is now
   **the Wall** on mobile AND desktop (same commit series): **`web/lib/wall.ts` `getWall()`** — the ONE

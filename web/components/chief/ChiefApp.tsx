@@ -19,6 +19,7 @@ import type { MemoryDetail, EntityListItem, SourcesOverview, DraftRow } from "@/
 import AdminPanel from "./AdminPanel";
 import AgentsPage from "./AgentsPage";
 import WallScreen from "./WallScreen";
+import QueueScreen from "./QueueScreen";
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
 import { applyTheme, resolveTheme, watchAutoTheme } from "@/lib/theme";
@@ -54,7 +55,7 @@ async function postJson<T>(url: string, body: unknown): Promise<T | null> {
   } catch { return null; }
 }
 
-type Screen = "today" | "brief" | "ask" | "track" | "memory" | "sources" | "settings" | "admin" | "agents";
+type Screen = "today" | "queue" | "brief" | "ask" | "track" | "memory" | "sources" | "settings" | "admin" | "agents";
 type Filter = "all" | "open" | "late" | "broken" | "kept";
 
 /* ── tiny SVG helpers (stroke icons, 24×24) ── */
@@ -138,7 +139,8 @@ export default function ChiefApp() {
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <Topbar onAsk={go("ask")} />
         <div className="scrl" style={{ flex: 1, overflowY: "auto" }}>
-          {screen === "today" && <WallScreen variant="desktop" onOpenEmail={(mid) => { if (typeof window !== "undefined") window.location.href = `/email?mid=${encodeURIComponent(mid)}`; }} onGoApprovals={() => setScreen("settings")} />}
+          {screen === "today" && <WallScreen variant="desktop" onOpenEmail={(mid) => { if (typeof window !== "undefined") window.location.href = `/email?mid=${encodeURIComponent(mid)}`; }} onGoApprovals={() => setScreen("queue")} />}
+          {screen === "queue" && <QueueScreen variant="desktop" onOpenEmail={(mid) => { if (typeof window !== "undefined") window.location.href = `/email?mid=${encodeURIComponent(mid)}`; }} />}
           {screen === "brief" && <Brief go={go} onAsk={() => runAsk("Every flooding conversation, in order — who promised what and whether it happened.")} />}
           {screen === "ask" && <Ask asked={asked} loading={loading} res={res} err={err} q={q} setQ={setQ} runAsk={runAsk} resetAsk={resetAsk} go={go} />}
           {screen === "track" && <Track filter={filter} setFilter={setFilter} />}
@@ -194,6 +196,7 @@ function Sidebar({ screen, go }: { screen: Screen; go: (s: Screen) => () => void
       <div className="scrl" style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 3 }}>
         <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".16em", padding: "4px 10px 8px" }}>Workspace</div>
         {item("today", "Today", <Ico d={ICON.today} />, <Star w={13} c={C.gold} />)}
+        {item("queue", "Queue", <Ico d={ICON.approvals} />)}
         {item("brief", "Emails", <Ico d={ICON.mail} />)}
         {item("ask", "Ask", <Star w={19} c="currentColor" />, <Kbd>⌘K</Kbd>)}
         {/* No hardcoded nav badges: every count the Mayor sees traces to getWall()

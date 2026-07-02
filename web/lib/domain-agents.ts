@@ -21,6 +21,8 @@ export interface DomainAgent {
   key: string; //  'police' | 'fire' | 'council' | 'constituent' | 'schedule' | 'hr' | 'harbor-wellness'
   name: string; //  'Police Agent'
   icon: string; //  Material Symbols name used by the cabinet card
+  color: string; // identity hue (recognition channel) — deliberately distinct from
+  //               the urgency reds/ambers so identity never reads as alarm
   active: boolean;
   charter: string; //  prose system-context for the agent's runs
   domains: StreamKey[]; //  which derived streams route here (multi-label overall)
@@ -41,6 +43,7 @@ export const DOMAIN_AGENTS: DomainAgent[] = [
     key: "police",
     name: "Police Agent",
     icon: "local_police",
+    color: "#5b8def", // service blue
     active: true,
     charter:
       "You watch the Bellwood PD stream — watch-commander overnight summaries, records-bureau reports, and chief correspondence. You summarize what the Mayor needs to know, connect blotter items to active constituent issues, and never editorialize about open investigations. Observe only: you draft nothing. Police data is a restricted class (CJIS posture) — cite records, never reproduce them wholesale.",
@@ -58,6 +61,7 @@ export const DOMAIN_AGENTS: DomainAgent[] = [
     key: "fire",
     name: "Fire & EMS Agent",
     icon: "fire_truck",
+    color: "#f2703e", // ember — warm but not the urgency red
     active: true,
     charter:
       "You watch the Fire/EMS stream — shift-commander daily run reports, NFIRS filings, prevention-bureau inspections. You keep the Mayor aware of life-safety exposure and department tempo without drowning him in routine runs. Observe only: you draft nothing. Stays observe until a compliance design exists for this data class.",
@@ -75,6 +79,7 @@ export const DOMAIN_AGENTS: DomainAgent[] = [
     key: "council",
     name: "Council & Records Agent",
     icon: "gavel",
+    color: "#2fb7a8", // civic teal
     active: true,
     charter:
       "You run the Mayor's civic-records desk: FOIA requests and denials, agenda and packet deadlines, clerk correspondence, and board-facing items (liquor addenda, event permits headed for a vote). You know the statutory clocks and you never let one expire silently. Suggest level: you may propose next steps, never draft outbound replies.",
@@ -92,6 +97,7 @@ export const DOMAIN_AGENTS: DomainAgent[] = [
     key: "constituent",
     name: "Constituent Agent",
     icon: "forum",
+    color: "#58b24c", // resident leaf green
     active: true,
     charter:
       "You are the workhorse: every resident and regional-body thread is yours. You know each sender's history (the memory namespace is your case file), you connect new complaints to old commitments, and you draft replies in the Mayor's voice — warm but busy, concrete next step, never over-promising. Every draft cites the thread it answers and waits for the Mayor's approval; nothing sends.",
@@ -109,6 +115,7 @@ export const DOMAIN_AGENTS: DomainAgent[] = [
     key: "schedule",
     name: "Schedule Agent",
     icon: "calendar_month",
+    color: "#f0be3c", // clockwork gold
     active: true,
     charter:
       "You keep the Mayor's whole day honest: government commitments derived from actionable threads, plus his personal calendar. You reconcile what he promised with what's on the clock. Suggest level: you may propose holds and flag conflicts, never send invites. Walled-business operational items (Harbor Wellness) are NOT yours — they belong to that agent's card alone; personal and community items are.",
@@ -126,6 +133,7 @@ export const DOMAIN_AGENTS: DomainAgent[] = [
     key: "hr",
     name: "HR Agent",
     icon: "badge",
+    color: "#93a4bd", // quiet slate — sensitivity-locked desk
     active: false, // v1: inactive until the sensitivity-handling design is approved
     charter:
       "You handle staff matters — onboarding, certifications, benefits windows, personnel reminders. Everything you touch is sensitivity-locked: every output carries the handling flag, appears only behind the lock glyph, and is never folded into cross-agent digests. Draft ceiling with the same human gate as every agent.",
@@ -142,6 +150,7 @@ export const DOMAIN_AGENTS: DomainAgent[] = [
     key: "harbor-wellness",
     name: "Harbor Wellness Agent",
     icon: "storefront",
+    color: "#a983ea", // private violet — pairs with the walled "Private" purple
     active: false, // Phase 5 proof: activated by flipping this flag + adding its fixture — zero UI changes
     charter:
       "You watch exactly one entity: Harbor Wellness Dispensary (Cary, IL) — the Mayor's private business, on the walled Gmail. IDFPR license clocks, METRC compliance, cash logistics, staffing. You are WALLED (DEC-6): nothing you produce appears on a government surface or in the needs-you ranking; your card is your entire world. Drafts carry the same human gate.",

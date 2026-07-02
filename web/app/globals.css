@@ -33,17 +33,19 @@
   --c-purple: #ab9bff; --c-purpletext: #c3b8ff; --c-cardbd: rgba(255, 255, 255, 0.11);
 }
 
-/* Daylight — light scheme, dark text, accents darkened for AA contrast. */
+/* Daylight — warm paper (the DEFAULT): cream page, white cards, dark ink,
+   accents darkened for AA contrast. Reference: the Granola-style "Coming up"
+   agenda (design pass 2026-07-01). */
 [data-theme="daylight"] {
-  --ink: 24, 33, 49;
-  --c-bgbody: #f4f6fa;
-  --c-appbg: radial-gradient(130% 100% at 18% -8%, #ffffff 0%, #eef2f8 45%, #e6ecf4 100%);
-  --c-text: #18212f; --c-text2: #38465a; --c-text3: #4e5d73; --c-muted: #64748a; --c-dim: #8090a4; --c-dim2: #9aa8ba;
+  --ink: 32, 30, 22;
+  --c-bgbody: #f5f1e6;
+  --c-appbg: radial-gradient(130% 100% at 18% -8%, #fffdf6 0%, #f6f2e6 45%, #efe9d8 100%);
+  --c-text: #201d14; --c-text2: #3c3a2e; --c-text3: #55523f; --c-muted: #6f6b57; --c-dim: #8b8670; --c-dim2: #a49f88;
   --c-gold: #a9750c; --c-goldhi: #8c6107; --c-goldlo: #c19a2e;
   --c-blue: #1f6ed6; --c-green: #0c9760; --c-greentext: #0a8453;
   --c-orange: #b96f14; --c-orangetext: #9c5f15; --c-red: #d23a2d; --c-redtext: #b83228;
-  --c-purple: #5d46d8; --c-purpletext: #4d3ac0; --c-cardbd: rgba(24, 33, 49, 0.14);
-  --c-sidebar: rgba(255, 255, 255, 0.72);
+  --c-purple: #5d46d8; --c-purpletext: #4d3ac0; --c-cardbd: rgba(88, 74, 38, 0.16);
+  --c-sidebar: rgba(255, 253, 246, 0.8);
 }
 
 /* High contrast — maximum legibility (near-AAA). */

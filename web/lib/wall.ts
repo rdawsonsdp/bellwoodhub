@@ -37,6 +37,7 @@ export interface CabinetCard {
   agentKey: string;
   name: string;
   icon: string;
+  color: string; // identity hue — recognition channel (urgency stays the action channel)
   statusDot: Urgency;
   walled: boolean;
   headline: string;
@@ -195,6 +196,7 @@ export function assembleWall(runs: AgentRun[], now: string, opts: WallOpts = {})
       agentKey: agent.key,
       name: agent.name,
       icon: agent.icon,
+      color: agent.color,
       statusDot: run.output.urgency,
       walled: !!agent.walled,
       headline: run.output.headline,

@@ -5,7 +5,9 @@
  * time-of-day palettes by the local hour; any other value is a pinned theme.
  */
 export const THEME_KEY = "bw-theme";
-export const DEFAULT_THEME = "auto";
+// Default: BRIGHT (design decision 2026-07-01 — bright surfaces, readable type;
+// the time-of-day "auto" mode remains available in the theme cycle).
+export const DEFAULT_THEME = "daylight";
 
 export type Band = "am" | "midday" | "evening" | "night";
 

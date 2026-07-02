@@ -12,6 +12,7 @@
 import type { CSSProperties } from "react";
 import { C, FONT, card, cite, eyebrow } from "@/lib/cos-design";
 import type { WallRun, CabinetCard } from "@/lib/wall";
+import { AgentAvatar } from "./AgentBadge";
 
 interface Props {
   run: WallRun;
@@ -33,10 +34,11 @@ export default function AgentDigestSheet({ run, card: c, variant, onClose, onOpe
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.5)", backdropFilter: "blur(2px)" }}>
       <div className="scrl" onClick={(e) => e.stopPropagation()} style={{ ...panel, background: "var(--c-appbg)", overflowY: "auto", padding: "18px 18px 28px", color: C.text, fontFamily: FONT.sans }}>
-        {/* header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+        {/* header: the agent's mark + name; urgency stays on the status dot */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <AgentAvatar agentKey={c.agentKey} size={32} />
+          <span style={{ fontSize: 15.5, fontWeight: 800, flex: 1, minWidth: 0 }}>{c.name}</span>
           <span style={{ width: 9, height: 9, borderRadius: 99, background: URGENCY_C[run.urgency], flexShrink: 0 }} />
-          <span style={{ fontSize: 15, fontWeight: 800, flex: 1, minWidth: 0 }}>{c.name}</span>
           {c.walled && <span style={privatePill}>Private</span>}
           <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{c.lastRunLabel}</span>
           <button onClick={onClose} aria-label="Close" style={{ background: "rgba(var(--ink),.06)", border: `1px solid ${C.line}`, borderRadius: 99, width: 30, height: 30, color: C.text2, cursor: "pointer", fontSize: 14, lineHeight: 1 }}>✕</button>
@@ -50,7 +52,7 @@ export default function AgentDigestSheet({ run, card: c, variant, onClose, onOpe
             <div key={i} style={{ display: "flex", gap: 10 }}>
               <span style={{ color: URGENCY_C[run.urgency], fontSize: 15, lineHeight: 1.4, flexShrink: 0 }}>•</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13.5, color: C.text2, lineHeight: 1.55 }}>{d.point}</div>
+                <div style={{ fontSize: 14.5, color: C.text2, lineHeight: 1.6 }}>{d.point}</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
                   {d.sources.map((s) => (
                     <button key={s.messageId} onClick={() => onOpenMessage(s.messageId)} style={{ ...cite, border: 0, cursor: "pointer" }}>

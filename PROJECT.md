@@ -79,6 +79,15 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 | RB-5 | Orchestrator + live runs + harbor-wellness config-only proof + usage instrumentation | ✅ done | Gate 5 passed 2026-07-02: proof commit `09094a4` (4 files, zero UI); /api/cron/agent-runs + memory-aware runner (live SQL smoke-tests at canonical cutover); 4 adoption metrics wired + operator readout; phone tests (a)-(c) = RD's Fluency session |
 | RB-6 | **Agent Factory** — agents create agents via interview onboarding (`docs/rebuild/AGENT_FACTORY.md`, DEC-12) | ⚪ design logged | RD direction 2026-07-02; builds on the registry-as-data architecture; sequenced after RB-5 (6a demo wizard → 6b live Builder+OAuth → 6c novel types) |
 
+**Go-Live (demo → everyday tool — `docs/GO_LIVE_PLAN.md`; pilot = RD's own mailbox; planned 2026-07-02):**
+| # | Phase | Status | Notes |
+|---|------|--------|-------|
+| L0 | Lock the doors: Auth.js login+allowlist, Deployment Protection, RLS (ISS-4), audit ledger (ISS-5), key rotation (TASK-7), CRON_SECRET | 🔵 started | Buildable slice (RLS/audit/auth-scaffold/state migrations) on branch `live-pilot`; blocked-on-RD: provider answer, OAuth app, pilot Supabase, dashboard toggles |
+| L1 | RD's mail flows (ING-1→4 on his mailbox) + real send in a safety cage (`SAFE_SEND_ALLOWLIST`) | ⚪ pending | Gate = the day-two test: two mornings, different real content; approve actually sends |
+| L2 | The return trip: 7 AM digest email → Web Push; server-side user state (cross-device); offline shell | ⚪ pending | |
+| L3 | Earned intelligence: live memory verified, fix-it→style patterns, 50-question evidence engine, retire 31MB bundle on live | ⚪ pending | |
+New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor's real mailbox, not the pilot) · `LGL-1` FOIA-discoverability/retention of the hub itself — counsel question.
+
 **Email ingestion (real mail — `docs/EMAIL_INGESTION.md`; absorbs TASK-1 + #3; spec'd 2026-07-02):**
 | # | Phase | Status | Notes |
 |---|------|--------|-------|

@@ -275,8 +275,10 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
   **Real-mail text hygiene** (RD screenshot): newsletters pad bodies with invisible Unicode + URL soup —
   lib/clean-text.ts scrubs at ingest, snippets de-noised, 9k mirrored bodies backfilled; also fixed the
   email drill-in reading the empty poc table on live (canonical lookup first — real mail 404'd on tap).
-  **Tomorrow (RD): agent logic + agent learning process** — incl. agents skipping no-reply senders when
-  drafting, and quieter not-sent feedback on bulk approvals.
+  **Tomorrow (RD): agent logic + agent learning process** — RD's closing directive: **related-email
+  retrieval becomes part of every agent's run loop** (FEAT-17 graduates from display feature to core
+  process: gather same-sender/thread/topic + semantic neighbors, reason over the context, not the lone
+  message); also agents skip no-reply senders when drafting, quieter not-sent feedback on bulk approvals.
 
 - **2026-07-03 evening (PRODUCTION LOCKDOWN — RD: "Tuesday uses production data; lock this down now")** —
   Two agent-workflow waves + inline provisioning, all on `live-pilot` (@ `dd0c061`), 10 migrations now

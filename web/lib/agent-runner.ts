@@ -55,8 +55,10 @@ export function buildAgentPrompt(
       ` "digest": [{"point": string, "sourceMessageIds": string[]}]  // max 8; EVERY point cited\n` +
       ` "actItems": ${actShape},\n` +
       ` "memoryOps": [{"op":"upsert"|"close","kind":"open_issue"|"commitment"|"pattern"|"entity_note","title":string,"body"?:string,"entityId"?:string,"sourceMessageIds":string[]}]}`,
-    `Hard rules: cite only messageIds present in the input (memory evidence included); never invent facts; ` +
-      `a commitment may only be closed with message evidence; when your memory shows a repeat, say so ` +
+    `Hard rules: cite only messageIds present in the input (memory evidence included) — a messageId is the ` +
+      `value in [square brackets]; thread ids in parentheses are NOT citable. Never invent facts. If you have ` +
+      `nothing citable to report, return "digest": [] — NEVER write filler points like "no new items". ` +
+      `A commitment may only be closed with message evidence; when your memory shows a repeat, say so ` +
       `("3rd complaint at this address this quarter") and cite the prior sourceMessageIds alongside the new one.`,
   ].join("\n\n");
 
@@ -185,6 +187,18 @@ export interface AgentRunResult {
   actItems?: number;
 }
 
+/** The honest empty run — persisted WITHOUT a model call when an agent's
+ *  desk is truly quiet (no new mail, no open memory). The first live run
+ *  (2026-07-03) proved the alternative: models asked to report on nothing
+ *  write uncited filler, and the constitution rightly rejects it. */
+const quietRun = (): AgentRunOutput => ({
+  headline: "Quiet desk — nothing new this pass.",
+  urgency: "clear",
+  digest: [],
+  actItems: [],
+  memoryOps: [],
+});
+
 export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> {
   try {
     const last = await query<{ ran_at: Date }>(
@@ -193,10 +207,28 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
     );
     const since = last[0]?.ran_at?.toISOString() ?? new Date(Date.now() - 7 * 86400000).toISOString();
     const [slice, memory] = await Promise.all([fetchAgentSlice(agent, since), fetchAgentMemory(agent.key)]);
+
+    // Quiet desk: nothing to read, nothing remembered — skip the model
+    // entirely; an honest "nothing new" beats prompted-into-filler output.
+    if (slice.length === 0 && memory.length === 0) {
+      await persistRun(agent.key, quietRun());
+      return { agentKey: agent.key, ok: true, slice: 0, digest: 0, actItems: 0 };
+    }
+
     const { system, user } = buildAgentPrompt(agent, memory, slice);
     const task = (process.env.AGENT_RUN_TASK as Task) || "draft"; // Sonnet; flagship gated by eval evidence
     const raw = await complete({ task, system, user, maxTokens: 2048 });
-    const output = validateRunOutput(agent, parseRunOutput(raw)); // enforce, then persist
+    const parsed = parseRunOutput(raw) as { digest?: { sourceMessageIds?: unknown[] }[] };
+    // Sanitize BEFORE validation: drop uncited filler points ("no new
+    // items") — an uncited claim must never surface, but it shouldn't kill
+    // the whole run either. Unknown-id citations still hard-fail below:
+    // that shape is hallucination, not fluff.
+    if (Array.isArray(parsed?.digest)) {
+      parsed.digest = parsed.digest.filter(
+        (d) => Array.isArray(d?.sourceMessageIds) && d.sourceMessageIds.length > 0,
+      );
+    }
+    const output = validateRunOutput(agent, parsed); // enforce, then persist
     // guard against cited ids that weren't in the input (no invented evidence)
     const known = new Set([...slice.map((m) => m.messageId), ...memory.flatMap((m) => m.sourceMessageIds)]);
     const invented = output.digest.flatMap((d) => d.sourceMessageIds).filter((id) => !known.has(id));

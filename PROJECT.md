@@ -248,6 +248,26 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 
 ## Changelog
 
+- **2026-07-03 night (GO-LIVE DAY — real mail flowing, first live agent runs, in-app agent controls)** —
+  The rehearsal became real: RD's Google OAuth client + sign-in (consent captured to Vault after fixing a
+  fire-and-forget serverless race — writes now awaited), `bellwood-mayor` DATABASE_URL wired (Session pooler,
+  pinned CA verified), and the pilot's first live render: honest zeros, real date. **Sync**: the 200-cap
+  became a full-mailbox walk (resumable `bf:` cursor + server batch loop + button auto-continue + live
+  "N synced" counter) — **~9,000 messages** mirrored by end of day, walk still running; 14 calendar events.
+  **First live agent runs** (RD's Anthropic key, Sensitive-scoped): all 6 initially rejected by the
+  constitution — models wrote uncited filler on empty desks, one cited thread-ids — fixed with quiet-desk
+  short-circuit (no model call), pre-validation filler drop, citation-hygiene prompt; second pass: 5 honest
+  quiet desks + Constituent's real judgment ("inbox is commercial/personal noise only"). **In-app agent
+  management started (FEAT-19 slice 1)**: enable switches on every Staff Agents card → `app.agent_configs`
+  (migration 011, applied), enforced in runner/ingest/sentinel/Wall, every flip audited. "Run agents now"
+  button (cards pulse Running). Email agents hold Wall cabinet seats from connector status (Default vs
+  Custom origin vocabulary). Inbox pagination (Load more). Demo-era content purged from operator screens on
+  live builds (real mailboxes in the switcher, no prototype fallbacks, no fake agent activity). **GitHub
+  integration live** (root directory fixed via API): push = auto-deploy, proven 5×. Sign out in both
+  profile menus. 48 holiday OOO drafts staged to Approvals (RD directive; send stays structurally
+  impossible — read-only scopes). Logged: FEAT-17 related-background, FEAT-18 auto sign-out, FEAT-19
+  agent-config-in-app. **Tomorrow (RD): agent logic + agent learning process.**
+
 - **2026-07-03 evening (PRODUCTION LOCKDOWN — RD: "Tuesday uses production data; lock this down now")** —
   Two agent-workflow waves + inline provisioning, all on `live-pilot` (@ `dd0c061`), 10 migrations now
   applied to `bellwood-mayor`. **Security:** DB client pins the Supabase Root 2021 CA (fetched from the

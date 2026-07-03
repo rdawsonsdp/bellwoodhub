@@ -13,6 +13,7 @@
  */
 import { createContext, useContext, useState, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { C, FONT, APP_BG, card, eyebrow, cite } from "@/lib/cos-design";
+import { IS_LIVE_BUILD } from "@/lib/live";
 import { ASK_SEEDS } from "@/lib/ask-seeds";
 import { loadOperatorMode, saveOperatorMode } from "@/lib/operator-mode";
 import { logUsage } from "@/lib/usage";
@@ -32,7 +33,7 @@ const OpenEmailCtx = createContext<(mid: string) => void>(() => {});
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
 import { applyTheme, resolveTheme, watchAutoTheme } from "@/lib/theme";
-import { MAILBOXES, getMailbox, PROVIDER_META } from "@/lib/mailboxes";
+import { MAILBOXES, PROVIDER_META, type Mailbox } from "@/lib/mailboxes";
 import { getRecentSearches, addRecentSearch } from "@/lib/recent-searches";
 import { getIngested, type IngestedRecord } from "@/lib/ingested-sources";
 import { SENSITIVITY_META, getSourceType } from "@/lib/source-types";
@@ -346,21 +347,40 @@ function DInboxRow({ href, onOpen, from, time, subject, snippet, dot, tag, tagCo
   );
 }
 
+/* Connected mailboxes via /api/mailboxes. Demo builds keep the static registry
+   as the instant first paint and never fetch (behavior unchanged); the LIVE
+   build starts empty and shows only what pipeline.connector_accounts actually
+   holds — real mailboxes or an honest none-connected state, never fictional. */
+function useMailboxes(): Mailbox[] {
+  const [boxes, setBoxes] = useState<Mailbox[]>(IS_LIVE_BUILD ? [] : MAILBOXES);
+  useEffect(() => {
+    if (!IS_LIVE_BUILD) return; // demo: the registry is the data — no fetch
+    let alive = true;
+    fetch("/api/mailboxes").then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => { if (alive && Array.isArray(d)) setBoxes(d); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  return boxes;
+}
+
 function Brief({ go, onAsk }: { go: (s: Screen) => () => void; onAsk: () => void }) {
   const openEmail = useContext(OpenEmailCtx);
+  const mailboxes = useMailboxes();
   const [mailboxId, setMailboxId] = useState("gov");
-  const mailbox = getMailbox(mailboxId)!;
+  // Resolve against the connected list; undefined only on the LIVE build with nothing connected.
+  const mailbox = mailboxes.find((m) => m.id === mailboxId) ?? mailboxes.find((m) => m.isDefault) ?? mailboxes[0];
+  const isPrivate = mailbox?.isPrivate ?? false;
   const { data: brief } = useApi<NeedsYouToday>("/api/brief");
   const { data: appr, reload } = useApi<{ drafts: DraftRow[] }>("/api/approvals");
-  const { data: inbox } = useApi<{ count: number; emails: InboxItem[] }>(`/api/inbox?mailbox=${mailboxId}`);
+  const { data: inbox } = useApi<{ count: number; emails: InboxItem[] }>(`/api/inbox?mailbox=${mailbox?.id ?? mailboxId}`);
   const [tab, setTab] = useState<"focus" | "all" | "queued">("focus");
   // The walled Business (Gmail) mailbox is private: no agent drafts, no FOIA digest.
-  const queued = mailbox.isPrivate ? [] : (appr?.drafts ?? []);
+  const queued = isPrivate ? [] : (appr?.drafts ?? []);
   const seen = new Set<string>();
-  const needs = mailbox.isPrivate ? [] : [...(brief?.awaitingReply ?? []), ...(brief?.highSensitivity ?? [])].filter((b) => (seen.has(b.messageId) ? false : (seen.add(b.messageId), true)));
+  const needs = isPrivate ? [] : [...(brief?.awaitingReply ?? []), ...(brief?.highSensitivity ?? [])].filter((b) => (seen.has(b.messageId) ? false : (seen.add(b.messageId), true)));
   const sensitive = new Set((brief?.highSensitivity ?? []).map((b) => b.messageId));
   const mid = (m: string) => `/email?mid=${encodeURIComponent(m)}`;
-  const tabs: [typeof tab, string, number][] = mailbox.isPrivate
+  const tabs: [typeof tab, string, number][] = isPrivate
     ? [["all", "Inbox", inbox?.count ?? 0]]
     : [["focus", "Urgent", needs.length], ["all", "Inbox", inbox?.count ?? 0], ["queued", "Agent Answered", queued.length]];
   const tabBtn = (k: typeof tab, label: string, n: number) => {
@@ -373,14 +393,17 @@ function Brief({ go, onAsk }: { go: (s: Screen) => () => void; onAsk: () => void
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 18 }}>
         <div>
           <div style={{ fontFamily: FONT.serif, fontSize: 34, fontWeight: 500, color: C.text, letterSpacing: "-.015em", lineHeight: 1 }}>Emails</div>
-          <div style={{ marginTop: 9, fontSize: 14.5, color: C.text3 }}>{mailbox.isPrivate ? `${(inbox?.count ?? 0).toLocaleString()} in this private inbox · walled from the public record` : `${needs.length} need you · ${(inbox?.count ?? 0).toLocaleString()} in the inbox · ${queued.length} queued.`}</div>
+          <div style={{ marginTop: 9, fontSize: 14.5, color: C.text3 }}>{isPrivate ? `${(inbox?.count ?? 0).toLocaleString()} in this private inbox · walled from the public record` : `${needs.length} need you · ${(inbox?.count ?? 0).toLocaleString()} in the inbox · ${queued.length} queued.`}</div>
         </div>
         <button onClick={onAsk} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "rgba(var(--ink),.05)", border: "1px solid rgba(var(--ink),.1)", color: C.muted, fontSize: 13.5, fontFamily: FONT.sans }}>
           <Ico d={ICON.search} w={16} sw={2} stroke={C.muted} /> Search every email…
         </button>
       </div>
-      <DMailboxSwitcher current={mailboxId} onChange={(id) => { setMailboxId(id); setTab(getMailbox(id)?.isPrivate ? "all" : "focus"); }} />
-      {mailbox.isPrivate && (
+      <DMailboxSwitcher boxes={mailboxes} current={mailbox?.id ?? mailboxId} onChange={(id) => { setMailboxId(id); setTab(mailboxes.find((m) => m.id === id)?.isPrivate ? "all" : "focus"); }} />
+      {mailboxes.length === 0 && (
+        <div style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 13, border: "1px dashed rgba(var(--ink),.14)", color: C.dim, fontSize: 13, textAlign: "center" }}>No mailboxes connected yet — sign in to connect one.</div>
+      )}
+      {mailbox?.isPrivate && (
         <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "11px 15px", borderRadius: 12, border: `1px solid ${mailbox.color}55`, background: `${mailbox.color}14`, marginBottom: 16, fontSize: 12.5, color: C.text3, lineHeight: 1.5 }}>
           <Ico d={["M6 10V8a6 6 0 0 1 12 0v2", "M5 10h14v10H5z", "M12 14v3"]} w={15} sw={1.8} stroke={mailbox.color} />
           <span><b style={{ color: C.text2 }}>Private business account.</b> Walled off from the public record — not FOIA-indexed and excluded from Ask, the village search.</span>
@@ -419,11 +442,13 @@ function Brief({ go, onAsk }: { go: (s: Screen) => () => void; onAsk: () => void
   );
 }
 
-/* Desktop mailbox (source-system) switcher — Government (Outlook) vs walled Business (Gmail). */
-function DMailboxSwitcher({ current, onChange }: { current: string; onChange: (id: string) => void }) {
+/* Desktop mailbox (source-system) switcher — e.g. Government (Outlook) vs walled
+   Business (Gmail). Hidden entirely when zero/one mailbox: nothing to switch. */
+function DMailboxSwitcher({ boxes, current, onChange }: { boxes: Mailbox[]; current: string; onChange: (id: string) => void }) {
+  if (boxes.length < 2) return null;
   return (
     <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
-      {MAILBOXES.map((m) => {
+      {boxes.map((m) => {
         const on = current === m.id;
         return (
           <button key={m.id} onClick={() => onChange(m.id)} style={{
@@ -522,10 +547,13 @@ function Ask({ asked, loading, res, err, q, setQ, runAsk, resetAsk, go }:
           {err && <div style={{ ...card, borderColor: "rgba(255,107,94,.3)", padding: 18, color: C.redText, fontSize: 14 }}>Could not reach the planner: {err}. (Set <code>DATABASE_URL</code> + keys and run the pipeline.)</div>}
           {res && <AnswerBody res={res} />}
         </div>
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 0 }}>
-          <RetrievalPlan res={res} loading={loading} />
-          <GapsPanel res={res} go={go} />
-        </div>
+        {/* Live builds: no prototype metrics (92% / gap counts) beside real answers — hide the rail. */}
+        {!IS_LIVE_BUILD && (
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 0 }}>
+            <RetrievalPlan res={res} loading={loading} />
+            <GapsPanel res={res} go={go} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -901,7 +929,8 @@ function Memory({ initial }: { initial?: string | null }) {
   useEffect(() => { if (initial) setSelected(initial); }, [initial]);
   useEffect(() => { if (!selected && entities.length) setSelected(entities[0].name); }, [entities, selected]);
 
-  if (!entities.length) return <MemoryRepresentative />; // fall back to prototype content while canonical is empty
+  // Live builds show an honest empty state; demo builds keep the prototype stand-in.
+  if (!entities.length) return IS_LIVE_BUILD ? <MemoryEmptyLive /> : <MemoryRepresentative />;
 
   const kinds = [...new Set(entities.map((e) => e.kind))];
   const filtered = entities.filter(
@@ -978,6 +1007,20 @@ function Memory({ initial }: { initial?: string | null }) {
   );
 }
 
+/* ════════════════════════ MEMORY (live empty state) ════════════════════════ */
+// Live builds: real or honestly empty — never the prototype's fictional entities.
+function MemoryEmptyLive() {
+  return (
+    <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
+      <div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1, marginBottom: 18 }}>History</div>
+      <div style={{ ...card, padding: 24 }}>
+        <div style={{ fontFamily: FONT.serif, fontSize: 22, color: C.text, lineHeight: 1.35 }}>No entities resolved yet.</div>
+        <div style={{ fontSize: 13.5, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>Entities appear as mail is ingested and identities are resolved.</div>
+      </div>
+    </div>
+  );
+}
+
 /* ════════════════════════ MEMORY (representative fallback) ════════════════════════ */
 function MemoryRepresentative() {
   return (
@@ -1040,7 +1083,8 @@ function Sources() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [ingested, setIngested] = useState<IngestedRecord[]>([]);
   useEffect(() => { setIngested(getIngested()); }, []);
-  if (!data || !data.connectors.length) return <SourcesRepresentative />;
+  // Live builds show an honest empty state; demo builds keep the prototype stand-in.
+  if (!data || !data.connectors.length) return IS_LIVE_BUILD ? <SourcesEmptyLive /> : <SourcesRepresentative />;
   const total = data.connectors.length;
   const dotFor = (st: string) => (st === "degraded" ? C.orange : st === "syncing" ? C.blue : C.green);
   return (
@@ -1116,6 +1160,20 @@ function DesktopIngested({ records }: { records: IngestedRecord[] }) {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════ SOURCES (live empty state) ════════════════════════ */
+// Live builds: real or honestly empty — never the prototype's fictional connectors.
+function SourcesEmptyLive() {
+  return (
+    <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
+      <div style={{ marginBottom: 18 }}><div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Sources</div><div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>An answer is only as complete as what&apos;s connected.</div></div>
+      <div style={{ ...card, padding: 24 }}>
+        <div style={{ fontFamily: FONT.serif, fontSize: 22, color: C.text, lineHeight: 1.35 }}>No connectors reporting yet.</div>
+        <div style={{ fontSize: 13.5, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>Connected mailboxes appear here after the first sync.</div>
       </div>
     </div>
   );
@@ -1198,6 +1256,9 @@ function Approvals() {
                 </div>
               ))}
             </div>
+          ) : IS_LIVE_BUILD ? (
+            // Live builds: honest empty — never the prototype's fictional drafts.
+            <div style={{ ...card, padding: 18, textAlign: "center", color: C.dim, fontSize: 13 }}>Nothing waiting on your signature.</div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
               <DraftCard agent="DRAFTING AGENT" agentColor={C.purpleText} agentBg="rgba(157,139,255,.16)" note="drafted · not sent" title="Reply to Ald. Reyes — rezoning hearing date" quote="&quot;Maria — the 19th Ave hearing is set for July 9 at 6:30 PM. I've asked the clerk to send you the packet…&quot;" full />

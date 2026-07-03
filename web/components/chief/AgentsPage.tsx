@@ -8,7 +8,13 @@
 import { useState } from "react";
 import { C, FONT, card, eyebrow, pill } from "@/lib/cos-design";
 import { COS_AGENTS, AUTONOMY_LABEL, type CosAgent } from "@/lib/cos-agents";
+import { IS_LIVE_BUILD } from "@/lib/live";
 import UsagePanel from "./UsagePanel";
+
+// The `recent` lines in the registry are demo-era narrative with invented
+// timestamps. On the live pilot they must not read as real activity — suppress
+// them (and the count they feed) until agents actually log runs.
+const LIVE_ACTIVITY_NOTE = "Activity appears here once this agent runs live.";
 
 const tone: Record<string, string> = { R1: C.blue, R2: C.orange, R3: C.purpleText, R4: C.green };
 
@@ -42,7 +48,7 @@ export default function AgentsPage() {
       <div style={{ display: "flex", gap: 18, marginTop: 16, marginBottom: 6 }}>
         <Metric n={String(active)} label="active agents" />
         <Metric n={String(COS_AGENTS.length)} label="on the team" />
-        <Metric n={String(actions)} label="recent actions" />
+        <Metric n={IS_LIVE_BUILD ? "—" : String(actions)} label="recent actions" />
       </div>
 
       <UsagePanel />
@@ -79,7 +85,9 @@ function AgentCard({ a, onClick }: { a: CosAgent; onClick: () => void }) {
       </div>
       <div style={{ borderTop: "1px solid var(--c-cardbd)", paddingTop: 10 }}>
         <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, marginBottom: 6 }}>Recent activity</div>
-        {a.recent.length ? (
+        {IS_LIVE_BUILD ? (
+          <div style={{ fontSize: 12.5, color: C.dim }}>{LIVE_ACTIVITY_NOTE}</div>
+        ) : a.recent.length ? (
           <div style={{ fontSize: 12.5, color: C.text2, lineHeight: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>· {a.recent[0]}</div>
         ) : (
           <div style={{ fontSize: 12.5, color: C.dim }}>No activity yet — planned.</div>
@@ -109,7 +117,9 @@ function AgentDetail({ a, onBack }: { a: CosAgent; onBack: () => void }) {
       </div>
 
       <div style={{ ...eyebrow(C.dim), marginTop: 22, marginBottom: 11 }}>Recent activity</div>
-      {a.recent.length ? (
+      {IS_LIVE_BUILD ? (
+        <div style={{ ...card, padding: 24, textAlign: "center", color: C.dim, fontSize: 13 }}>{LIVE_ACTIVITY_NOTE}</div>
+      ) : a.recent.length ? (
         <div style={{ ...card, overflow: "hidden" }}>
           {a.recent.map((r, i) => {
             const [text, time] = r.split(" · ");

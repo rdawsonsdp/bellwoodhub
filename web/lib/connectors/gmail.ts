@@ -124,10 +124,17 @@ async function getMessage(
   return toPulled(m, address);
 }
 
-/** Newest message ids, paged, up to `cap`. */
-async function listIds(accessToken: string, cap: number): Promise<string[]> {
+/** Message ids newest-first, paged, up to `cap` — resumable: `start` continues
+ *  from a prior run's nextPageToken, and the unconsumed token comes back so a
+ *  capped run can resume exactly where it stopped (the Sync-until-mirrored
+ *  loop, RD 2026-07-03: "the sync job should sync every mail record"). */
+async function listIds(
+  accessToken: string,
+  cap: number,
+  start?: string,
+): Promise<{ ids: string[]; nextPageToken: string | null }> {
   const ids: string[] = [];
-  let pageToken: string | null = null;
+  let pageToken: string | null = start ?? null;
   while (ids.length < cap) {
     const url =
       `${GMAIL}/messages?maxResults=${Math.min(cap - ids.length, 100)}` +
@@ -138,7 +145,22 @@ async function listIds(accessToken: string, cap: number): Promise<string[]> {
     pageToken = (page?.nextPageToken as string | undefined) ?? null;
     if (!pageToken || rows.length === 0) break;
   }
-  return ids.slice(0, cap);
+  return { ids: ids.slice(0, cap), nextPageToken: pageToken };
+}
+
+// Backfill cursor encoding: while the initial mirror is still walking the
+// mailbox, the cursor is `bf:<pageToken>|<historyId>` — the page to resume
+// from plus the historyId captured when the walk STARTED (mail arriving
+// mid-walk has newer history records, so the incremental phase that follows
+// misses nothing; the ingest_key upsert makes any overlap a no-op). Once the
+// walk completes, the cursor collapses to the bare historyId and pulls turn
+// incremental. Parsing tolerates pageTokens containing '|' via lastIndexOf.
+const BF_PREFIX = "bf:";
+function parseBackfillCursor(cursor: string): { page: string; hist: string } | null {
+  if (!cursor.startsWith(BF_PREFIX)) return null;
+  const sep = cursor.lastIndexOf("|");
+  if (sep < 0) return null;
+  return { page: cursor.slice(BF_PREFIX.length, sep), hist: cursor.slice(sep + 1) };
 }
 
 /** Build the Gmail connector for one connected account. */
@@ -163,7 +185,7 @@ export function gmailConnector(address: string): Connector {
     },
 
     async listNewest(accessToken, n) {
-      const ids = await listIds(accessToken, n);
+      const { ids } = await listIds(accessToken, n);
       const out: PulledMessage[] = [];
       for (const id of ids) {
         const pm = await getMessage(accessToken, id, address, "metadata");
@@ -176,7 +198,17 @@ export function gmailConnector(address: string): Connector {
       let ids: string[] = [];
       let nextCursor: string | null = null;
 
-      if (cursor) {
+      // Mid-backfill: keep walking the mailbox from the stored page until the
+      // whole account is mirrored; only then switch to incremental history.
+      const bf = cursor ? parseBackfillCursor(cursor) : null;
+      if (bf) {
+        const walk = await listIds(accessToken, cap, bf.page);
+        ids = walk.ids;
+        nextCursor = walk.nextPageToken
+          ? `${BF_PREFIX}${walk.nextPageToken}|${bf.hist}`
+          : bf.hist; // walk complete — incremental resumes from the start-of-walk historyId
+        cursor = "handled-as-backfill";
+      } else if (cursor) {
         // Incremental: history since the stored historyId (messagesAdded only).
         // History records are consumed whole (may overshoot the cap by one
         // record); on a cap-out the cursor resumes at the LAST PROCESSED
@@ -221,12 +253,17 @@ export function gmailConnector(address: string): Connector {
       }
 
       if (!cursor) {
-        // First pull (or expired cursor): newest ids up to cap; the cursor
-        // starts from the CURRENT profile historyId (backfill beyond the cap
-        // is the Python pipeline's job, per EMAIL_INGESTION §8.4).
+        // First pull (or expired cursor): start the full-mailbox walk. The
+        // historyId is captured NOW so mail arriving mid-walk is covered by
+        // the incremental phase; the walk itself continues run over run via
+        // the bf: cursor until every record is mirrored (RD 2026-07-03).
         const profile = await gmailFetch(`${GMAIL}/profile`, accessToken);
-        nextCursor = profile?.historyId ? String(profile.historyId) : null;
-        ids = await listIds(accessToken, cap);
+        const hist = profile?.historyId ? String(profile.historyId) : null;
+        const walk = await listIds(accessToken, cap);
+        ids = walk.ids;
+        nextCursor = walk.nextPageToken && hist
+          ? `${BF_PREFIX}${walk.nextPageToken}|${hist}`
+          : hist;
       }
 
       const messages: PulledMessage[] = [];

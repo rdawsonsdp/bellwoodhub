@@ -16,6 +16,13 @@ import { COS_PERSONA_DEFAULT, COS_TONE_PRESETS, type CosPersona, type CosTone } 
 import { applyTheme } from "@/lib/theme";
 import { ROUTINES, ON_DEMAND_AGENTS } from "@/lib/routines";
 import { AUTONOMY_LABEL } from "@/lib/cos-agents";
+import { IS_LIVE_BUILD } from "@/lib/live";
+
+// On the live pilot, demo-era reference sections (Routines schedules/scopes,
+// Cost figures) get an amber banner so they can't be mistaken for live data.
+const DemoEraBanner = () => (
+  <Banner tone="amber" title="Demo-era reference content" body="Live values arrive with production scheduling." />
+);
 
 type Section = "appearance" | "cos" | "models" | "cost" | "rules" | "skills" | "sources" | "routines" | "status";
 
@@ -173,6 +180,7 @@ function Routines({ st, update }: { st: AdminState; update: (n: Partial<AdminSta
   };
   return (
     <div style={{ display: "grid", gap: 16 }}>
+      {IS_LIVE_BUILD && <DemoEraBanner />}
       <Banner tone="gold" title="Routines — agents on a schedule"
         body="Every agent has a scope; a routine binds it to a schedule and a place to work (a directory, a server, a feed). One agent can run many routines. Some agents instead run on demand. Demo: schedules illustrate the architecture — the scheduler isn't firing them yet." />
       <div style={{ display: "grid", gap: 12 }}>
@@ -360,6 +368,7 @@ function Cost({ st }: { st: AdminState }) {
   const opusShare = Object.values(st.router).filter((m) => m.includes("opus")).length;
   return (
     <div style={{ display: "grid", gap: 16 }}>
+      {IS_LIVE_BUILD && <DemoEraBanner />}
       <div style={{ ...card, padding: "18px 20px" }}>
         <div style={eyebrow(C.dim)}>Estimated monthly cost</div>
         <div style={{ fontFamily: FONT.serif, fontWeight: 700, fontSize: 40, color: C.gold, lineHeight: 1.05, marginTop: 6 }}>${COST_MODEL.monthlyLow}–${COST_MODEL.monthlyHigh}<span style={{ fontSize: 16, fontWeight: 600, color: C.muted }}> / month</span></div>
@@ -509,8 +518,8 @@ const ghostBtn: CSSProperties = {
   border: `1px solid ${C.line}`, color: C.text2, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans,
 };
 
-function Banner({ tone, title, body }: { tone: "gold" | "purple" | "blue"; title: string; body: string }) {
-  const map = { gold: [C.gold, "rgba(231,181,60,.3)", "rgba(231,181,60,.06)"], purple: [C.purpleText, "rgba(157,139,255,.3)", "rgba(157,139,255,.06)"], blue: [C.blue, "rgba(103,173,255,.3)", "rgba(103,173,255,.06)"] }[tone];
+function Banner({ tone, title, body }: { tone: "gold" | "purple" | "blue" | "amber"; title: string; body: string }) {
+  const map = { gold: [C.gold, "rgba(231,181,60,.3)", "rgba(231,181,60,.06)"], purple: [C.purpleText, "rgba(157,139,255,.3)", "rgba(157,139,255,.06)"], blue: [C.blue, "rgba(103,173,255,.3)", "rgba(103,173,255,.06)"], amber: [C.orangeText, "rgba(240,163,60,.35)", "rgba(240,163,60,.07)"] }[tone];
   return (
     <div style={{ borderRadius: 14, border: `1px solid ${map[1]}`, background: map[2], padding: "15px 18px" }}>
       <div style={{ fontSize: 14, fontWeight: 700, color: map[0] as string, marginBottom: 4 }}>{title}</div>

@@ -25,7 +25,8 @@ import { getRecentSearches, addRecentSearch } from "@/lib/recent-searches";
 import { getEnabledTabs } from "@/lib/email-config";
 import { getIngested, type IngestedRecord } from "@/lib/ingested-sources";
 import { SENSITIVITY_META, getSourceType } from "@/lib/source-types";
-import { MAILBOXES, getMailbox, PROVIDER_META, type Mailbox } from "@/lib/mailboxes";
+import { MAILBOXES, PROVIDER_META, type Mailbox } from "@/lib/mailboxes";
+import { IS_LIVE_BUILD } from "@/lib/live";
 
 const CAT_META: Record<string, [string, string]> = {
   urgent: [C.red, "Urgent"], important: [C.gold, "Important"], social: [C.green, "Social"], spam: [C.dim, "Spam"], general: [C.muted, "General"],
@@ -465,24 +466,43 @@ function InboxRow({ from, time, subject, snippet, dot, tag, tagColor, onClick }:
   );
 }
 
+/* Connected mailboxes via /api/mailboxes. Demo builds keep the static registry
+   as the instant first paint and never fetch (behavior unchanged); the LIVE
+   build starts empty and shows only what pipeline.connector_accounts actually
+   holds — real mailboxes or an honest none-connected state, never fictional. */
+function useMailboxes(): Mailbox[] {
+  const [boxes, setBoxes] = useState<Mailbox[]>(IS_LIVE_BUILD ? [] : MAILBOXES);
+  useEffect(() => {
+    if (!IS_LIVE_BUILD) return; // demo: the registry is the data — no fetch
+    let live = true;
+    fetch("/api/mailboxes").then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => { if (live && Array.isArray(d)) setBoxes(d); }).catch(() => {});
+    return () => { live = false; };
+  }, []);
+  return boxes;
+}
+
 /* EMAILS — agent-sorted inbox: Urgent / Important / Social / Spam / Inbox / Agent Answered. */
 function EmailsScreen({ onAsk }: { onAsk: () => void }) {
+  const mailboxes = useMailboxes();
   const [mailboxId, setMailboxId] = useState("gov");
+  // Resolve against the connected list; undefined only on the LIVE build with nothing connected.
+  const mailbox = mailboxes.find((m) => m.id === mailboxId) ?? mailboxes.find((m) => m.isDefault) ?? mailboxes[0];
+  const isPrivate = mailbox?.isPrivate ?? false;
   const { data: appr, reload } = useApi<{ drafts: DraftRow[] }>("/api/approvals");
-  const { data: inbox } = useApi<{ count: number; emails: InboxItem[]; counts: Record<string, number> }>(`/api/inbox?mailbox=${mailboxId}`);
+  const { data: inbox } = useApi<{ count: number; emails: InboxItem[]; counts: Record<string, number> }>(`/api/inbox?mailbox=${mailbox?.id ?? mailboxId}`);
   const openEmail = useOpenEmail();
   const enabledCats = getEnabledTabs();
   const [tab, setTab] = useState<string>(enabledCats[0] ?? "all");
-  const mailbox = getMailbox(mailboxId)!;
 
-  const queued = mailbox.isPrivate ? [] : appr?.drafts ?? []; // agent drafting is gov-only in the demo
+  const queued = isPrivate ? [] : appr?.drafts ?? []; // agent drafting is gov-only in the demo
   const emails = inbox?.emails ?? [];
   const counts = inbox?.counts ?? {};
   const empty = (t: string) => <div style={{ padding: 40, textAlign: "center", color: C.dim, fontSize: 13 }}>{t}</div>;
   const tabs: [string, string, number][] = [
     ...enabledCats.map((c) => [c, CAT_META[c]?.[1] ?? c, counts[c] ?? 0] as [string, string, number]),
     ["all", "Inbox", inbox?.count ?? 0],
-    ...(mailbox.isPrivate ? [] : [["queued", "Agent Answered", queued.length] as [string, string, number]]),
+    ...(isPrivate ? [] : [["queued", "Agent Answered", queued.length] as [string, string, number]]),
   ];
   const shown = tab === "all" ? emails : tab === "queued" ? [] : emails.filter((e) => e.cat === tab);
 
@@ -493,9 +513,12 @@ function EmailsScreen({ onAsk }: { onAsk: () => void }) {
         <button onClick={onAsk} aria-label="Search" style={{ marginLeft: "auto", width: 38, height: 38, borderRadius: 99, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, display: "flex", alignItems: "center", justifyContent: "center" }}><Svg d={I.search} w={18} /></button>
       </div>
 
-      {/* mailbox (source system) switcher */}
-      <MailboxSwitcher current={mailboxId} onChange={(id) => { setMailboxId(id); setTab(getEnabledTabs()[0] ?? "all"); }} />
-      {mailbox.isPrivate && (
+      {/* mailbox (source system) switcher — hidden when there's nothing to switch */}
+      <MailboxSwitcher boxes={mailboxes} current={mailbox?.id ?? mailboxId} onChange={(id) => { setMailboxId(id); setTab(getEnabledTabs()[0] ?? "all"); }} />
+      {mailboxes.length === 0 && (
+        <div style={{ margin: "12px 16px 2px", padding: "10px 13px", borderRadius: 12, border: "1px dashed var(--c-cardbd)", color: C.dim, fontSize: 12.5, textAlign: "center" }}>No mailboxes connected yet — sign in to connect one.</div>
+      )}
+      {mailbox?.isPrivate && (
         <div style={{ margin: "0 16px 4px", padding: "9px 12px", borderRadius: 11, border: `1px solid ${mailbox.color}55`, background: `${mailbox.color}14`, display: "flex", gap: 9, alignItems: "flex-start" }}>
           <span style={{ color: mailbox.color, marginTop: 1 }}><Svg d="M6 10V8a6 6 0 0 1 12 0v2M5 10h14v10H5zM12 14v3" w={15} /></span>
           <div style={{ fontSize: 11.5, color: C.text3, lineHeight: 1.5 }}><b style={{ color: C.text2 }}>Private business account.</b> Walled off from the public record — not FOIA-indexed and excluded from village Ask.</div>
@@ -524,11 +547,13 @@ function EmailsScreen({ onAsk }: { onAsk: () => void }) {
   );
 }
 
-/* Mailbox (source-system) switcher — Government (Outlook) vs the walled Business (Gmail). */
-function MailboxSwitcher({ current, onChange }: { current: string; onChange: (id: string) => void }) {
+/* Mailbox (source-system) switcher — e.g. Government (Outlook) vs the walled
+   Business (Gmail). Hidden entirely when zero/one mailbox: nothing to switch. */
+function MailboxSwitcher({ boxes, current, onChange }: { boxes: Mailbox[]; current: string; onChange: (id: string) => void }) {
+  if (boxes.length < 2) return null;
   return (
     <div style={{ display: "flex", gap: 8, padding: "12px 16px 2px" }}>
-      {MAILBOXES.map((m: Mailbox) => {
+      {boxes.map((m: Mailbox) => {
         const on = current === m.id;
         return (
           <button key={m.id} onClick={() => onChange(m.id)} style={{
@@ -793,13 +818,18 @@ function SourcesView() {
   );
 }
 
-/* Connected mailboxes (the source systems) — Government (Outlook) + Business (Gmail). */
+/* Connected mailboxes (the source systems) — /api/mailboxes; live shows only
+   what's really connected, and an empty pipeline is an honest empty state. */
 function MailboxesBlock() {
+  const mailboxes = useMailboxes();
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".1em", color: C.dim, textTransform: "uppercase", marginBottom: 9 }}>Mailboxes · source systems</div>
       <div style={{ display: "grid", gap: 9 }}>
-        {MAILBOXES.map((m: Mailbox) => (
+        {mailboxes.length === 0 && (
+          <div style={{ ...cardS, padding: 13, textAlign: "center", color: C.dim, fontSize: 12.5 }}>No mailboxes connected yet — sign in to connect one.</div>
+        )}
+        {mailboxes.map((m: Mailbox) => (
           <div key={m.id} style={{ ...cardS, padding: 13, display: "flex", alignItems: "center", gap: 12 }}>
             <span style={{ width: 10, height: 10, borderRadius: 99, background: m.color, flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 0 }}>

@@ -80,7 +80,7 @@ The two base URLs used everywhere below:
    complete the OAuth flow while in Testing.
 5. Scopes: **Data access** (older console: consent screen → **Scopes**) →
    **Add or remove scopes** → filter by *Gmail API* → check
-   `https://www.googleapis.com/auth/gmail.readonly` (it appears under
+   `https://www.googleapis.com/auth/gmail.readonly` and `https://www.googleapis.com/auth/gmail.send` (they appear under
    **Restricted scopes**) → **Update** → **Save**. In Testing this is a
    declaration of intent — the app can request the scope regardless — but it
    must be on record before any future verification.

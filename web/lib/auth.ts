@@ -33,11 +33,13 @@ if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
       // Google only issues a refresh token on an offline + consent grant;
       // gmail.readonly here makes sign-in double as the Gmail ingest consent,
-      // and calendar.readonly adds Google Calendar as a data source (RD's
-      // pilot account rehearses both). Read-only forever — no send scopes.
+      // and calendar.readonly adds Google Calendar as a data source. gmail.send
+      // joined 2026-07-03 (RD's explicit L1.7 decision) — but transmission is
+      // gated far from here: ONLY the approve path sends, and only through
+      // lib/send-cage (SEND_ENABLED + SAFE_SEND_ALLOWLIST, fail-closed).
       authorization: {
         params: {
-          scope: "openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly",
+          scope: "openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/gmail.send",
           access_type: "offline",
           prompt: "consent",
         },

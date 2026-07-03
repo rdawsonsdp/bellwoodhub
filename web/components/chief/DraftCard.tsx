@@ -25,7 +25,12 @@ export default function DraftCard({ draft, onReload }: { draft: DraftRow; onRelo
 
   async function decide(action: "approve" | "discard") {
     setBusy(true);
-    await post("/api/approvals", { action, draftId: draft.draftId });
+    const d = await post("/api/approvals", { action, draftId: draft.draftId });
+    // Send-cage honesty (L1.7): an approve that did NOT transmit says so —
+    // "approved" and "sent" are different facts and the Mayor must know which.
+    if (action === "approve" && d && d.sent === false && typeof d.note === "string") {
+      window.alert(d.note);
+    }
     onReload();
   }
   async function save() {

@@ -33,18 +33,28 @@ breach of this application becoming a breach of the Mayor's correspondence.
 Every design decision below is ranked against that scenario.
 
 The key structural insight: **the app never holds the mailbox password, and
-the credentials it does hold are read-only.** Sign-in happens at Microsoft
-and Google; what the hub keeps is an OAuth refresh token scoped to
-`Mail.Read`, `gmail.readonly`, and `calendar.readonly` — no send scope, no
-write scope, no account-management scope exists anywhere in the system
-(COMPLIANCE_MAP §1.7). So even a *total* compromise of the application —
-attacker owns the server, reads every secret — cannot send mail as the
-Mayor, delete his mail, reset his password, or change his account in any
-way. The worst case is disclosure of the copies we hold. That is still a
-serious outcome, and every layer in the next section exists to shrink it.
-(If a send capability is ever added, it will be a separate, deliberately
-granted consent behind its own recipient allowlist — never an expansion of
-the ingest credential.)
+its credentials cannot manage the account.** Sign-in happens at Microsoft
+and Google; what the hub keeps is an OAuth refresh token scoped to reading
+mail (`Mail.Read` / `gmail.readonly`), reading the calendar
+(`calendar.readonly`), and — added 2026-07-03 as a deliberate, separately
+decided step — sending replies (`gmail.send`), which is **caged** (below).
+No delete, write-to-mailbox, or account-management scope exists anywhere
+(COMPLIANCE_MAP §1.7). Even a *total* compromise of the application —
+attacker owns the server, reads every secret — cannot delete the Mayor's
+mail, reset his password, or change his account in any way.
+
+**The send cage.** Transmission is possible ONLY through one path: a human
+pressing Approve on a specific draft. Behind that human gate sit two more
+locks, both fail-closed: a master switch (`SEND_ENABLED` — anything but "1"
+means nothing sends), and a **recipient allowlist** (`SAFE_SEND_ALLOWLIST`)
+that ships holding only the operator's own address — so even a runaway
+agent or a compromised approve path could, at worst, email the operator.
+Widening the allowlist is an explicit, per-environment operator act. Every
+attempt — sent, cage-refused, or provider-failed — lands in the audit
+ledger with the outcome on the draft row. The residual worst case of a
+total compromise is therefore: disclosure of the copies we hold, plus mail
+sent to allowlisted addresses only. Every layer in the next section exists
+to shrink the former; the allowlist bounds the latter.
 
 ## 3. Blast-radius layers
 
@@ -193,8 +203,11 @@ scorecards.
 
 ## Summary — what we do (one page)
 
-- **Read-only by construction**: the app never holds the mailbox password;
-  its OAuth scopes cannot send, delete, or modify anything at the provider.
+- **No account control by construction**: the app never holds the mailbox
+  password; its OAuth scopes cannot delete, modify, or manage the account.
+  Sending exists but is **caged**: human Approve → master switch →
+  recipient allowlist (ships as the operator's own address only) — every
+  attempt audited, fail-closed at each lock.
 - **SSO perimeter** in front of every non-production URL — unauthenticated
   requests never reach our code.
 - **Named-person allowlist**, fail-closed: unset means everyone is denied.

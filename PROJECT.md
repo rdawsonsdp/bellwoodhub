@@ -266,7 +266,14 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
   integration live** (root directory fixed via API): push = auto-deploy, proven 5×. Sign out in both
   profile menus. 48 holiday OOO drafts staged to Approvals (RD directive; send stays structurally
   impossible — read-only scopes). Logged: FEAT-17 related-background, FEAT-18 auto sign-out, FEAT-19
-  agent-config-in-app. **Tomorrow (RD): agent logic + agent learning process.**
+  agent-config-in-app. **Send cage (L1.7) BUILT + first real send**: RD chose the SEND_ENABLED route — gmail.send scope
+  (re-consented), lib/send-cage (human Approve → master switch → recipient allowlist, fail-closed),
+  threaded Gmail replies, outcomes on the draft row + ledger; **first caged send delivered 3:51 PM**
+  (to RD himself), robot-recipient refusals proved the cage; RD then opened SAFE_SEND_ALLOWLIST to `*`
+  (pilot Preview only — the Mayor's production env starts tight); 6 no-reply robot drafts discarded as
+  housekeeping (restorable). SECURITY_POLICY / COMPLIANCE_MAP 1.7 updated honestly.
+  **Tomorrow (RD): agent logic + agent learning process** — incl. agents skipping no-reply senders when
+  drafting, and quieter not-sent feedback on bulk approvals.
 
 - **2026-07-03 evening (PRODUCTION LOCKDOWN — RD: "Tuesday uses production data; lock this down now")** —
   Two agent-workflow waves + inline provisioning, all on `live-pilot` (@ `dd0c061`), 10 migrations now

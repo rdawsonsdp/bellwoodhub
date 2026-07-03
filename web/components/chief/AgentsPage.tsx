@@ -34,12 +34,14 @@ function StateBadge({ a }: { a: CosAgent }) {
 
 /** The in-app cabinet trigger (RD 2026-07-03: agents managed in the app).
  *  Live builds only — runs every active agent once, then reloads so the
- *  Wall picks up the fresh runs. */
-function RunAgentsButton() {
-  const [state, setState] = useState<"idle" | "busy" | "err" | "done">("idle");
+ *  Wall picks up the fresh runs. Full-width row so it can't fall off a
+ *  narrow screen; flips every card's badge to Running via onRunning. */
+function RunAgentsButton({ running, onRunning }: { running: boolean; onRunning: (r: boolean) => void }) {
+  const [state, setState] = useState<"idle" | "err" | "done">("idle");
   async function run() {
-    if (state === "busy") return;
-    setState("busy");
+    if (running) return;
+    setState("idle");
+    onRunning(true);
     try {
       const r = await fetch("/api/agents/run-now", { method: "POST" });
       const d = await r.json().catch(() => ({}));
@@ -48,20 +50,24 @@ function RunAgentsButton() {
       window.setTimeout(() => window.location.reload(), 900);
     } catch (err) {
       console.error("[agents.run]", err instanceof Error ? err.message : err);
+      onRunning(false);
       setState("err");
       window.setTimeout(() => setState("idle"), 3000);
     }
   }
   return (
     <button onClick={run} title="Run every active agent once, right now"
-      style={{ marginLeft: "auto", cursor: "pointer", padding: "9px 18px", borderRadius: 99, fontWeight: 700, fontSize: 12.5, fontFamily: FONT.sans, border: `1px solid ${state === "err" ? C.red : C.gold}`, background: state === "busy" ? "rgba(var(--ink),.05)" : "linear-gradient(135deg,#F4CB63,#D7991C)", color: state === "busy" ? C.text2 : "#081627", flexShrink: 0 }}>
-      {state === "busy" ? "Running agents… (takes a minute)" : state === "done" ? "Done — refreshing" : state === "err" ? "Run failed — see console" : "Run agents now"}
+      style={{ display: "block", width: "100%", maxWidth: 420, marginTop: 12, cursor: "pointer", padding: "12px 18px", borderRadius: 13, fontWeight: 800, fontSize: 13.5, fontFamily: FONT.sans, border: `1px solid ${state === "err" ? C.red : C.gold}`, background: running ? "rgba(var(--ink),.05)" : "linear-gradient(135deg,#F4CB63,#D7991C)", color: running ? C.text2 : "#081627" }}>
+      {running ? "Running agents… (takes a minute)" : state === "done" ? "Done — refreshing" : state === "err" ? "Run failed — see console" : "▶ Run agents now"}
     </button>
   );
 }
 
 export default function AgentsPage() {
   const [sel, setSel] = useState<CosAgent | null>(null);
+  // Running state lifted here so every card can flip its badge to "Running…"
+  // while a manual pass is in flight (RD 2026-07-03).
+  const [running, setRunning] = useState(false);
   if (sel) return <AgentDetail a={sel} onBack={() => setSel(null)} />;
 
   const active = COS_AGENTS.filter((a) => a.status !== "planned").length;
@@ -73,17 +79,17 @@ export default function AgentsPage() {
       <div style={{ fontSize: 14, color: C.text3, marginTop: 7, maxWidth: 660, lineHeight: 1.55 }}>
         The Mayor&rsquo;s team of agents and the work they&rsquo;re doing. The team grows over time — today it handles email; tomorrow it could approve time cards. Agents draft and organize; every action stays a human gate.
       </div>
-      <div style={{ display: "flex", gap: 18, marginTop: 16, marginBottom: 6, alignItems: "center" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginTop: 16, marginBottom: 6, alignItems: "center" }}>
         <Metric n={String(active)} label="active agents" />
         <Metric n={String(COS_AGENTS.length)} label="on the team" />
         <Metric n={IS_LIVE_BUILD ? "—" : String(actions)} label="recent actions" />
-        {IS_LIVE_BUILD && <RunAgentsButton />}
       </div>
+      {IS_LIVE_BUILD && <RunAgentsButton running={running} onRunning={setRunning} />}
 
       <UsagePanel />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(330px,1fr))", gap: 14, marginTop: 16 }}>
-        {COS_AGENTS.map((a) => <AgentCard key={a.key} a={a} onClick={() => setSel(a)} />)}
+        {COS_AGENTS.map((a) => <AgentCard key={a.key} a={a} running={running} onClick={() => setSel(a)} />)}
       </div>
 
       <div style={{ fontSize: 11.5, color: C.dim, fontFamily: FONT.mono, marginTop: 18 }}>Agents are configured &amp; tested in Claude Code · this is the Mayor&rsquo;s read-only view to track their work.</div>
@@ -100,12 +106,19 @@ function Metric({ n, label }: { n: string; label: string }) {
   );
 }
 
-function AgentCard({ a, onClick }: { a: CosAgent; onClick: () => void }) {
+function AgentCard({ a, running, onClick }: { a: CosAgent; running?: boolean; onClick: () => void }) {
+  const showRunning = running && isActive(a);
   return (
     <button onClick={onClick} style={{ ...card, padding: 17, textAlign: "left", color: C.text, cursor: "pointer", display: "block", width: "100%", opacity: isActive(a) ? 1 : 0.62 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 8 }}>
         <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{a.name}</span>
-        <span style={{ marginLeft: "auto" }}><StateBadge a={a} /></span>
+        <span style={{ marginLeft: "auto" }}>
+          {showRunning ? (
+            <span style={{ ...pill("#0a1322", C.gold), fontWeight: 800, animation: "cosPulse 1.2s ease-in-out infinite" }}>Running…</span>
+          ) : (
+            <StateBadge a={a} />
+          )}
+        </span>
       </div>
       <div style={{ fontSize: 12.5, color: C.text3, lineHeight: 1.5, marginBottom: 11 }}>{a.role}</div>
       <div style={{ display: "flex", gap: 7, marginBottom: 11 }}>

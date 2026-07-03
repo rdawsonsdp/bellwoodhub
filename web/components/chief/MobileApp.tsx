@@ -490,7 +490,8 @@ function EmailsScreen({ onAsk }: { onAsk: () => void }) {
   const mailbox = mailboxes.find((m) => m.id === mailboxId) ?? mailboxes.find((m) => m.isDefault) ?? mailboxes[0];
   const isPrivate = mailbox?.isPrivate ?? false;
   const { data: appr, reload } = useApi<{ drafts: DraftRow[] }>("/api/approvals");
-  const { data: inbox } = useApi<{ count: number; emails: InboxItem[]; counts: Record<string, number> }>(`/api/inbox?mailbox=${mailbox?.id ?? mailboxId}`);
+  const [limit, setLimit] = useState(80); // pagination: Load more bumps the window
+  const { data: inbox } = useApi<{ count: number; emails: InboxItem[]; counts: Record<string, number> }>(`/api/inbox?mailbox=${mailbox?.id ?? mailboxId}&limit=${limit}`);
   const openEmail = useOpenEmail();
   const enabledCats = getEnabledTabs();
   const [tab, setTab] = useState<string>(enabledCats[0] ?? "all");
@@ -537,6 +538,14 @@ function EmailsScreen({ onAsk }: { onAsk: () => void }) {
         {shown.map((e) => <InboxRow key={e.messageId} from={e.fromName || "—"} time={fmtTime(e.date)} subject={e.subject || ""} snippet={e.snippet}
           dot={e.cat === "urgent" ? C.red : undefined} tag={CAT_META[e.cat]?.[1] ?? e.stream} tagColor={CAT_META[e.cat]?.[0] ?? C.muted} onClick={() => openEmail(e.messageId)} />)}
         {inbox && shown.length === 0 && empty("Nothing here.")}
+        {inbox && emails.length < inbox.count && (
+          <div style={{ padding: "10px 16px 4px", display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
+            <button onClick={() => setLimit((l) => Math.min(l + 200, 1000))} style={{ cursor: "pointer", padding: "11px 22px", borderRadius: 99, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, fontWeight: 700, fontSize: 13, fontFamily: FONT.sans }}>
+              Load more
+            </button>
+            <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{emails.length.toLocaleString()} of {inbox.count.toLocaleString()}</span>
+          </div>
+        )}
       </div>)}
 
       {tab === "queued" && (<div>

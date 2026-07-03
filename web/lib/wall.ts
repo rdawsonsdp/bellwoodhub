@@ -42,6 +42,7 @@ export interface CabinetCard {
   color: string; // identity hue — recognition channel (urgency stays the action channel)
   statusDot: Urgency;
   walled: boolean;
+  origin?: "default" | "custom"; // Default = code-defined roster; Custom = Agent-Factory-created (RD 2026-07-03)
   headline: string;
   counts: { newItems: number; needsYou: number };
   lastRunLabel: string; // "updated 25m ago"
@@ -139,9 +140,69 @@ export async function getWall(opts: WallOpts = {}): Promise<WallPayload> {
     const wall = assembleWall(runs, new Date().toISOString(), opts, await liveMessageMeta([...ids]));
     // "Coming up" reads the live calendar mirror — fixture events never leak here
     wall.schedule = await buildLiveSchedule(wall.generatedAt);
+    // The email agents hold cabinet seats from connector STATUS alone (RD
+    // 2026-07-03: "the Wall should have the current email agent") — the sync
+    // layer is visible before the intelligence layer produces its first run.
+    await addConnectorCards(wall);
     return wall;
   }
   return assembleWall(DEMO_AGENT_RUNS.filter((r) => active.has(r.agentKey)), DEMO_NOW, opts);
+}
+
+/** Synthesize a Default cabinet card + status digest per connected mailbox
+ *  from pipeline.connector_accounts — no agent_runs required. The digest
+ *  points are source-less by design: they are connector telemetry, not
+ *  claims about mail content. */
+async function addConnectorCards(wall: WallPayload): Promise<void> {
+  const { query } = await import("./db");
+  const accounts = await query<{
+    provider: "outlook" | "gmail"; address: string; mailbox_id: string;
+    status: string; cursor: string | null; last_synced_at: string | null;
+  }>(
+    `SELECT provider, address, mailbox_id, status, cursor, last_synced_at::text
+       FROM pipeline.connector_accounts ORDER BY created_at`,
+  );
+  if (!accounts.length) return;
+  const totals = await query<{ messages: string; today: string; calendar: string }>(
+    `SELECT (SELECT count(*) FROM canonical.messages) AS messages,
+            (SELECT count(*) FROM canonical.messages WHERE sent_at::date = now()::date) AS today,
+            (SELECT count(*) FROM app.calendar_events) AS calendar`,
+  );
+  const t = totals[0];
+  for (const a of accounts) {
+    const agentKey = a.provider === "gmail" ? "email-gmail" : "email-outlook";
+    const name = a.provider === "gmail" ? "Gmail Email Agent" : "Outlook Email Agent";
+    const midWalk = !!a.cursor?.startsWith("bf:");
+    const statusDot: Urgency = a.status === "error" ? "red" : a.status === "active" ? "clear" : "yellow";
+    const headline =
+      a.status === "error" ? "Sync error — see Sources for details."
+      : a.status !== "active" ? "Connected, awaiting activation."
+      : midWalk ? `Mirroring the mailbox — ${Number(t.messages).toLocaleString()} messages so far.`
+      : `${Number(t.messages).toLocaleString()} messages mirrored · watching for new mail.`;
+    const freshAt = a.last_synced_at ?? wall.generatedAt;
+    wall.cabinet.push({
+      agentKey, name, icon: "mail", color: a.provider === "gmail" ? "#5b8def" : "#67adff",
+      statusDot, walled: a.mailbox_id === "biz", origin: "default",
+      headline, counts: { newItems: Number(t.today), needsYou: 0 },
+      lastRunLabel: a.last_synced_at ? relLabel(a.last_synced_at, wall.generatedAt) : "never synced",
+      freshAt,
+    });
+    wall.runs[agentKey] = {
+      agentKey, ranAt: freshAt, urgency: statusDot === "red" ? "yellow" : "clear",
+      headline,
+      digest: [
+        { point: `Account: ${a.address} (${a.mailbox_id === "biz" ? "private" : "public record"} mailbox).`, sources: [] },
+        { point: `${Number(t.messages).toLocaleString()} messages mirrored into the record; ${Number(t.today).toLocaleString()} dated today.`, sources: [] },
+        { point: midWalk ? "Initial mailbox walk in progress — press Sync to continue pulling history." : "Initial mirror complete; incremental sync picks up new mail.", sources: [] },
+        ...(a.provider === "gmail" ? [{ point: `${Number(t.calendar).toLocaleString()} calendar events mirrored (rolling 60-day window).`, sources: [] }] : []),
+        ...(a.status === "error" ? [{ point: "Connector is in an error state — the Sources screen has the message; a fresh sign-in usually clears it.", sources: [] }] : []),
+      ],
+      actItems: [],
+    };
+  }
+  // registry cards are code-defined too — mark them Default so the
+  // Default-vs-Custom vocabulary is ready for the Agent Factory
+  for (const c of wall.cabinet) if (!c.origin) c.origin = "default";
 }
 
 /** Pure assembly over a set of latest runs — exported so the eval harness can

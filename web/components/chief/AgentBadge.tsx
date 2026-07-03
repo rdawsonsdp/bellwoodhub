@@ -16,6 +16,8 @@ import { domainAgentByKey } from "@/lib/domain-agents";
 /** Stroke emblems per cabinet seat (house SVG idiom; the registry's Material
  *  Symbols names remain the spec — these are their local renderings). */
 export const AGENT_ICON: Record<string, string[]> = {
+  "email-gmail": ["M3 7l9 6 9-6", "M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"],
+  "email-outlook": ["M3 7l9 6 9-6", "M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"],
   police: ["M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"],
   fire: ["M12 2c1 4-3 5.5-3 9.5a3 3 0 0 0 6 0c0-1.6-.8-2.8-.8-2.8s3.8 1.8 3.8 5.8a6 6 0 0 1-12 0c0-6 5-8 6-12.5z"],
   council: ["M3 21h18", "M5 21V10M9 21V10M15 21V10M19 21V10", "M3 10l9-7 9 7"],
@@ -27,8 +29,15 @@ export const AGENT_ICON: Record<string, string[]> = {
 const FALLBACK_ICON = ["M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z"];
 const FALLBACK_COLOR = "#93a4bd";
 
+// Identity hues for roster agents that live outside the domain registry
+// (the mailbox agents hold cabinet seats from connector status alone).
+const EXTRA_COLOR: Record<string, string> = {
+  "email-gmail": "#5b8def",
+  "email-outlook": "#67adff",
+};
+
 export const agentColor = (agentKey: string): string =>
-  domainAgentByKey(agentKey)?.color ?? FALLBACK_COLOR;
+  domainAgentByKey(agentKey)?.color ?? EXTRA_COLOR[agentKey] ?? FALLBACK_COLOR;
 
 export function AgentIco({ agentKey, w = 16, color }: { agentKey: string; w?: number; color?: string }) {
   const d = AGENT_ICON[agentKey] ?? FALLBACK_ICON;

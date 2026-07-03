@@ -204,6 +204,7 @@ function CabinetCardView({ c, mobile, unseen, onOpen }: { c: CabinetCard; mobile
         <AgentAvatar agentKey={c.agentKey} size={mobile ? 22 : 26} />
         <span style={{ fontSize: mobile ? 13 : 14, fontWeight: 800, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{shortName(c.name)}</span>
         {unseen && <span style={newPill}>new</span>}
+        {c.origin === "custom" ? <span style={originPill}>Custom</span> : c.origin === "default" && !mobile ? <span style={originPill}>Default</span> : null}
         {c.walled && <span style={privatePill}>Private</span>}
         <span style={{ width: 9, height: 9, borderRadius: 99, background: URGENCY_C[c.statusDot], flexShrink: 0, boxShadow: c.statusDot !== "clear" ? `0 0 0 3px ${URGENCY_C[c.statusDot]}22` : undefined }} />
       </div>
@@ -265,6 +266,14 @@ const newPill: CSSProperties = {
 };
 const unseenRing: CSSProperties = {
   boxShadow: "0 0 0 2px rgba(231,181,60,.55), 0 6px 18px rgba(231,181,60,.18)",
+};
+
+/** Default = code-defined roster agent; Custom = created via the Agent
+ *  Factory interview (RD's vocabulary, 2026-07-03). Muted — identity, not alarm. */
+const originPill: CSSProperties = {
+  padding: "2px 7px", borderRadius: 99, fontSize: 9, fontWeight: 700, letterSpacing: ".06em",
+  fontFamily: FONT.mono, textTransform: "uppercase", color: "var(--c-dim)",
+  background: "rgba(var(--ink),.06)", border: "1px solid rgba(var(--ink),.1)", flexShrink: 0,
 };
 
 const privatePill: CSSProperties = {

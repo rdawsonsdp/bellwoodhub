@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   try {
     const mailbox = req.nextUrl.searchParams.get("mailbox") || "gov";
     const limitRaw = Number(req.nextUrl.searchParams.get("limit") ?? "80");
-    const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 500) : 80;
+    const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 1000) : 80;
     // actor: null until L0.1 threads the session email through
     void logAudit({ actor: null, action: "inbox.read", meta: { mailbox }, req });
     if (!DEMO) {

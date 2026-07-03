@@ -372,7 +372,8 @@ function Brief({ go, onAsk }: { go: (s: Screen) => () => void; onAsk: () => void
   const isPrivate = mailbox?.isPrivate ?? false;
   const { data: brief } = useApi<NeedsYouToday>("/api/brief");
   const { data: appr, reload } = useApi<{ drafts: DraftRow[] }>("/api/approvals");
-  const { data: inbox } = useApi<{ count: number; emails: InboxItem[] }>(`/api/inbox?mailbox=${mailbox?.id ?? mailboxId}`);
+  const [limit, setLimit] = useState(80); // pagination: Load more bumps the window
+  const { data: inbox } = useApi<{ count: number; emails: InboxItem[] }>(`/api/inbox?mailbox=${mailbox?.id ?? mailboxId}&limit=${limit}`);
   const [tab, setTab] = useState<"focus" | "all" | "queued">("focus");
   // The walled Business (Gmail) mailbox is private: no agent drafts, no FOIA digest.
   const queued = isPrivate ? [] : (appr?.drafts ?? []);
@@ -422,6 +423,12 @@ function Brief({ go, onAsk }: { go: (s: Screen) => () => void; onAsk: () => void
             tag={e.stream} tagColor={STREAMC[e.stream] || C.muted} border={i < (inbox?.emails.length ?? 0) - 1} />
         )))}
         {tab === "all" && !inbox && <div style={{ padding: 40, textAlign: "center", color: C.dim, fontSize: 13 }}>Loading inbox…</div>}
+        {tab === "all" && inbox && (inbox.emails ?? []).length < inbox.count && (
+          <div style={{ padding: "12px 18px", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, borderTop: `1px solid ${C.line2}` }}>
+            <button onClick={() => setLimit((l) => Math.min(l + 200, 1000))} style={{ cursor: "pointer", padding: "9px 20px", borderRadius: 99, border: "1px solid rgba(var(--ink),.14)", background: "rgba(var(--ink),.05)", color: C.text2, fontWeight: 700, fontSize: 12.5, fontFamily: FONT.sans }}>Load more</button>
+            <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim }}>{(inbox.emails ?? []).length.toLocaleString()} of {inbox.count.toLocaleString()}</span>
+          </div>
+        )}
 
         {tab === "queued" && (queued.length ? queued.map((d, i) => (
           <div key={d.draftId} style={{ padding: "14px 18px", borderBottom: i < queued.length - 1 ? `1px solid ${C.line2}` : undefined }}>

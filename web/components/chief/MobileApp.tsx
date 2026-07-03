@@ -16,6 +16,7 @@ import ThreadView from "./ThreadView";
 import { ASK_SEEDS } from "@/lib/ask-seeds";
 import { loadOperatorMode, saveOperatorMode } from "@/lib/operator-mode";
 import { logUsage } from "@/lib/usage";
+import SyncButton from "./SyncButton";
 import DraftCard from "./DraftCard";
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
@@ -429,6 +430,7 @@ function Header({ operator, onMenu, onProfile }: { operator: boolean; onMenu: ()
           ? <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="4.2" /><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M5 5l1.8 1.8M17.2 17.2l1.8 1.8M19 5l-1.8 1.8M6.8 17.2 5 19" /></svg>
           : <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>}
       </button>
+      <SyncButton compact />
       <button onClick={onProfile} aria-label="Profile & workspace mode" style={{ width: 36, height: 36, borderRadius: 99, border: `1.5px solid ${C.gold}`, background: "linear-gradient(135deg,#1d3f6b,#0e2440)", color: C.gold, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 15, flexShrink: 0 }}>M</button>
     </div>
   );

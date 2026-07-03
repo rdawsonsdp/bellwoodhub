@@ -24,6 +24,7 @@ import AgentsPage from "./AgentsPage";
 import WallScreen from "./WallScreen";
 import QueueScreen from "./QueueScreen";
 import ThreadView from "./ThreadView";
+import SyncButton from "./SyncButton";
 
 /** Open the actual source document from anywhere a message is referenced —
  *  in-app (Phase 4), never the old standalone page. */
@@ -310,6 +311,7 @@ function Topbar() {
   // lives in the rail. The topbar keeps only ambient controls.
   return (
     <div style={{ flexShrink: 0, height: 58, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, padding: "0 22px", borderBottom: `1px solid ${C.line2}`, background: "rgba(var(--ink),.035)", backdropFilter: "blur(14px)" }}>
+      <SyncButton />
       <ThemeToggle />
     </div>
   );

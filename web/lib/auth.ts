@@ -68,18 +68,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     // account is only present on first sign-in: persist the refresh token +
     // provider so the mail ingest can be wired without another grant.
-    jwt({ token, account }) {
+    async jwt({ token, account }) {
       if (account) {
         token.provider = account.provider;
         if (account.refresh_token) token.refresh_token = account.refresh_token;
         // ── connector capture (ING-1) — begin marked block ──────────────────
         // Live path only (DATABASE_URL set): upsert the account row and put
         // the refresh token in Supabase Vault via lib/connectors/token-store
-        // (Gap 5.3 — the plaintext column stays NULL) so the ingest cron can
-        // pull mail. status stays 'pending' — an operator flips it to
-        // 'active'. Fire-and-forget: a DB outage must never block or fail the
-        // sign-in. Dynamic import keeps this module side-effect-free for the
-        // keyless demo.
+        // (Gap 5.3 — the plaintext column stays NULL) so the ingest can pull
+        // mail. status stays 'pending' — an operator flips it to 'active'.
+        // AWAITED, deliberately: fire-and-forget lost the write when the
+        // serverless sandbox froze before the promise resolved (seen live,
+        // 2026-07-03). The try/catch still guarantees a DB outage can never
+        // block or fail the sign-in. Dynamic import keeps this module
+        // side-effect-free for the keyless demo.
         if (account.refresh_token && process.env.DATABASE_URL) {
           const provider =
             account.provider === "google" ? "gmail"
@@ -87,14 +89,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             : null;
           const address = token.email?.toLowerCase();
           if (provider && address) {
-            const refreshToken = account.refresh_token;
-            import("./connectors/token-store")
-              .then(({ storeRefreshToken }) =>
-                storeRefreshToken({ provider, address, token: refreshToken }),
-              )
-              .catch((err) =>
-                console.error("[auth] connector capture failed:", err instanceof Error ? err.message : err),
-              );
+            try {
+              const { storeRefreshToken } = await import("./connectors/token-store");
+              await storeRefreshToken({ provider, address, token: account.refresh_token });
+            } catch (err) {
+              console.error("[auth] connector capture failed:", err instanceof Error ? err.message : err);
+            }
           }
         }
         // ── connector capture (ING-1) — end marked block ────────────────────

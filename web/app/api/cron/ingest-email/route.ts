@@ -30,7 +30,12 @@ function authorized(req: NextRequest): boolean {
 
 const TENANT = "00000000-0000-0000-0000-000000000001";
 const SOURCE = "email"; // real mail (vs synthetic_email); streams stay read-time
-const CAP = 200; // messages per account per run — the cron catches up next pass
+const CAP = 200; // messages per batch — the inner loop below strings batches together
+// One run keeps pulling batches until the account is caught up or the time
+// budget is spent (RD 2026-07-03: "the sync job should sync every mail
+// record") — the cursor lands after EVERY batch, so an interrupted run
+// resumes exactly where it stopped. Budget stays under maxDuration=300.
+const RUN_BUDGET_MS = 210_000;
 
 const sha256 = (s: string) => createHash("sha256").update(s, "utf8").digest("hex");
 // parity with ingest/envelope.py ingest_key(): sha256(source + "\x00" + source_ref)
@@ -145,6 +150,7 @@ async function handle(req: NextRequest) {
       `SELECT id, provider, address, mailbox_id, cursor
          FROM pipeline.connector_accounts WHERE status = 'active' ORDER BY created_at`,
     );
+    const started = Date.now();
     const results: Record<string, unknown>[] = [];
     for (const a of accounts) {
       try {
@@ -153,19 +159,28 @@ async function handle(req: NextRequest) {
         if (!refreshToken) throw new Error("no refresh token on file — re-consent via sign-in");
         const connector = a.provider === "gmail" ? gmailConnector(a.address) : graphConnector(a.address);
         const { accessToken } = await connector.refreshAccessToken(refreshToken);
-        const { messages, nextCursor } = await connector.pullSince(accessToken, a.cursor, CAP);
+        let cursor = a.cursor;
+        let pulled = 0;
         let landed = 0;
         let skipped = 0;
-        for (const m of messages) {
-          if ((await landMessage(m, a.mailbox_id)) === "landed") landed++;
-          else skipped++;
-        }
-        await query(
-          `UPDATE pipeline.connector_accounts
-              SET cursor = $2, last_synced_at = NOW(), last_error = NULL WHERE id = $1`,
-          [a.id, nextCursor ?? a.cursor],
-        );
-        results.push({ ok: true, provider: a.provider, account: a.address, pulled: messages.length, landed, skipped });
+        // batch loop: cursor persists after every batch, so a timeout or crash
+        // mid-account loses nothing — the next run resumes from the last batch
+        do {
+          const batch = await connector.pullSince(accessToken, cursor, CAP);
+          for (const m of batch.messages) {
+            if ((await landMessage(m, a.mailbox_id)) === "landed") landed++;
+            else skipped++;
+          }
+          pulled += batch.messages.length;
+          cursor = batch.nextCursor ?? cursor;
+          await query(
+            `UPDATE pipeline.connector_accounts
+                SET cursor = $2, last_synced_at = NOW(), last_error = NULL WHERE id = $1`,
+            [a.id, cursor],
+          );
+          if (batch.messages.length === 0) break; // caught up (or empty walk page)
+        } while (cursor?.startsWith("bf:") && Date.now() - started < RUN_BUDGET_MS);
+        results.push({ ok: true, provider: a.provider, account: a.address, pulled, landed, skipped, backfillRemaining: !!cursor?.startsWith("bf:") });
       } catch (err) {
         // flag the account, keep the fleet moving — never throw the whole route
         const message = err instanceof Error ? err.message : String(err);

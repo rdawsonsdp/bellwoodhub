@@ -9,6 +9,30 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // a manual sync is a full email + calendar pass
 
+// The counter under the Sync button (RD 2026-07-03): live totals of what has
+// been mirrored so far. Demo returns nulls — the button hides the line.
+export async function GET() {
+  try {
+    if (DEMO) {
+      return NextResponse.json({ messages: null, calendarEvents: null, lastSyncedAt: null });
+    }
+    const { query } = await import("@/lib/db");
+    const rows = await query<{ messages: string; calendar_events: string; last_synced_at: string | null }>(
+      `SELECT (SELECT count(*) FROM canonical.messages)      AS messages,
+              (SELECT count(*) FROM app.calendar_events)      AS calendar_events,
+              (SELECT max(last_synced_at)::text FROM pipeline.connector_accounts) AS last_synced_at`,
+    );
+    return NextResponse.json({
+      messages: Number(rows[0]?.messages ?? 0),
+      calendarEvents: Number(rows[0]?.calendar_events ?? 0),
+      lastSyncedAt: rows[0]?.last_synced_at ?? null,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Internal error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
 // The Sync button (RD 2026-07-03): a user-triggered pull that replaces the
 // cron on environments where Vercel doesn't fire schedules (preview/pilot)
 // and gives the Mayor "refresh now" control everywhere. Runs the SAME
@@ -40,13 +64,17 @@ export async function POST(req: NextRequest) {
     const calRes = await ingestCalendar(internal("/api/cron/ingest-calendar"));
     const calendar = await calRes.json();
 
+    // more to walk? — the button auto-continues while any account is mid-backfill
+    const results = (email?.results ?? []) as { backfillRemaining?: boolean }[];
+    const backfillRemaining = results.some((r) => r.backfillRemaining);
+
     await logAudit({
       actor: session?.user?.email ?? null,
       action: "sync.manual",
-      meta: { email, calendar },
+      meta: { email, calendar, backfillRemaining },
       req,
     });
-    return NextResponse.json({ ok: !!(email.ok && calendar.ok), email, calendar });
+    return NextResponse.json({ ok: !!(email.ok && calendar.ok), backfillRemaining, email, calendar });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";
     console.error("[/api/sync]", message);

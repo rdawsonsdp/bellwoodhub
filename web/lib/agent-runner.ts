@@ -240,10 +240,17 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
   }
 }
 
-/** One orchestrator pass: every active agent, isolated failures. */
+/** One orchestrator pass: every active agent, isolated failures. The in-app
+ *  enable switch (app.agent_configs, FEAT-19) overrides the code default —
+ *  a disabled agent is skipped entirely. */
 export async function runAllAgents(): Promise<AgentRunResult[]> {
+  const disabled = new Set(
+    (await query<{ agent_key: string }>(
+      `SELECT agent_key FROM app.agent_configs WHERE NOT enabled`,
+    ).catch(() => [])).map((r) => r.agent_key),
+  );
   const results: AgentRunResult[] = [];
-  for (const agent of DOMAIN_AGENTS.filter((a) => a.active)) {
+  for (const agent of DOMAIN_AGENTS.filter((a) => a.active && !disabled.has(a.key))) {
     results.push(await runAgentLive(agent)); // sequential: bounded DB + API pressure
   }
   return results;

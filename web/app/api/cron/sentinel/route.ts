@@ -71,6 +71,14 @@ async function handle(req: NextRequest) {
     return NextResponse.json({ ok: true, mode: "demo", note: "DEMO mode: nothing to watch; live checks require DATABASE_URL." });
   }
 
+  // the in-app enable switch (app.agent_configs, FEAT-19)
+  const off = await query<{ agent_key: string }>(
+    `SELECT agent_key FROM app.agent_configs WHERE agent_key = 'sentinel' AND NOT enabled`,
+  ).catch(() => [] as { agent_key: string }[]);
+  if (off.length) {
+    return NextResponse.json({ ok: true, skipped: "disabled by operator" });
+  }
+
   const findings: Finding[] = [];
   const P = [WINDOW_HOURS, BASELINE_DAYS];
 

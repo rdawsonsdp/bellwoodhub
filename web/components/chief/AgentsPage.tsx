@@ -5,7 +5,7 @@
  * and tested in Claude Code, not here. Click an agent to see its recent activity.
  * The team is open-ended: today it's email; tomorrow it could be approving time cards.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { C, FONT, card, eyebrow, pill } from "@/lib/cos-design";
 import { COS_AGENTS, AUTONOMY_LABEL, type CosAgent } from "@/lib/cos-agents";
 import { IS_LIVE_BUILD } from "@/lib/live";
@@ -20,14 +20,32 @@ const tone: Record<string, string> = { R1: C.blue, R2: C.orange, R3: C.purpleTex
 
 // Agents read as Active (in use) or Inactive (not yet in use) — each its own colour.
 const isActive = (a: CosAgent) => a.status !== "planned";
-function StateBadge({ a }: { a: CosAgent }) {
-  const on = isActive(a);
+function StateBadge({ a, disabled }: { a: CosAgent; disabled?: boolean }) {
+  const on = isActive(a) && !disabled;
   const c = on ? C.greenText : C.dim;
   const bg = on ? "rgba(52,201,139,.16)" : "rgba(var(--ink),.08)";
   return (
     <span style={{ ...pill(c, bg), display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
       <span style={{ width: 7, height: 7, borderRadius: 99, background: on ? c : "transparent", border: on ? 0 : `1.5px solid ${c}` }} />
-      {on ? "Active" : "Inactive"}
+      {disabled ? "Disabled" : on ? "Active" : "Inactive"}
+    </span>
+  );
+}
+
+/** The enable switch, upper-right of every card (RD 2026-07-03: disable an
+ *  agent from the card — FEAT-19's first in-app config control). A span,
+ *  not a button: cards are buttons and can't nest one. */
+function EnableSwitch({ on, onFlip }: { on: boolean; onFlip: () => void }) {
+  return (
+    <span
+      role="switch"
+      aria-checked={on}
+      aria-label={on ? "Disable this agent" : "Enable this agent"}
+      title={on ? "On — tap to disable" : "Off — tap to enable"}
+      onClick={(e) => { e.stopPropagation(); e.preventDefault(); onFlip(); }}
+      style={{ display: "inline-flex", alignItems: "center", width: 34, height: 20, borderRadius: 99, padding: 2, cursor: "pointer", flexShrink: 0, background: on ? C.green : "rgba(var(--ink),.15)", transition: "background .15s ease" }}
+    >
+      <span style={{ width: 16, height: 16, borderRadius: 99, background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,.3)", transform: on ? "translateX(14px)" : "translateX(0)", transition: "transform .15s ease" }} />
     </span>
   );
 }
@@ -68,6 +86,26 @@ export default function AgentsPage() {
   // Running state lifted here so every card can flip its badge to "Running…"
   // while a manual pass is in flight (RD 2026-07-03).
   const [running, setRunning] = useState(false);
+  // Enable switches (FEAT-19): absent key = enabled; live builds load the
+  // exceptions from app.agent_configs and flips persist + audit there.
+  const [configs, setConfigs] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    if (!IS_LIVE_BUILD) return;
+    fetch("/api/agents/config")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d: { configs?: Record<string, boolean> }) => setConfigs(d.configs ?? {}))
+      .catch(() => { /* switches default to on */ });
+  }, []);
+  const enabledOf = (key: string) => configs[key] !== false;
+  const flip = (key: string) => {
+    const next = !enabledOf(key);
+    setConfigs((c) => ({ ...c, [key]: next })); // optimistic
+    fetch("/api/agents/config", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ agentKey: key, enabled: next }),
+    }).catch(() => setConfigs((c) => ({ ...c, [key]: !next }))); // roll back on failure
+  };
   if (sel) return <AgentDetail a={sel} onBack={() => setSel(null)} />;
 
   const active = COS_AGENTS.filter((a) => a.status !== "planned").length;
@@ -89,7 +127,10 @@ export default function AgentsPage() {
       <UsagePanel />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(330px,1fr))", gap: 14, marginTop: 16 }}>
-        {COS_AGENTS.map((a) => <AgentCard key={a.key} a={a} running={running} onClick={() => setSel(a)} />)}
+        {COS_AGENTS.map((a) => (
+          <AgentCard key={a.key} a={a} running={running} enabled={enabledOf(a.key)}
+            onFlip={IS_LIVE_BUILD ? () => flip(a.key) : undefined} onClick={() => setSel(a)} />
+        ))}
       </div>
 
       <div style={{ fontSize: 11.5, color: C.dim, fontFamily: FONT.mono, marginTop: 18 }}>Agents are configured &amp; tested in Claude Code · this is the Mayor&rsquo;s read-only view to track their work.</div>
@@ -106,18 +147,19 @@ function Metric({ n, label }: { n: string; label: string }) {
   );
 }
 
-function AgentCard({ a, running, onClick }: { a: CosAgent; running?: boolean; onClick: () => void }) {
-  const showRunning = running && isActive(a);
+function AgentCard({ a, running, enabled = true, onFlip, onClick }: { a: CosAgent; running?: boolean; enabled?: boolean; onFlip?: () => void; onClick: () => void }) {
+  const showRunning = running && isActive(a) && enabled;
   return (
-    <button onClick={onClick} style={{ ...card, padding: 17, textAlign: "left", color: C.text, cursor: "pointer", display: "block", width: "100%", opacity: isActive(a) ? 1 : 0.62 }}>
+    <button onClick={onClick} style={{ ...card, padding: 17, textAlign: "left", color: C.text, cursor: "pointer", display: "block", width: "100%", opacity: !isActive(a) ? 0.62 : enabled ? 1 : 0.45 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 8 }}>
         <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{a.name}</span>
-        <span style={{ marginLeft: "auto" }}>
+        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 8 }}>
           {showRunning ? (
             <span style={{ ...pill("#0a1322", C.gold), fontWeight: 800, animation: "cosPulse 1.2s ease-in-out infinite" }}>Running…</span>
           ) : (
-            <StateBadge a={a} />
+            <StateBadge a={a} disabled={!enabled} />
           )}
+          {onFlip && <EnableSwitch on={enabled} onFlip={onFlip} />}
         </span>
       </div>
       <div style={{ fontSize: 12.5, color: C.text3, lineHeight: 1.5, marginBottom: 11 }}>{a.role}</div>

@@ -150,9 +150,20 @@ async function handle(req: NextRequest) {
       `SELECT id, provider, address, mailbox_id, cursor
          FROM pipeline.connector_accounts WHERE status = 'active' ORDER BY created_at`,
     );
+    // the in-app enable switch (app.agent_configs, FEAT-19): a disabled email
+    // agent pauses its provider's pulls without touching connector status
+    const disabled = new Set(
+      (await query<{ agent_key: string }>(
+        `SELECT agent_key FROM app.agent_configs WHERE NOT enabled`,
+      ).catch(() => [] as { agent_key: string }[])).map((r) => r.agent_key),
+    );
     const started = Date.now();
     const results: Record<string, unknown>[] = [];
     for (const a of accounts) {
+      if (disabled.has(a.provider === "gmail" ? "email-gmail" : "email-outlook")) {
+        results.push({ ok: true, provider: a.provider, account: a.address, skipped: "disabled by operator" });
+        continue;
+      }
       try {
         // token lives in Supabase Vault, resolved by ref (Gap 5.3) — never read inline
         const refreshToken = await getRefreshToken(a.id);

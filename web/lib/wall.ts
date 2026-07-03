@@ -163,6 +163,13 @@ async function addConnectorCards(wall: WallPayload): Promise<void> {
        FROM pipeline.connector_accounts ORDER BY created_at`,
   );
   if (!accounts.length) return;
+  // the in-app enable switch (app.agent_configs, FEAT-19): a disabled email
+  // agent gives up its cabinet seat until re-enabled
+  const off = new Set(
+    (await query<{ agent_key: string }>(
+      `SELECT agent_key FROM app.agent_configs WHERE NOT enabled`,
+    ).catch(() => [] as { agent_key: string }[])).map((r) => r.agent_key),
+  );
   const totals = await query<{ messages: string; today: string; calendar: string }>(
     `SELECT (SELECT count(*) FROM canonical.messages) AS messages,
             (SELECT count(*) FROM canonical.messages WHERE sent_at::date = now()::date) AS today,
@@ -171,6 +178,7 @@ async function addConnectorCards(wall: WallPayload): Promise<void> {
   const t = totals[0];
   for (const a of accounts) {
     const agentKey = a.provider === "gmail" ? "email-gmail" : "email-outlook";
+    if (off.has(agentKey)) continue;
     const name = a.provider === "gmail" ? "Gmail Email Agent" : "Outlook Email Agent";
     const midWalk = !!a.cursor?.startsWith("bf:");
     const statusDot: Urgency = a.status === "error" ? "red" : a.status === "active" ? "clear" : "yellow";

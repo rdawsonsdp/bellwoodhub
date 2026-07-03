@@ -272,6 +272,9 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
   (to RD himself), robot-recipient refusals proved the cage; RD then opened SAFE_SEND_ALLOWLIST to `*`
   (pilot Preview only — the Mayor's production env starts tight); 6 no-reply robot drafts discarded as
   housekeeping (restorable). SECURITY_POLICY / COMPLIANCE_MAP 1.7 updated honestly.
+  **Real-mail text hygiene** (RD screenshot): newsletters pad bodies with invisible Unicode + URL soup —
+  lib/clean-text.ts scrubs at ingest, snippets de-noised, 9k mirrored bodies backfilled; also fixed the
+  email drill-in reading the empty poc table on live (canonical lookup first — real mail 404'd on tap).
   **Tomorrow (RD): agent logic + agent learning process** — incl. agents skipping no-reply senders when
   drafting, and quieter not-sent feedback on bulk approvals.
 

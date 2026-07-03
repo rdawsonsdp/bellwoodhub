@@ -8,7 +8,7 @@
 > This file is the durable copy that survives across sessions.
 
 **📡 Shareable status page (live):** https://project-status-ten.vercel.app — public, no login. Source: `project-status/index.html`. Redeploy: `vercel deploy --prod --yes --cwd project-status`.
-**Last updated:** 2026-07-03 — **Tuesday target: mayor's Outlook + Gmail ingestion starts.** `bellwood-mayor` Supabase live (8 migrations, RLS deny-all verified); connector framework + live-honest paths built; pilot at https://bellwood-hub-pilot.vercel.app (Vercel-SSO protected). Remaining unblocks: RD's two OAuth apps (`docs/OAUTH_SETUP.md`) + DATABASE_URL password
+**Last updated:** 2026-07-03 (evening) — **PRODUCTION LOCKDOWN executed** (RD: Tuesday = production data, Google mail + calendar). Gaps register closed or staged: CA pinned, tokens→Vault, audit trigger-guarded, strict live mode (no fixtures in the pilot, ever), gcal connector, access telemetry (ip/device/geo on every action), **Sentinel monitoring agent** (hourly baseline-deviation watch), SECURITY_POLICY + RETENTION_POLICY docs. 10 migrations applied to `bellwood-mayor`. URLs: demo=**bellwood-hub.vercel.app** (public), pilot=**bellwood-hub-pilot.vercel.app** (SSO). Remaining unblocks: RD's OAuth apps + DATABASE_URL password (docs/OAUTH_SETUP.md)
 **Project:** AI Chief of Staff platform, built on the Bellwood municipal email RAG POC
 **Authoritative spec:** `cto-architecture-brief.md` (R. Dawson, SDP Chicago, 2026-06-24) — three-plane
 design (Ingestion → Canonical → Capability), 6 architectural decision records (AD-1…AD-6), 5-phase plan.
@@ -243,6 +243,28 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 ---
 
 ## Changelog
+
+- **2026-07-03 evening (PRODUCTION LOCKDOWN — RD: "Tuesday uses production data; lock this down now")** —
+  Two agent-workflow waves + inline provisioning, all on `live-pilot` (@ `dd0c061`), 10 migrations now
+  applied to `bellwood-mayor`. **Security:** DB client pins the Supabase Root 2021 CA (fetched from the
+  live TLS chain; `SUPABASE_CA_CERT` on Preview); OAuth refresh tokens moved to **Supabase Vault**
+  (migration 007 + `token-store.ts`, plaintext column NULLed forever); `audit_log` append-only now
+  **DB-trigger-enforced** (binds even the owner, 009); **strict live mode** — `DEMO_MODE=0` set on the
+  pilot: fixtures can never serve there, even DB-less (RD: "remove the demo data in this env").
+  **Google Calendar** (RD: "my Google and Google Calendar, real data"): `calendar.readonly` scope,
+  gcal connector, 2-hourly ingest cron → `app.calendar_events`; /api/events and the Wall's "Coming up"
+  card read real rows live. **Access monitoring (RD: #1 risk = Mayor's mail accessed through us):**
+  every audited action now carries **ip / device class / city / region / country**; page-view telemetry
+  via middleware sink when auth is on; and the **Sentinel agent** — R1, flags-never-blocks, hourly cron
+  baselining 30 days of access and flagging new IPs (alarm), new device classes (alarm), geo deviations,
+  off-hours use, and volume anomalies (review), findings occurrence-counted into agent memory, 503-on-alarm
+  so a free uptime pinger becomes the pager; registered in Staff Agents with spec
+  `docs/agents/sentinel-agent.md`. ops-watch hourly + 15-min email-ingest crons scheduled. **Docs:**
+  `SECURITY_POLICY.md` (plain-English, CTO-level, for peer review), `RETENTION_POLICY.md` (DRAFT for
+  counsel), `OPS_RUNBOOK.md`, COMPLIANCE_MAP register updated (5.1/5.3/5.6 CLOSED, 5.4 partial,
+  5.5 draft delivered). AUTH staged: `AUTH_SECRET` + `ALLOWED_EMAILS` set; `AUTH_ENABLED=1` flips the
+  moment RD's Google OAuth client lands. Deliberate non-lockdowns per RD: no VPN/tunnel (mobile-first),
+  MFA delegated to provider accounts. tsc + build + 5 eval suites green; public demo untouched (200).
 
 - **2026-07-03 (Week-1 sprint: DB provisioned · connectors built · demo-data strategy executed)** — RD set
   the Tuesday goal (start ingesting the Mayor's Outlook + Gmail; his own accounts as the rehearsal;

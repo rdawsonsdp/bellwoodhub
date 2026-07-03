@@ -32,6 +32,34 @@ function StateBadge({ a }: { a: CosAgent }) {
   );
 }
 
+/** The in-app cabinet trigger (RD 2026-07-03: agents managed in the app).
+ *  Live builds only — runs every active agent once, then reloads so the
+ *  Wall picks up the fresh runs. */
+function RunAgentsButton() {
+  const [state, setState] = useState<"idle" | "busy" | "err" | "done">("idle");
+  async function run() {
+    if (state === "busy") return;
+    setState("busy");
+    try {
+      const r = await fetch("/api/agents/run-now", { method: "POST" });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || d.ok === false) throw new Error(d.error || "agent run reported failures");
+      setState("done");
+      window.setTimeout(() => window.location.reload(), 900);
+    } catch (err) {
+      console.error("[agents.run]", err instanceof Error ? err.message : err);
+      setState("err");
+      window.setTimeout(() => setState("idle"), 3000);
+    }
+  }
+  return (
+    <button onClick={run} title="Run every active agent once, right now"
+      style={{ marginLeft: "auto", cursor: "pointer", padding: "9px 18px", borderRadius: 99, fontWeight: 700, fontSize: 12.5, fontFamily: FONT.sans, border: `1px solid ${state === "err" ? C.red : C.gold}`, background: state === "busy" ? "rgba(var(--ink),.05)" : "linear-gradient(135deg,#F4CB63,#D7991C)", color: state === "busy" ? C.text2 : "#081627", flexShrink: 0 }}>
+      {state === "busy" ? "Running agents… (takes a minute)" : state === "done" ? "Done — refreshing" : state === "err" ? "Run failed — see console" : "Run agents now"}
+    </button>
+  );
+}
+
 export default function AgentsPage() {
   const [sel, setSel] = useState<CosAgent | null>(null);
   if (sel) return <AgentDetail a={sel} onBack={() => setSel(null)} />;
@@ -45,10 +73,11 @@ export default function AgentsPage() {
       <div style={{ fontSize: 14, color: C.text3, marginTop: 7, maxWidth: 660, lineHeight: 1.55 }}>
         The Mayor&rsquo;s team of agents and the work they&rsquo;re doing. The team grows over time — today it handles email; tomorrow it could approve time cards. Agents draft and organize; every action stays a human gate.
       </div>
-      <div style={{ display: "flex", gap: 18, marginTop: 16, marginBottom: 6 }}>
+      <div style={{ display: "flex", gap: 18, marginTop: 16, marginBottom: 6, alignItems: "center" }}>
         <Metric n={String(active)} label="active agents" />
         <Metric n={String(COS_AGENTS.length)} label="on the team" />
         <Metric n={IS_LIVE_BUILD ? "—" : String(actions)} label="recent actions" />
+        {IS_LIVE_BUILD && <RunAgentsButton />}
       </div>
 
       <UsagePanel />

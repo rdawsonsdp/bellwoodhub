@@ -108,7 +108,7 @@ async function fetchAgentSlice(agent: DomainAgent, since: string): Promise<Agent
   const rows = await query<SliceRow>(
     `SELECT m.source_ref, m.thread_id, m.sent_at, m.from_name, m.from_email, m.subject,
             (SELECT mt.topic FROM canonical.message_topics mt WHERE mt.message_id = m.message_id LIMIT 1) AS topic,
-            LEFT(m.body_clean, 400) AS snippet
+            LEFT(m.clean_body, 400) AS snippet
        FROM canonical.messages m
       WHERE m.tenant_id = $1 AND m.direction = 'inbound' AND m.sent_at > $2
       ORDER BY m.sent_at DESC

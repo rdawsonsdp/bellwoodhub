@@ -5,6 +5,7 @@ import { query } from "@/lib/db";
 import { logAudit } from "@/lib/audit";
 import { graphConnector } from "@/lib/connectors/graph";
 import { gmailConnector } from "@/lib/connectors/gmail";
+import { getRefreshToken } from "@/lib/connectors/token-store";
 import type { PulledMessage } from "@/lib/connectors/types";
 
 export const runtime = "nodejs";
@@ -40,7 +41,6 @@ interface AccountRow {
   provider: "outlook" | "gmail";
   address: string;
   mailbox_id: string;
-  refresh_token: string | null;
   cursor: string | null;
 }
 
@@ -142,15 +142,17 @@ async function handle(req: NextRequest) {
       return NextResponse.json({ ok: true, mode: "demo", note: "DEMO mode: fixture mail serves the app; live ingest requires DATABASE_URL + active connector_accounts rows." });
     }
     const accounts = await query<AccountRow>(
-      `SELECT id, provider, address, mailbox_id, refresh_token, cursor
+      `SELECT id, provider, address, mailbox_id, cursor
          FROM pipeline.connector_accounts WHERE status = 'active' ORDER BY created_at`,
     );
     const results: Record<string, unknown>[] = [];
     for (const a of accounts) {
       try {
-        if (!a.refresh_token) throw new Error("no refresh token on file — re-consent via sign-in");
+        // token lives in Supabase Vault, resolved by ref (Gap 5.3) — never read inline
+        const refreshToken = await getRefreshToken(a.id);
+        if (!refreshToken) throw new Error("no refresh token on file — re-consent via sign-in");
         const connector = a.provider === "gmail" ? gmailConnector(a.address) : graphConnector(a.address);
-        const { accessToken } = await connector.refreshAccessToken(a.refresh_token);
+        const { accessToken } = await connector.refreshAccessToken(refreshToken);
         const { messages, nextCursor } = await connector.pullSince(accessToken, a.cursor, CAP);
         let landed = 0;
         let skipped = 0;

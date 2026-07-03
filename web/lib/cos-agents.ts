@@ -101,6 +101,14 @@ export const COS_AGENTS: CosAgent[] = [
     recent: ["Ingested the overnight Police RMS batch — 12 reports · 2:00 AM", "Parked 1 name collision for review · today", "Re-synced the 311 CRM · 15m ago"],
   },
   {
+    key: "sentinel", name: "Sentinel — Access Monitor", autonomy: "R1", status: "active", powers: ["Sources", "Admin"],
+    role: "Watches every access to the record and flags what does not fit.",
+    job: "Keeps a 30-day baseline of the known devices, IP addresses, and locations that touch the hub — a small, predictable set (RD's phone and desktop, later the Mayor's) — then reviews the access ledger hourly for deviations: new IPs, new device classes per person, out-of-area access, off-hours activity, and volume spikes. It flags — never blocks — and every deviation goes to a human for review. Its own runs land in the same audit ledger it watches.",
+    produces: "Hourly access review + anomaly findings in agent memory.",
+    recent: ["Hourly review clean — 2 known devices, 3 known IPs, all in-pattern · 7:30 AM", "Flagged an off-hours session for review — 11:52 PM access from a known device · yesterday", "Learned a new baseline IP after RD confirmed travel · 3d ago"],
+    spec: "docs/agents/sentinel-agent.md",
+  },
+  {
     key: "compliance", name: "Compliance Watchtower", autonomy: "R2", status: "planned", powers: ["Sources"],
     role: "Flags FOIA / Open Meetings / retention risk.",
     job: "Watches the record for records-posture and compliance risk and flags it for review — never auto-acts.",

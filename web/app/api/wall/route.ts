@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getWall } from "@/lib/wall";
+import { logAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +14,8 @@ export async function GET(req: NextRequest) {
     const hourRaw = Number(req.nextUrl.searchParams.get("hour") ?? "8");
     const hour = Number.isFinite(hourRaw) ? hourRaw : 8;
     const name = req.nextUrl.searchParams.get("name") ?? undefined;
+    // actor: null until L0.1 threads the session email through
+    void logAudit({ actor: null, action: "wall.read", req });
     return NextResponse.json(await getWall({ hour, mayorName: name }));
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";

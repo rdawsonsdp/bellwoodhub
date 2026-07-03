@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getQueue } from "@/lib/queue";
 import { logAudit } from "@/lib/audit";
 
@@ -9,10 +9,10 @@ export const dynamic = "force-dynamic";
 // pending drafts, deduped by thread, red→yellow→recency. Approve/discard
 // actions stay on the existing /api/approvals route (keyed by draftId).
 // getQueue branches DEMO (fixtures) vs live (agent_runs ∪ app.drafts) itself.
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     // actor: null until L0.1 threads the session email through
-    void logAudit({ actor: null, action: "queue.read" });
+    void logAudit({ actor: null, action: "queue.read", req });
     return NextResponse.json(await getQueue());
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";

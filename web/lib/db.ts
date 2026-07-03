@@ -19,6 +19,12 @@ export function pool(): Pool {
     );
   }
 
+  // Cert pinning (COMPLIANCE_MAP gap 5.1): SUPABASE_CA_CERT holds the Supabase
+  // project CA (PEM). Vercel env can deliver the newlines as literal \n, so
+  // normalize before handing it to TLS. Pinned + verified is the production
+  // posture; the unpinned branch is the pre-pilot/dev fallback.
+  const ca = process.env.SUPABASE_CA_CERT?.replace(/\\n/g, "\n");
+
   const u = new URL(cs);
   _pool = new Pool({
     host: u.hostname,
@@ -26,7 +32,9 @@ export function pool(): Pool {
     user: decodeURIComponent(u.username) || "postgres",
     password: decodeURIComponent(u.password),
     database: u.pathname.replace(/^\//, "") || "postgres",
-    ssl: { rejectUnauthorized: false }, // Supabase requires SSL
+    ssl: ca
+      ? { ca, rejectUnauthorized: true } // pinned CA — verify the server cert (gap 5.1)
+      : { rejectUnauthorized: false }, // Supabase requires SSL; the pinned path above is the production posture
     max: 3, // small per-instance pool (serverless can spin up many instances)
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 15_000,

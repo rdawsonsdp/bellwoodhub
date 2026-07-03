@@ -14,6 +14,22 @@
     {
       "path": "/api/cron/needs-you",
       "schedule": "0 12 * * 1-5"
+    },
+    {
+      "path": "/api/cron/ingest-calendar",
+      "schedule": "0 */2 * * *"
+    },
+    {
+      "path": "/api/cron/ingest-email",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/ops-watch",
+      "schedule": "0 */1 * * *"
+    },
+    {
+      "path": "/api/cron/sentinel",
+      "schedule": "30 * * * *"
     }
   ]
 }

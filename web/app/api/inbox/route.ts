@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DEMO, demoInbox } from "@/lib/demo";
+import { logAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +14,8 @@ export async function GET(req: NextRequest) {
     const mailbox = req.nextUrl.searchParams.get("mailbox") || "gov";
     const limitRaw = Number(req.nextUrl.searchParams.get("limit") ?? "80");
     const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 500) : 80;
+    // actor: null until L0.1 threads the session email through
+    void logAudit({ actor: null, action: "inbox.read", meta: { mailbox }, req });
     if (!DEMO) {
       const { liveInbox } = await import("@/lib/live-inbox");
       return NextResponse.json(await liveInbox(limit, mailbox));

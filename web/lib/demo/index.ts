@@ -60,7 +60,12 @@ export interface UploadDoc {
   fields?: Record<string, string>; entities?: { name: string }[];
 }
 
-export const DEMO = process.env.DEMO_MODE === "1" || !process.env.DATABASE_URL;
+// DEMO_MODE=0 forces live mode — with no DATABASE_URL the app then errors
+// honestly instead of serving fixtures (RD: no demo data in the pilot env,
+// ever). Keyless default (DEMO_MODE unset, no DATABASE_URL) stays the demo.
+export const DEMO =
+  process.env.DEMO_MODE === "1" ||
+  (!process.env.DATABASE_URL && process.env.DEMO_MODE !== "0");
 export const HAS_OPENAI = !!process.env.OPENAI_API_KEY;
 
 // ── small fixtures: static import (tiny) ──

@@ -24,6 +24,7 @@ UI, keeps the real contract in code review + git history, and gives Claude Code
 |---|---|---|
 | Outlook Email Agent | `email-outlook` | [email-outlook-agent.md](email-outlook-agent.md) |
 | Gmail Email Agent | `email-gmail` | [email-gmail-agent.md](email-gmail-agent.md) |
+| Sentinel — Access Monitor | `sentinel` | [sentinel-agent.md](sentinel-agent.md) |
 
 Related: the ingestion contract (`ingest/base.py` 5-step), the Mailbox registry
 (`web/lib/mailboxes.ts`), Routines (`web/lib/routines.ts`), and the autonomy

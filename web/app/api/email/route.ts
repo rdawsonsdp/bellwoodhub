@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Provide mid (message id)." }, { status: 400 });
     }
     // actor: null until L0.1 threads the session email through
-    void logAudit({ actor: null, action: "email.open", objectType: "message", objectRef: mid });
+    void logAudit({ actor: null, action: "email.open", objectType: "message", objectRef: mid, req });
     if (process.env.DATABASE_URL) {
       try {
         const full = await getEmailByMessageId(mid);

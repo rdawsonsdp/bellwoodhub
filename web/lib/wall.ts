@@ -136,7 +136,10 @@ export async function getWall(opts: WallOpts = {}): Promise<WallPayload> {
       r.output.digest.forEach((d) => d.sourceMessageIds.forEach((id) => ids.add(id)));
       r.output.actItems.forEach((a) => a.citations.forEach((id) => ids.add(id)));
     }
-    return assembleWall(runs, new Date().toISOString(), opts, await liveMessageMeta([...ids]));
+    const wall = assembleWall(runs, new Date().toISOString(), opts, await liveMessageMeta([...ids]));
+    // "Coming up" reads the live calendar mirror — fixture events never leak here
+    wall.schedule = await buildLiveSchedule(wall.generatedAt);
+    return wall;
   }
   return assembleWall(DEMO_AGENT_RUNS.filter((r) => active.has(r.agentKey)), DEMO_NOW, opts);
 }
@@ -312,8 +315,8 @@ export function assembleWall(runs: AgentRun[], now: string, opts: WallOpts = {},
  *  personal/community holds do. */
 function buildSchedule(now: string): WallSchedule {
   const today = now.slice(0, 10);
-  // Live calendar events land with a calendar connector (post-ingestion, like
-  // /api/events) — until then the card says "No events today" honestly.
+  // Live is buildLiveSchedule (getWall overrides the schedule after assembly —
+  // this fixture path stays sync for the eval harness); here live yields [].
   const upcoming = (DEMO ? demoEvents().events : [])
     .filter((e) => !(e.source === "gmail" && e.topic === "business"))
     .filter((e) => e.status !== "done" && e.date.slice(0, 10) >= today)
@@ -351,6 +354,59 @@ function buildSchedule(now: string): WallSchedule {
     { label: "Google Calendar", href: "https://calendar.google.com/" },
   ];
   return { days, links };
+}
+
+/** LIVE "Coming up": the app.calendar_events mirror (cron/ingest-calendar),
+ *  same card shape as buildSchedule but on the Mayor's real clock and
+ *  timezone — today (even if clear) plus the next 3 days that HAVE events.
+ *  gcal rows ride the Gmail grant, so they render in the 'gmail' lane.
+ *  Empty mirror → "No events today", honestly — never fixtures. Dynamic
+ *  import keeps lib/db out of the demo module graph (same as getWall). */
+async function buildLiveSchedule(now: string): Promise<WallSchedule> {
+  const TZ = "America/Chicago"; // Bellwood's clock, not the server's
+  const { query } = await import("./db");
+  const rows = await query<{ title: string | null; starts_at: Date; all_day: boolean }>(
+    `SELECT title, starts_at, all_day FROM app.calendar_events
+      WHERE status <> 'cancelled' AND starts_at >= now() - interval '1 day'
+      ORDER BY starts_at`,
+  );
+  const localDay = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: TZ }); // ISO day in TZ
+  const today = localDay(new Date(now));
+
+  const byDay = new Map<string, ScheduleDayEvent[]>();
+  for (const r of rows) {
+    const d = new Date(r.starts_at);
+    const iso = localDay(d);
+    if (iso < today) continue; // the −1d fetch pad covers the UTC/local seam
+    const list = byDay.get(iso) ?? [];
+    if (list.length < 3)
+      list.push({
+        title: r.title ?? "(untitled)",
+        time: r.all_day ? null : d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: TZ }),
+        source: "gmail",
+      });
+    byDay.set(iso, list);
+  }
+
+  const mkDay = (iso: string): ScheduleDay => {
+    const d = new Date(`${iso}T00:00:00Z`);
+    return {
+      date: iso,
+      dayNum: d.getUTCDate(),
+      month: d.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }),
+      weekday: d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }),
+      isToday: iso === today,
+      events: byDay.get(iso) ?? [],
+    };
+  };
+  const days = [mkDay(today), ...[...byDay.keys()].filter((d) => d > today).sort().slice(0, 3).map(mkDay)];
+  return {
+    days,
+    links: [
+      { label: "Outlook Calendar", href: "https://outlook.office.com/calendar/" },
+      { label: "Google Calendar", href: "https://calendar.google.com/" },
+    ],
+  };
 }
 
 /** The push-notification one-liner (cron → phone): reads like

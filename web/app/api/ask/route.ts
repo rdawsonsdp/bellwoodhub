@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing question." }, { status: 400 });
     }
     // actor: null until L0.1 threads the session email through
-    void logAudit({ actor: null, action: "ask.query", meta: { question } });
+    void logAudit({ actor: null, action: "ask.query", meta: { question }, req });
     if (DEMO) {
       const k = typeof body.k === "number" && Number.isFinite(body.k) ? body.k : 8;
       const uploads = Array.isArray(body.uploads) ? body.uploads : [];

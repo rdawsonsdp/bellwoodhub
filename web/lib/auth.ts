@@ -32,10 +32,12 @@ if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
       // Google only issues a refresh token on an offline + consent grant;
-      // gmail.readonly here makes sign-in double as the Gmail ingest consent.
+      // gmail.readonly here makes sign-in double as the Gmail ingest consent,
+      // and calendar.readonly adds Google Calendar as a data source (RD's
+      // pilot account rehearses both). Read-only forever — no send scopes.
       authorization: {
         params: {
-          scope: "openid email profile https://www.googleapis.com/auth/gmail.readonly",
+          scope: "openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly",
           access_type: "offline",
           prompt: "consent",
         },
@@ -71,11 +73,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.provider = account.provider;
         if (account.refresh_token) token.refresh_token = account.refresh_token;
         // ── connector capture (ING-1) — begin marked block ──────────────────
-        // Live path only (DATABASE_URL set): upsert the refresh token into
-        // pipeline.connector_accounts so the ingest cron can pull mail. status
-        // stays 'pending' — an operator flips it to 'active'. Fire-and-forget:
-        // a DB outage must never block or fail the sign-in. Dynamic import
-        // keeps this module side-effect-free for the keyless demo.
+        // Live path only (DATABASE_URL set): upsert the account row and put
+        // the refresh token in Supabase Vault via lib/connectors/token-store
+        // (Gap 5.3 — the plaintext column stays NULL) so the ingest cron can
+        // pull mail. status stays 'pending' — an operator flips it to
+        // 'active'. Fire-and-forget: a DB outage must never block or fail the
+        // sign-in. Dynamic import keeps this module side-effect-free for the
+        // keyless demo.
         if (account.refresh_token && process.env.DATABASE_URL) {
           const provider =
             account.provider === "google" ? "gmail"
@@ -84,14 +88,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const address = token.email?.toLowerCase();
           if (provider && address) {
             const refreshToken = account.refresh_token;
-            import("./db")
-              .then(({ query }) =>
-                query(
-                  `INSERT INTO pipeline.connector_accounts (provider, address, refresh_token)
-                   VALUES ($1, $2, $3)
-                   ON CONFLICT (provider, address) DO UPDATE SET refresh_token = EXCLUDED.refresh_token`,
-                  [provider, address, refreshToken],
-                ),
+            import("./connectors/token-store")
+              .then(({ storeRefreshToken }) =>
+                storeRefreshToken({ provider, address, token: refreshToken }),
               )
               .catch((err) =>
                 console.error("[auth] connector capture failed:", err instanceof Error ? err.message : err),

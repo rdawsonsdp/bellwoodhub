@@ -266,6 +266,9 @@ function Sidebar({ screen, go, operator, onToggleOperator }: { screen: Screen; g
             <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5, marginTop: 7 }}>
               Reveals Emails, Calendar, History, Sources, Staff Agents, Approvals, and Admin. The Mayor&apos;s view is Wall · Queue · Ask.
             </div>
+            {process.env.NEXT_PUBLIC_AUTH_ENABLED === "1" && (
+              <button onClick={() => { window.location.href = "/api/auth/signout"; }} style={{ display: "block", width: "100%", marginTop: 11, padding: "9px 12px", borderRadius: 10, cursor: "pointer", background: "rgba(var(--ink),.05)", border: `1px solid ${C.line}`, color: C.text2, fontWeight: 700, fontSize: 12.5, fontFamily: FONT.sans }}>Sign out</button>
+            )}
           </div>
         )}
         <button onClick={() => setMenu((m) => !m)} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", cursor: "pointer", background: "none", border: 0, padding: 0, textAlign: "left" }}>

@@ -228,6 +228,9 @@ function ProfileSheet({ operator, onToggle, onClose }: { operator: boolean; onTo
             <span style={{ display: "block", fontSize: 11.5, color: C.muted, marginTop: 2, lineHeight: 1.45 }}>Reveals Emails, Calendar, History, Sources, Staff Agents, and Admin behind the menu button.</span>
           </span>
         </button>
+        {process.env.NEXT_PUBLIC_AUTH_ENABLED === "1" && (
+          <button onClick={() => { window.location.href = "/api/auth/signout"; }} style={{ display: "block", width: "100%", marginTop: 10, padding: "12px 14px", borderRadius: 13, cursor: "pointer", background: "rgba(var(--ink),.04)", border: "1px solid var(--c-cardbd)", color: C.text2, fontWeight: 700, fontSize: 13.5, fontFamily: FONT.sans }}>Sign out</button>
+        )}
         <button onClick={onClose} style={{ display: "block", width: "100%", marginTop: 12, padding: "13px 14px", borderRadius: 13, border: 0, cursor: "pointer", background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322", fontWeight: 800, fontSize: 14.5, fontFamily: FONT.sans }}>Done</button>
       </div>
     </div>

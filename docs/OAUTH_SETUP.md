@@ -13,7 +13,7 @@ The two base URLs used everywhere below:
 | Environment | Base URL |
 |---|---|
 | Local dev | `http://localhost:3200` |
-| Pilot (stable branch preview) | `https://web-git-live-pilot-rdawson-7101s-projects.vercel.app` |
+| Pilot (stable branch preview) | `https://bellwood-hub-pilot.vercel.app` |
 
 ---
 
@@ -32,7 +32,7 @@ The two base URLs used everywhere below:
 5. Click **Register**.
 6. In the new app: left nav **Manage → Authentication** → under the **Web**
    platform click **Add URI** → paste
-   `https://web-git-live-pilot-rdawson-7101s-projects.vercel.app/api/auth/callback/microsoft-entra-id`
+   `https://bellwood-hub-pilot.vercel.app/api/auth/callback/microsoft-entra-id`
    → **Save**.
 7. **Manage → API permissions** → **+ Add a permission** → **Microsoft
    Graph** → **Delegated permissions** →
@@ -89,7 +89,7 @@ The two base URLs used everywhere below:
    - Application type **Web application**, name `Bellwood Hub Pilot web`;
    - **Authorized redirect URIs** — add BOTH:
      - `http://localhost:3200/api/auth/callback/google`
-     - `https://web-git-live-pilot-rdawson-7101s-projects.vercel.app/api/auth/callback/google`
+     - `https://bellwood-hub-pilot.vercel.app/api/auth/callback/google`
    - JavaScript origins: not needed (server-side code flow) → **Create**.
 7. Record the mapping:
 

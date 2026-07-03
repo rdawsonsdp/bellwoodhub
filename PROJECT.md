@@ -8,7 +8,7 @@
 > This file is the durable copy that survives across sessions.
 
 **📡 Shareable status page (live):** https://project-status-ten.vercel.app — public, no login. Source: `project-status/index.html`. Redeploy: `vercel deploy --prod --yes --cwd project-status`.
-**Last updated:** 2026-07-02 (evening) — anticipation loop LIVE on prod; L0 security slice on `live-pilot` awaiting RD's five unblocks (see Go-Live board)
+**Last updated:** 2026-07-03 — **Tuesday target: mayor's Outlook + Gmail ingestion starts.** `bellwood-mayor` Supabase live (8 migrations, RLS deny-all verified); connector framework + live-honest paths built; pilot at https://bellwood-hub-pilot.vercel.app (Vercel-SSO protected). Remaining unblocks: RD's two OAuth apps (`docs/OAUTH_SETUP.md`) + DATABASE_URL password
 **Project:** AI Chief of Staff platform, built on the Bellwood municipal email RAG POC
 **Authoritative spec:** `cto-architecture-brief.md` (R. Dawson, SDP Chicago, 2026-06-24) — three-plane
 design (Ingestion → Canonical → Capability), 6 architectural decision records (AD-1…AD-6), 5-phase plan.
@@ -243,6 +243,28 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 ---
 
 ## Changelog
+
+- **2026-07-03 (Week-1 sprint: DB provisioned · connectors built · demo-data strategy executed)** — RD set
+  the Tuesday goal (start ingesting the Mayor's Outlook + Gmail; his own accounts as the rehearsal;
+  week 1 = LOAD, search is week 2) and the strategy: isolate the data, kill demo-data ambiguity, two email
+  agents (Outlook + Gmail, separate business rules). Executed autonomously while RD was in a meeting:
+  **(1) `bellwood-mayor` Supabase project created** via MCP (us-east-1, $10/mo, org rdawson) — all 8
+  migrations applied (poc, canonical, pipeline, app, domain-agents, audit, user-state, connector-accounts)
+  + RLS deny-all as the 9th; security advisors confirm ZERO missing-RLS findings (ISS-4 closed on this DB);
+  tenant renamed honestly to `bellwood-mayor-pilot (real mail)`. **(2) Week-1 framework** (3-agent
+  workflow, verified tsc/build/5-suites): live-honest data paths — /api/inbox reads canonical.messages,
+  /api/events returns honest zeros, getWall/getQueue read canonical.agent_runs + app.drafts (fixtures can
+  no longer leak into live mode); `ACTIVE_AGENTS` env narrows the pilot cabinet without touching the demo;
+  Graph + Gmail connectors (plain-fetch, token refresh, delta/historyId cursors, Retry-After backoff);
+  `/api/cron/ingest-email` lands RAW→staged→canonical with per-account error isolation; sign-in refresh
+  tokens auto-upsert `pipeline.connector_accounts` (pending → operator flips active). **(3) Ops**:
+  CRON_SECRET set on Production+Preview (crons stop silent-401ing); pilot deployed +
+  aliased **https://bellwood-hub-pilot.vercel.app** — Vercel Deployment Protection confirmed ON for
+  previews (L0.2 done); prod demo untouched (200). **RD's remaining unblocks (all in
+  `docs/OAUTH_SETUP.md`):** Entra app registration, Google OAuth client (+ test users), reset the
+  bellwood-mayor DB password → DATABASE_URL + auth env vars into Vercel Preview. Known gaps logged in
+  commit 9707b19 caveats: clean_text parity (TS stores stripped text; Python re-parity from RAW later),
+  Graph sent-items TODO, mailbox stamp rides provenance until a mailbox column lands.
 
 - **2026-07-02 (L0 slice built by agent workflow · hourly cadence + cabinet notifications)** — Four parallel
   agents (workflow `l0-lock-the-doors`, branch `live-pilot`) built the unblocked Phase-L0 pieces:

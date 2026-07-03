@@ -7,7 +7,8 @@
  * dual-domain thread (Pawlak / El Faro blotter) renders ONCE with two agent
  * chips; footer counts trace to the runs; the greeting is time-coherent and
  * never mentions coffee; walled agents never enter needsYouNow or the footer;
- * and the demo's single clock holds.
+ * the ACTIVE_AGENTS env override narrows the cabinet; and the demo's single
+ * clock holds. (Async main: getWall is now a Promise-returning provider.)
  */
 import { getWall, assembleWall } from "../lib/wall";
 import { DEMO_AGENT_RUNS, DEMO_RUN_AT } from "../lib/demo/data/domain-agents";
@@ -24,94 +25,123 @@ function check(name: string, cond: boolean, detail?: string) {
   }
 }
 
-console.log("single demo clock");
-check("demoToday() anchors to the fixture window", demoToday() === "2026-06-28", demoToday());
-check("DEMO_NOW is after the cabinet pass", DEMO_NOW > DEMO_RUN_AT);
+async function main() {
+  console.log("single demo clock");
+  check("demoToday() anchors to the fixture window", demoToday() === "2026-06-28", demoToday());
+  check("DEMO_NOW is after the cabinet pass", DEMO_NOW > DEMO_RUN_AT);
 
-console.log("getWall — needsYouNow");
-const wall = getWall({ hour: 9, mayorName: "Mayor Harvey" });
-check("max 3 rows", wall.needsYouNow.length > 0 && wall.needsYouNow.length <= 3, String(wall.needsYouNow.length));
-const ranks = wall.needsYouNow.map((i) => (i.urgency === "red" ? 0 : i.urgency === "yellow" ? 1 : 2));
-check("red ranks before yellow", ranks.every((r, i) => i === 0 || r >= ranks[i - 1]), ranks.join(","));
-check("no duplicate threads", new Set(wall.needsYouNow.map((i) => i.id)).size === wall.needsYouNow.length);
-check("Meyer (red, newest) leads", wall.needsYouNow[0]?.id === "now-thr-6abdde046d94", wall.needsYouNow[0]?.id);
-check("…captioned by the constituent, not the internal reply", wall.needsYouNow[0]?.line.startsWith("Eleanor Meyer"), wall.needsYouNow[0]?.line);
+  console.log("getWall — needsYouNow");
+  const wall = await getWall({ hour: 9, mayorName: "Mayor Harvey" });
+  check("max 3 rows", wall.needsYouNow.length > 0 && wall.needsYouNow.length <= 3, String(wall.needsYouNow.length));
+  const ranks = wall.needsYouNow.map((i) => (i.urgency === "red" ? 0 : i.urgency === "yellow" ? 1 : 2));
+  check("red ranks before yellow", ranks.every((r, i) => i === 0 || r >= ranks[i - 1]), ranks.join(","));
+  check("no duplicate threads", new Set(wall.needsYouNow.map((i) => i.id)).size === wall.needsYouNow.length);
+  check("Meyer (red, newest) leads", wall.needsYouNow[0]?.id === "now-thr-6abdde046d94", wall.needsYouNow[0]?.id);
+  check("…captioned by the constituent, not the internal reply", wall.needsYouNow[0]?.line.startsWith("Eleanor Meyer"), wall.needsYouNow[0]?.line);
 
-const pawlak = wall.needsYouNow.filter((i) => i.id === "now-thr-7ae8ce60f226");
-check("dual-domain thread appears exactly once", pawlak.length === 1);
-check(
-  "…with police + constituent chips merged (cabinet order)",
-  JSON.stringify(pawlak[0]?.agentKeys) === JSON.stringify(["police", "constituent"]),
-  JSON.stringify(pawlak[0]?.agentKeys),
-);
-check("…keeps max urgency (red) and the Approve verb", pawlak[0]?.urgency === "red" && pawlak[0]?.action === "Approve");
-
-console.log("getWall — cabinet & footer trace to the runs");
-check(
-  "one card per active agent, registry order (incl. the walled seat)",
-  JSON.stringify(wall.cabinet.map((c) => c.agentKey)) ===
-    JSON.stringify(["police", "fire", "council", "constituent", "schedule", "harbor-wellness"]),
-  wall.cabinet.map((c) => c.agentKey).join(","),
-);
-// government-surface numbers exclude walled agents by construction
-const walledKeys = new Set(DOMAIN_AGENTS.filter((a) => a.walled).map((a) => a.key));
-const govRuns = DEMO_AGENT_RUNS.filter((r) => !walledKeys.has(r.agentKey));
-const expHandled = govRuns.reduce((n, r) => n + r.output.digest.length, 0);
-const expWaiting = govRuns.reduce((n, r) => n + r.output.actItems.length, 0);
-check(`footer.handled = Σ digest points (${expHandled})`, wall.footer.handled === expHandled, String(wall.footer.handled));
-check(`footer.waiting = Σ actItems (${expWaiting})`, wall.footer.waiting === expWaiting, String(wall.footer.waiting));
-check("eta present when drafts wait", wall.footer.etaMinutes >= 1);
-for (const c of wall.cabinet) {
-  const run = DEMO_AGENT_RUNS.find((r) => r.agentKey === c.agentKey)!;
+  const pawlak = wall.needsYouNow.filter((i) => i.id === "now-thr-7ae8ce60f226");
+  check("dual-domain thread appears exactly once", pawlak.length === 1);
   check(
-    `${c.agentKey}: card counts = run counts`,
-    c.counts.newItems === run.output.digest.length && c.counts.needsYou === run.output.actItems.length,
+    "…with police + constituent chips merged (cabinet order)",
+    JSON.stringify(pawlak[0]?.agentKeys) === JSON.stringify(["police", "constituent"]),
+    JSON.stringify(pawlak[0]?.agentKeys),
   );
+  check("…keeps max urgency (red) and the Approve verb", pawlak[0]?.urgency === "red" && pawlak[0]?.action === "Approve");
+
+  console.log("getWall — cabinet & footer trace to the runs");
+  check(
+    "one card per active agent, registry order (incl. the walled seat)",
+    JSON.stringify(wall.cabinet.map((c) => c.agentKey)) ===
+      JSON.stringify(["police", "fire", "council", "constituent", "schedule", "harbor-wellness"]),
+    wall.cabinet.map((c) => c.agentKey).join(","),
+  );
+  // government-surface numbers exclude walled agents by construction
+  const walledKeys = new Set(DOMAIN_AGENTS.filter((a) => a.walled).map((a) => a.key));
+  const govRuns = DEMO_AGENT_RUNS.filter((r) => !walledKeys.has(r.agentKey));
+  const expHandled = govRuns.reduce((n, r) => n + r.output.digest.length, 0);
+  const expWaiting = govRuns.reduce((n, r) => n + r.output.actItems.length, 0);
+  check(`footer.handled = Σ digest points (${expHandled})`, wall.footer.handled === expHandled, String(wall.footer.handled));
+  check(`footer.waiting = Σ actItems (${expWaiting})`, wall.footer.waiting === expWaiting, String(wall.footer.waiting));
+  check("eta present when drafts wait", wall.footer.etaMinutes >= 1);
+  for (const c of wall.cabinet) {
+    const run = DEMO_AGENT_RUNS.find((r) => r.agentKey === c.agentKey)!;
+    check(
+      `${c.agentKey}: card counts = run counts`,
+      c.counts.newItems === run.output.digest.length && c.counts.needsYou === run.output.actItems.length,
+    );
+  }
+  check("runs payload carries the full digests", wall.runs.constituent?.actItems.length === 3 && wall.runs.police?.digest.length === 5);
+  check("every citation chip has a label", Object.values(wall.runs).every((r) => r.digest.every((d) => d.sources.every((s) => s.label.length > 0))));
+  check("dateLabel derives from the demo clock", wall.dateLabel.includes("June 28"), wall.dateLabel);
+
+  console.log("anticipation loop — hourly freshness rotation");
+  check("every card carries freshAt", wall.cabinet.every((c) => !!c.freshAt));
+  const freshAt = async (h: number) =>
+    (await getWall({ hour: h })).cabinet.find((c) => c.lastRunLabel === "updated just now")?.agentKey;
+  check("exactly one gov desk reports in per hour", !!(await freshAt(9)) && !!(await freshAt(10)));
+  check("the fresh desk varies by hour", (await freshAt(9)) !== (await freshAt(10)), `${await freshAt(9)} vs ${await freshAt(10)}`);
+  check("deterministic for a given hour (evals + demo coherence)", (await freshAt(9)) === (await freshAt(9)));
+  check(
+    "the walled desk NEVER reports in on the government rotation",
+    (await Promise.all(Array.from({ length: 24 }, (_, h) => freshAt(h)))).every((k) => k !== "harbor-wellness"),
+  );
+
+  console.log("greeting — time-coherent, never playful");
+  check("morning", (await getWall({ hour: 9 })).greeting === "Good morning, Mayor Harvey.");
+  check("evening", (await getWall({ hour: 19 })).greeting === "Good evening, Mayor Harvey.");
+  check("no coffee, no exclamation", !/coffee|!/i.test((await getWall({ hour: 19 })).greeting));
+
+  console.log("walled rule — now live via the Phase 5 flip");
+  check("harbor card is walled (Private)", wall.cabinet.some((c) => c.agentKey === "harbor-wellness" && c.walled));
+  check("walled items NEVER enter needsYouNow", wall.needsYouNow.every((i) => !i.agentKeys.includes("harbor-wellness")));
+  check("walled digest points stay out of 'handled'", wall.footer.handled === expHandled, String(wall.footer.handled));
+  check("harbor's full digest still serves its own card", wall.runs["harbor-wellness"]?.digest.length === 5);
+
+  // worst case: a RED walled run with a draft still can't cross the wall
+  const harborRed: AgentRun = {
+    agentKey: "harbor-wellness",
+    ranAt: DEMO_RUN_AT,
+    output: {
+      headline: "IDFPR deadline inside 7 days.",
+      urgency: "red",
+      digest: [{ point: "License renewal filing deadline — final week.", sourceMessageIds: ["biz-015"] }],
+      actItems: [{ type: "draft_reply", threadId: "biz-015", draftSubject: "Re: license renewal", draftBody: "…", rationale: "deadline", citations: ["biz-015"] }],
+      memoryOps: [],
+    },
+  };
+  const walled = assembleWall([...govRuns, harborRed], DEMO_NOW, { hour: 9 });
+  check("even a RED walled run never enters needsYouNow", walled.needsYouNow.every((i) => !i.agentKeys.includes("harbor-wellness")));
+  check("walled drafts stay out of the government footer", walled.footer.waiting === expWaiting, String(walled.footer.waiting));
+
+  console.log("ACTIVE_AGENTS env override — the pilot's narrowed cabinet");
+  const prevActive = process.env.ACTIVE_AGENTS;
+  process.env.ACTIVE_AGENTS = "council, constituent";
+  const narrowed = await getWall({ hour: 9 });
+  check(
+    "cabinet narrows to the listed keys (registry order)",
+    JSON.stringify(narrowed.cabinet.map((c) => c.agentKey)) === JSON.stringify(["council", "constituent"]),
+    narrowed.cabinet.map((c) => c.agentKey).join(","),
+  );
+  check(
+    "needsYouNow only cites listed agents",
+    narrowed.needsYouNow.length > 0 &&
+      narrowed.needsYouNow.every((i) => i.agentKeys.every((k) => k === "council" || k === "constituent")),
+    JSON.stringify(narrowed.needsYouNow.map((i) => i.agentKeys)),
+  );
+  check("footer counts trace to the narrowed runs only", narrowed.footer.handled < wall.footer.handled);
+  process.env.ACTIVE_AGENTS = "";
+  check("blank/unset restores the registry flags", (await getWall({ hour: 9 })).cabinet.length === wall.cabinet.length);
+  if (prevActive === undefined) delete process.env.ACTIVE_AGENTS;
+  else process.env.ACTIVE_AGENTS = prevActive;
+
+  if (failures) {
+    console.error(`\n${failures} check(s) FAILED`);
+    process.exit(1);
+  }
+  console.log("\nAll checks passed.");
 }
-check("runs payload carries the full digests", wall.runs.constituent?.actItems.length === 3 && wall.runs.police?.digest.length === 5);
-check("every citation chip has a label", Object.values(wall.runs).every((r) => r.digest.every((d) => d.sources.every((s) => s.label.length > 0))));
-check("dateLabel derives from the demo clock", wall.dateLabel.includes("June 28"), wall.dateLabel);
 
-console.log("anticipation loop — hourly freshness rotation");
-check("every card carries freshAt", wall.cabinet.every((c) => !!c.freshAt));
-const freshAt = (h: number) => getWall({ hour: h }).cabinet.find((c) => c.lastRunLabel === "updated just now")?.agentKey;
-check("exactly one gov desk reports in per hour", !!freshAt(9) && !!freshAt(10));
-check("the fresh desk varies by hour", freshAt(9) !== freshAt(10), `${freshAt(9)} vs ${freshAt(10)}`);
-check("deterministic for a given hour (evals + demo coherence)", freshAt(9) === freshAt(9));
-check(
-  "the walled desk NEVER reports in on the government rotation",
-  Array.from({ length: 24 }, (_, h) => freshAt(h)).every((k) => k !== "harbor-wellness"),
-);
-
-console.log("greeting — time-coherent, never playful");
-check("morning", getWall({ hour: 9 }).greeting === "Good morning, Mayor Harvey.");
-check("evening", getWall({ hour: 19 }).greeting === "Good evening, Mayor Harvey.");
-check("no coffee, no exclamation", !/coffee|!/i.test(getWall({ hour: 19 }).greeting));
-
-console.log("walled rule — now live via the Phase 5 flip");
-check("harbor card is walled (Private)", wall.cabinet.some((c) => c.agentKey === "harbor-wellness" && c.walled));
-check("walled items NEVER enter needsYouNow", wall.needsYouNow.every((i) => !i.agentKeys.includes("harbor-wellness")));
-check("walled digest points stay out of 'handled'", wall.footer.handled === expHandled, String(wall.footer.handled));
-check("harbor's full digest still serves its own card", wall.runs["harbor-wellness"]?.digest.length === 5);
-
-// worst case: a RED walled run with a draft still can't cross the wall
-const harborRed: AgentRun = {
-  agentKey: "harbor-wellness",
-  ranAt: DEMO_RUN_AT,
-  output: {
-    headline: "IDFPR deadline inside 7 days.",
-    urgency: "red",
-    digest: [{ point: "License renewal filing deadline — final week.", sourceMessageIds: ["biz-015"] }],
-    actItems: [{ type: "draft_reply", threadId: "biz-015", draftSubject: "Re: license renewal", draftBody: "…", rationale: "deadline", citations: ["biz-015"] }],
-    memoryOps: [],
-  },
-};
-const walled = assembleWall([...govRuns, harborRed], DEMO_NOW, { hour: 9 });
-check("even a RED walled run never enters needsYouNow", walled.needsYouNow.every((i) => !i.agentKeys.includes("harbor-wellness")));
-check("walled drafts stay out of the government footer", walled.footer.waiting === expWaiting, String(walled.footer.waiting));
-
-if (failures) {
-  console.error(`\n${failures} check(s) FAILED`);
+main().catch((err) => {
+  console.error(err);
   process.exit(1);
-}
-console.log("\nAll checks passed.");
+});

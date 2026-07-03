@@ -70,6 +70,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (account) {
         token.provider = account.provider;
         if (account.refresh_token) token.refresh_token = account.refresh_token;
+        // ── connector capture (ING-1) — begin marked block ──────────────────
+        // Live path only (DATABASE_URL set): upsert the refresh token into
+        // pipeline.connector_accounts so the ingest cron can pull mail. status
+        // stays 'pending' — an operator flips it to 'active'. Fire-and-forget:
+        // a DB outage must never block or fail the sign-in. Dynamic import
+        // keeps this module side-effect-free for the keyless demo.
+        if (account.refresh_token && process.env.DATABASE_URL) {
+          const provider =
+            account.provider === "google" ? "gmail"
+            : account.provider === "microsoft-entra-id" ? "outlook"
+            : null;
+          const address = token.email?.toLowerCase();
+          if (provider && address) {
+            const refreshToken = account.refresh_token;
+            import("./db")
+              .then(({ query }) =>
+                query(
+                  `INSERT INTO pipeline.connector_accounts (provider, address, refresh_token)
+                   VALUES ($1, $2, $3)
+                   ON CONFLICT (provider, address) DO UPDATE SET refresh_token = EXCLUDED.refresh_token`,
+                  [provider, address, refreshToken],
+                ),
+              )
+              .catch((err) =>
+                console.error("[auth] connector capture failed:", err instanceof Error ? err.message : err),
+              );
+          }
+        }
+        // ── connector capture (ING-1) — end marked block ────────────────────
       }
       return token;
     },

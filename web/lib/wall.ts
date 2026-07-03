@@ -13,7 +13,9 @@
  * needsYouNow or the footer; their world is their own cabinet card.
  *
  * DEMO: assembles from fixture runs (lib/demo/data/domain-agents.ts) on the
- * demo's single clock (DEMO_NOW). Live: Phase 5 reads canonical.agent_runs.
+ * demo's single clock (DEMO_NOW). Live: each agent's latest canonical.agent_runs
+ * row + canonical.messages metadata (lib/live-inbox), on the real clock. Zero
+ * runs → a calm, honestly empty Wall — never fixtures.
  */
 import { DOMAIN_AGENTS, domainAgentByKey, type Urgency } from "./domain-agents";
 import { URGENCY_RANK, type AgentRun } from "./agent-run";
@@ -110,25 +112,46 @@ export interface WallOpts {
   mayorName?: string;
 }
 
-export function getWall(opts: WallOpts = {}): WallPayload {
+/** Active agents for the SERVER providers (wall + queue, both branches).
+ *  ACTIVE_AGENTS (comma-separated registry keys) overrides the registry flags —
+ *  the pilot runs a narrowed cabinet without touching the demo registry.
+ *  Unset → the flags rule. Never read process.env in client components. */
+export function activeAgentKeys(): Set<string> {
+  const env = (process.env.ACTIVE_AGENTS ?? "").trim();
+  if (!env) return new Set(DOMAIN_AGENTS.filter((a) => a.active).map((a) => a.key));
+  const wanted = new Set(env.split(",").map((k) => k.trim()).filter(Boolean));
+  return new Set(DOMAIN_AGENTS.filter((a) => wanted.has(a.key)).map((a) => a.key));
+}
+
+export async function getWall(opts: WallOpts = {}): Promise<WallPayload> {
+  const active = activeAgentKeys();
   if (!DEMO) {
-    // Phase 5: read each agent's latest row from canonical.agent_runs.
-    throw new Error("Live Wall reads canonical.agent_runs — lands in Phase 5 (/api/cron/agent-runs).");
+    // Live: latest run per active agent; cited source_refs resolve against
+    // canonical.messages (missing ids fall back to id-as-label in assembly).
+    // Dynamic import keeps lib/db out of the demo module graph.
+    const { liveLatestRuns, liveMessageMeta } = await import("./live-inbox");
+    const runs = (await liveLatestRuns()).filter((r) => active.has(r.agentKey));
+    const ids = new Set<string>();
+    for (const r of runs) {
+      r.output.digest.forEach((d) => d.sourceMessageIds.forEach((id) => ids.add(id)));
+      r.output.actItems.forEach((a) => a.citations.forEach((id) => ids.add(id)));
+    }
+    return assembleWall(runs, new Date().toISOString(), opts, await liveMessageMeta([...ids]));
   }
-  const active = new Set(DOMAIN_AGENTS.filter((a) => a.active).map((a) => a.key));
   return assembleWall(DEMO_AGENT_RUNS.filter((r) => active.has(r.agentKey)), DEMO_NOW, opts);
 }
 
 /** Pure assembly over a set of latest runs — exported so the eval harness can
- *  prove the ranking/dedup/walled rules on fabricated runs too. */
-export function assembleWall(runs: AgentRun[], now: string, opts: WallOpts = {}): WallPayload {
+ *  prove the ranking/dedup/walled rules on fabricated runs too. `metaIn` is the
+ *  live path's canonical metadata; absent → the demo fixtures resolve. */
+export function assembleWall(runs: AgentRun[], now: string, opts: WallOpts = {}, metaIn?: Map<string, MessageMeta>): WallPayload {
   // one metadata pass over every cited message
   const allIds = new Set<string>();
   for (const r of runs) {
     r.output.digest.forEach((d) => d.sourceMessageIds.forEach((id) => allIds.add(id)));
     r.output.actItems.forEach((a) => a.citations.forEach((id) => allIds.add(id)));
   }
-  const meta = demoMessageMeta([...allIds]);
+  const meta = metaIn ?? demoMessageMeta([...allIds]);
   const threadOf = (id: string) => meta.get(id)?.threadId ?? id;
 
   // ── candidates → merge by thread overlap → rank ────────────────────────────
@@ -253,13 +276,13 @@ export function assembleWall(runs: AgentRun[], now: string, opts: WallOpts = {})
   const waiting = govRuns.reduce((n, r) => n + r.output.actItems.length, 0);
   const etaMinutes = waiting ? Math.max(1, Math.ceil(waiting * 1.5)) : 0;
 
-  // The anticipation loop (RD 2026-07-02): live, the hourly cron staggers real
-  // runs through the day; in DEMO one government desk "reports in" each hour so
-  // the cabinet varies visit to visit. Deterministic in `hour`, so evals hold
-  // and the demo stays coherent — content dates never move, only freshness.
+  // The anticipation loop (RD 2026-07-02): in DEMO one government desk "reports
+  // in" each hour so the cabinet varies visit to visit — deterministic in
+  // `hour`, so evals hold and the demo stays coherent. Live cards keep their
+  // REAL ran_at freshness (the cron staggers actual runs); no fake "just now".
   const rotHour = opts.hour ?? 8;
   const govCards = cabinet.filter((c) => !c.walled);
-  if (govCards.length) {
+  if (DEMO && govCards.length) {
     const fresh = govCards[((rotHour % govCards.length) + govCards.length) % govCards.length];
     fresh.freshAt = `${now.slice(0, 11)}${String(((rotHour % 24) + 24) % 24).padStart(2, "0")}:00:00.000Z`;
     fresh.lastRunLabel = "updated just now";
@@ -289,8 +312,10 @@ export function assembleWall(runs: AgentRun[], now: string, opts: WallOpts = {})
  *  personal/community holds do. */
 function buildSchedule(now: string): WallSchedule {
   const today = now.slice(0, 10);
-  const upcoming = demoEvents()
-    .events.filter((e) => !(e.source === "gmail" && e.topic === "business"))
+  // Live calendar events land with a calendar connector (post-ingestion, like
+  // /api/events) — until then the card says "No events today" honestly.
+  const upcoming = (DEMO ? demoEvents().events : [])
+    .filter((e) => !(e.source === "gmail" && e.topic === "business"))
     .filter((e) => e.status !== "done" && e.date.slice(0, 10) >= today)
     .sort((a, b) => a.date.localeCompare(b.date));
 

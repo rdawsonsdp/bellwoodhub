@@ -12,11 +12,17 @@
  * Item STATE (pending/revising/approved/skipped) is a client concern in DEMO —
  * lib/queue-state.ts persists it in localStorage so the queue survives
  * refresh/navigation (invariant 7). Live mode extends the approvals tables.
+ *
+ * DEMO: fixture runs ∪ demoDrafts. Live: latest canonical.agent_runs actItems
+ * ∪ app.drafts pending rows (lib/screens listDrafts), metadata from
+ * canonical.messages. Empty DB → { items: [] } — honest, never fixtures.
  */
-import { DOMAIN_AGENTS, type Urgency } from "./domain-agents";
-import { URGENCY_RANK } from "./agent-run";
+import { DOMAIN_AGENTS, type DomainAgent, type Urgency } from "./domain-agents";
+import { URGENCY_RANK, type AgentRun } from "./agent-run";
 import { DEMO, DEMO_NOW, demoDrafts, demoMessageMeta, type MessageMeta } from "./demo";
 import { DEMO_AGENT_RUNS } from "./demo/data/domain-agents";
+import { activeAgentKeys } from "./wall";
+import type { DraftRow } from "./screens";
 
 export interface QueueCitation {
   messageId: string;
@@ -39,19 +45,38 @@ export interface QueueItem {
   date: string; // newest inbound date in the thread (recency rank)
 }
 
-export function getQueue(): { items: QueueItem[]; generatedAt: string } {
+export async function getQueue(): Promise<{ items: QueueItem[]; generatedAt: string }> {
+  const active = activeAgentKeys();
+  const agents = new Map(DOMAIN_AGENTS.filter((a) => active.has(a.key) && !a.walled).map((a) => [a.key, a]));
   if (!DEMO) {
-    throw new Error("Live Queue extends the approvals tables — post-Phase-3 work.");
+    // Dynamic imports keep lib/db out of the demo module graph.
+    const { liveLatestRuns, liveMessageMeta } = await import("./live-inbox");
+    const { listDrafts } = await import("./screens");
+    const runs = (await liveLatestRuns()).filter((r) => agents.has(r.agentKey));
+    const drafts = await listDrafts("pending");
+    return assembleQueue(agents, runs, drafts, await liveMessageMeta(citedIds(runs, drafts)), new Date().toISOString());
   }
-  const agents = new Map(DOMAIN_AGENTS.filter((a) => a.active && !a.walled).map((a) => [a.key, a]));
   const runs = DEMO_AGENT_RUNS.filter((r) => agents.has(r.agentKey));
   const drafts = demoDrafts("pending");
+  return assembleQueue(agents, runs, drafts, demoMessageMeta(citedIds(runs, drafts)), DEMO_NOW);
+}
 
-  // one metadata pass over everything cited or replied-to
+/** Everything cited by the runs' actItems or replied-to by the stored drafts. */
+function citedIds(runs: AgentRun[], drafts: DraftRow[]): string[] {
   const ids = new Set<string>();
   runs.forEach((r) => r.output.actItems.forEach((a) => a.citations.forEach((id) => ids.add(id))));
   drafts.forEach((d) => { if (d.toMessageId) ids.add(d.toMessageId); });
-  const meta = demoMessageMeta([...ids]);
+  return [...ids];
+}
+
+/** Pure assembly — both branches feed it, so the dedup/order rules can't drift. */
+function assembleQueue(
+  agents: Map<string, DomainAgent>,
+  runs: AgentRun[],
+  drafts: DraftRow[],
+  meta: Map<string, MessageMeta>,
+  now: string,
+): { items: QueueItem[]; generatedAt: string } {
   const chipLabel = (id: string) =>
     meta.get(id)?.fromName ?? (id.startsWith("doc-") ? "Document" : id.slice(0, 12));
   const newestInbound = (msgIds: string[]): MessageMeta | undefined => {
@@ -79,7 +104,7 @@ export function getQueue(): { items: QueueItem[]; generatedAt: string } {
         fullBody: a.draftBody,
         rationale: a.rationale,
         citations: a.citations.map((id) => ({ messageId: id, label: chipLabel(id) })),
-        date: nb?.date ?? DEMO_NOW,
+        date: nb?.date ?? now,
       });
     }
   }
@@ -120,5 +145,5 @@ export function getQueue(): { items: QueueItem[]; generatedAt: string } {
   const items = [...byThread.values()].sort(
     (a, b) => URGENCY_RANK[a.urgency] - URGENCY_RANK[b.urgency] || b.date.localeCompare(a.date),
   );
-  return { items, generatedAt: DEMO_NOW };
+  return { items, generatedAt: now };
 }

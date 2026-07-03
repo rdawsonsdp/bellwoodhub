@@ -11,6 +11,11 @@
  * Autonomy ceiling is DRAFT — no domain agent ever sends anything. The gate
  * is enforced in lib/agent-run.ts (the runner rejects actItems from any agent
  * whose autonomy isn't "draft"), not by prompt discipline.
+ *
+ * Pilot override: the SERVER providers (lib/wall.ts activeAgentKeys, used by
+ * wall + queue) honor an ACTIVE_AGENTS env var — comma-separated registry keys
+ * that, when set, replace the `active` flags below. This module stays
+ * client-safe: never read process.env here.
  */
 import type { StreamKey } from "./types";
 

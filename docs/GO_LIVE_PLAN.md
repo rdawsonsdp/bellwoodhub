@@ -47,7 +47,7 @@ Executes ING-1→4 against RD's mailbox, then makes Approve mean something.
 | # | Task | Notes |
 |---|---|---|
 | L1.1 | OAuth app registration for RD's provider (Entra app or Google Cloud client) + Auth.js wiring (L0.1) captures the refresh token | **RD input needed: is rdawson@strategicdataproducts.com M365 or Google Workspace?** That decides which connector goes first; the other follows the same contract. |
-| L1.2 | New Supabase project `bellwood-pilot`; apply migrations (schema + 002/003/004) | Session-pooler (IPv4) connection string, per the house gotcha. |
+| L1.2 | New Supabase project `bellwood-mayor`; apply migrations (schema + 002/003/004) | Session-pooler (IPv4) connection string, per the house gotcha. |
 | L1.3 | Backfill (recommend 12 months) → RAW → Envelope (`clean_text`) → canonical → Voyage embeddings; reconciliation counts at each hop | ING-2/3/4 on real data. Python pipeline for the one-shot; TS route for incremental. |
 | L1.4 | Incremental sync cron (`/api/cron/ingest-email`, 5-min routine per DEC-10) with delta tokens / historyId | The Sources screen's connector health becomes real here. |
 | L1.5 | `RETRIEVAL_BACKEND=canonical` on the pilot; Ask/Wall/Queue over real mail | deriveDomains will route most SDP mail → constituent (its domain rules are Bellwood-specific) — acceptable for the pilot; per-tenant routing config is a fast follow. |
@@ -126,7 +126,7 @@ numbers, not vibes.
 1. Answer: **M365 or Google Workspace** for rdawson@strategicdataproducts.com?
 2. Create the OAuth app (Entra ID or Google Cloud) — I'll spec the exact
    scopes/redirects when (1) is answered.
-3. Create the `bellwood-pilot` Supabase project (or hand me an org invite).
+3. Create the `bellwood-mayor` Supabase project (or hand me an org invite).
 4. Fresh API keys at env-entry time (rotation moment).
 5. Dashboard toggles: Deployment Protection; Log Alerts.
 

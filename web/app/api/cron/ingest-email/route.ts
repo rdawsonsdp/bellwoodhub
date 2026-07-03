@@ -6,6 +6,7 @@ import { logAudit } from "@/lib/audit";
 import { graphConnector } from "@/lib/connectors/graph";
 import { gmailConnector } from "@/lib/connectors/gmail";
 import { getRefreshToken } from "@/lib/connectors/token-store";
+import { cleanEmailText } from "@/lib/clean-text";
 import type { PulledMessage } from "@/lib/connectors/types";
 
 export const runtime = "nodejs";
@@ -79,7 +80,7 @@ async function landMessage(m: PulledMessage, mailboxId: string): Promise<"landed
 
   // Minimal normalize: bodyText stands in for clean_text (the quote/sig
   // stripper is Python-only — clean_text.py); stage-5 parity replays from RAW.
-  const cleanBody = (m.bodyText ?? "").trim();
+  const cleanBody = cleanEmailText(m.bodyText ?? "");
   const provenance = JSON.stringify({
     _mailbox: mailboxId, // gov = public record, biz = walled (DEC-6)
     _provider: m.provider,

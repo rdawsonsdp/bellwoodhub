@@ -9,6 +9,7 @@
  * graph — and the keyless deployed demo — is untouched.
  */
 import { query } from "./db";
+import { snippetText } from "./clean-text";
 import { deriveStream } from "./topics";
 import { emailCategory, type EmailCat, type MessageMeta } from "./demo";
 import { AgentRunOutputZ, type AgentRun } from "./agent-run";
@@ -39,14 +40,14 @@ export async function liveInbox(limit = 80, mailbox = "gov"): Promise<{
     subject: string | null; snippet: string; sent_at: Date; topic: string | null;
   }>(
     `SELECT m.source_ref, m.from_name, m.from_email, m.subject,
-            LEFT(m.clean_body, 220) AS snippet, m.sent_at,
+            LEFT(m.clean_body, 600) AS snippet, m.sent_at,
             (SELECT t.topic FROM canonical.message_topics t
               WHERE t.message_id = m.message_id ORDER BY t.confidence DESC LIMIT 1) AS topic
        FROM canonical.messages m
       WHERE m.tenant_id = $1 AND m.direction = 'inbound'
       ORDER BY m.sent_at DESC LIMIT $2`,
     [TENANT, limit],
-  );
+  ); // 600 chars in: newsletters open with link blocks — snippetText needs headroom to find prose
   const [{ n: total }] = await query<{ n: number }>(
     `SELECT count(*)::int AS n FROM canonical.messages
       WHERE tenant_id = $1 AND direction = 'inbound'`,
@@ -55,7 +56,8 @@ export async function liveInbox(limit = 80, mailbox = "gov"): Promise<{
   const emails: LiveInboxEmail[] = rows.map((r) => {
     const stream = deriveStream(r.topic, r.from_email);
     return {
-      messageId: r.source_ref, fromName: r.from_name, subject: r.subject, snippet: r.snippet,
+      messageId: r.source_ref, fromName: r.from_name, subject: r.subject,
+      snippet: snippetText(r.snippet), // de-noise: invisible chars, URL soup, link-only lines
       date: r.sent_at.toISOString(), stream, topic: r.topic,
       cat: emailCategory(r.topic, stream, r.subject), mailbox: "gov",
     };

@@ -4,6 +4,7 @@ import { streamCase } from "./sql";
 import { autoFilters, isKnownPerson } from "./entities";
 import { normalizeAddress, normalizePerson } from "./normalize";
 import { deriveStream } from "./topics";
+import { cleanEmailText } from "./clean-text";
 import { snippet } from "./utils";
 import type {
   AppliedFilters,
@@ -623,6 +624,38 @@ export async function listEmails(
 
 // ── full email detail (source drill-in) ─────────────────────────────────────
 export async function getEmailByMessageId(mid: string): Promise<EmailDetail | null> {
+  // Canonical first — real ingested mail lives there (the pilot's poc schema
+  // is deliberately empty); the poc lookup below keeps the 30k demo corpus
+  // resolving on environments that still carry it.
+  const canon = await query<{
+    subject: string | null; from_name: string | null; from_email: string | null;
+    to_email: string | null; cc: string | null; direction: Direction;
+    topic: string | null; sent_at: Date; clean_body: string | null;
+  }>(
+    `SELECT m.subject, m.from_name, m.from_email, m.to_email, m.cc, m.direction,
+            (SELECT t.topic FROM canonical.message_topics t
+              WHERE t.message_id = m.message_id ORDER BY t.confidence DESC LIMIT 1) AS topic,
+            m.sent_at, m.clean_body
+       FROM canonical.messages m WHERE m.source_ref = $1 LIMIT 1`,
+    [mid],
+  );
+  if (canon.length) {
+    const c = canon[0];
+    return {
+      subject: c.subject,
+      fromName: c.from_name,
+      fromEmail: c.from_email,
+      toEmail: c.to_email,
+      cc: c.cc,
+      direction: c.direction,
+      topic: c.topic,
+      stream: deriveStream(c.topic, c.from_email),
+      date: c.sent_at.toISOString(),
+      bodyClean: cleanEmailText(c.clean_body ?? ""),
+      bodyRaw: c.clean_body ?? "",
+    };
+  }
+
   const rows = await query<{
     subject: string | null;
     from_name: string | null;

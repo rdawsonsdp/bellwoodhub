@@ -16,6 +16,50 @@ import UsagePanel from "./UsagePanel";
 // them (and the count they feed) until agents actually log runs.
 const LIVE_ACTIVITY_NOTE = "Activity appears here once this agent runs live.";
 
+/** Live facts behind an email agent's card — from /api/agents/config, derived
+ *  from connector state (FEAT-20: the card must describe the REAL account). */
+interface EmailFacts {
+  address: string;
+  provider: string;
+  walled: boolean;
+  status: string;
+  midWalk: boolean;
+  messages: number;
+  sendEnabled: boolean;
+}
+interface LiveAgentData {
+  email: Record<string, EmailFacts>;
+  activity: Record<string, string[]>;
+}
+
+/** On live builds the email agents' registry copy is demo-persona fiction —
+ *  rebuild role/job/plain from the connected account's actual facts. */
+function liveEmailOverlay(a: CosAgent, f: EmailFacts): CosAgent {
+  const providerName = f.provider === "gmail" ? "Gmail" : "Outlook";
+  const lane = f.walled
+    ? "WALLED: private — kept out of the public record and default search."
+    : "Connected as the public-record lane on this pilot.";
+  const send = f.sendEnabled
+    ? "Outgoing mail: it transmits only replies a human has approved — behind a master switch and a recipient allowlist."
+    : "Read-only: it cannot send.";
+  return {
+    ...a,
+    role: `Mirrors ${f.address} (${providerName}) into the Hub.`,
+    job: `Pulls ${f.address} via the ${providerName} API on a rolling sync and mirrors every message into the record — ${f.messages.toLocaleString()} so far${f.midWalk ? ", initial mailbox walk still in progress" : ""}. ${lane} ${send}`,
+    produces: f.walled
+      ? "The walled private inbox in the Hub."
+      : "Your inbox in the Hub — organized, searchable, with a live status card on the Wall.",
+    plain: {
+      reads: `Email in ${f.address}${f.provider === "gmail" ? ", plus its calendar (read-only)" : ""}. Nothing else.`,
+      produces: "Your mail, mirrored into the Hub and kept in sync — the raw material every other agent works from.",
+      never: f.sendEnabled
+        ? "It never writes or sends anything by itself. The only mail that ever leaves is a reply you personally approved — and a master switch plus a recipient list stand between your approval and the send. It never deletes or edits your mail."
+        : "It cannot send, delete, or change any email — the connection is read-only.",
+      decides: "You. It watches and reports; anything that touches the outside world needs your approval.",
+    },
+  };
+}
+
 const tone: Record<string, string> = { R1: C.blue, R2: C.orange, R3: C.purpleText, R4: C.green };
 
 // Agents read as Active (in use) or Inactive (not yet in use) — each its own colour.
@@ -89,13 +133,21 @@ export default function AgentsPage() {
   // Enable switches (FEAT-19): absent key = enabled; live builds load the
   // exceptions from app.agent_configs and flips persist + audit there.
   const [configs, setConfigs] = useState<Record<string, boolean>>({});
+  // FEAT-20: live facts + real activity ride the same call.
+  const [live, setLive] = useState<LiveAgentData>({ email: {}, activity: {} });
   useEffect(() => {
     if (!IS_LIVE_BUILD) return;
     fetch("/api/agents/config")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: { configs?: Record<string, boolean> }) => setConfigs(d.configs ?? {}))
+      .then((d: { configs?: Record<string, boolean>; email?: Record<string, EmailFacts>; activity?: Record<string, string[]> }) => {
+        setConfigs(d.configs ?? {});
+        setLive({ email: d.email ?? {}, activity: d.activity ?? {} });
+      })
       .catch(() => { /* switches default to on */ });
   }, []);
+  // The card describes reality: on live, email agents wear their connected
+  // account's facts instead of the demo persona's.
+  const effective = (a: CosAgent) => (IS_LIVE_BUILD && live.email[a.key] ? liveEmailOverlay(a, live.email[a.key]) : a);
   const enabledOf = (key: string) => configs[key] !== false;
   const flip = (key: string) => {
     const next = !enabledOf(key);
@@ -106,7 +158,7 @@ export default function AgentsPage() {
       body: JSON.stringify({ agentKey: key, enabled: next }),
     }).catch(() => setConfigs((c) => ({ ...c, [key]: !next }))); // roll back on failure
   };
-  if (sel) return <AgentDetail a={sel} onBack={() => setSel(null)} />;
+  if (sel) return <AgentDetail a={effective(sel)} activity={live.activity[sel.key]} onBack={() => setSel(null)} />;
 
   const active = COS_AGENTS.filter((a) => a.status !== "planned").length;
   const actions = COS_AGENTS.reduce((n, a) => n + a.recent.length, 0);
@@ -128,7 +180,7 @@ export default function AgentsPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(330px,1fr))", gap: 14, marginTop: 16 }}>
         {COS_AGENTS.map((a) => (
-          <AgentCard key={a.key} a={a} running={running} enabled={enabledOf(a.key)}
+          <AgentCard key={a.key} a={effective(a)} activity={live.activity[a.key]} running={running} enabled={enabledOf(a.key)}
             onFlip={IS_LIVE_BUILD ? () => flip(a.key) : undefined} onClick={() => setSel(a)} />
         ))}
       </div>
@@ -147,7 +199,7 @@ function Metric({ n, label }: { n: string; label: string }) {
   );
 }
 
-function AgentCard({ a, running, enabled = true, onFlip, onClick }: { a: CosAgent; running?: boolean; enabled?: boolean; onFlip?: () => void; onClick: () => void }) {
+function AgentCard({ a, activity, running, enabled = true, onFlip, onClick }: { a: CosAgent; activity?: string[]; running?: boolean; enabled?: boolean; onFlip?: () => void; onClick: () => void }) {
   const showRunning = running && isActive(a) && enabled;
   return (
     <button onClick={onClick} style={{ ...card, padding: 17, textAlign: "left", color: C.text, cursor: "pointer", display: "block", width: "100%", opacity: !isActive(a) ? 0.62 : enabled ? 1 : 0.45 }}>
@@ -170,7 +222,11 @@ function AgentCard({ a, running, enabled = true, onFlip, onClick }: { a: CosAgen
       <div style={{ borderTop: "1px solid var(--c-cardbd)", paddingTop: 10 }}>
         <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, marginBottom: 6 }}>Recent activity</div>
         {IS_LIVE_BUILD ? (
-          <div style={{ fontSize: 12.5, color: C.dim }}>{LIVE_ACTIVITY_NOTE}</div>
+          activity?.length ? (
+            <div style={{ fontSize: 12.5, color: C.text2, lineHeight: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>· {activity[0]}</div>
+          ) : (
+            <div style={{ fontSize: 12.5, color: C.dim }}>{LIVE_ACTIVITY_NOTE}</div>
+          )
         ) : a.recent.length ? (
           <div style={{ fontSize: 12.5, color: C.text2, lineHeight: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>· {a.recent[0]}</div>
         ) : (
@@ -182,7 +238,7 @@ function AgentCard({ a, running, enabled = true, onFlip, onClick }: { a: CosAgen
   );
 }
 
-function AgentDetail({ a, onBack }: { a: CosAgent; onBack: () => void }) {
+function AgentDetail({ a, activity, onBack }: { a: CosAgent; activity?: string[]; onBack: () => void }) {
   return (
     <div className="fu" style={{ padding: "24px 20px 56px", maxWidth: 760, margin: "0 auto" }}>
       <button onClick={onBack} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(var(--ink),.05)", border: "1px solid var(--c-cardbd)", borderRadius: 99, padding: "7px 14px", cursor: "pointer", color: C.text2, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans, marginBottom: 18 }}>← All agents</button>
@@ -192,7 +248,17 @@ function AgentDetail({ a, onBack }: { a: CosAgent; onBack: () => void }) {
       </div>
       <div style={{ fontSize: 14, color: C.text2, marginTop: 7, lineHeight: 1.55 }}>{a.role}</div>
 
-      <div style={{ ...card, padding: 17, marginTop: 18, display: "grid", gap: 11 }}>
+      {/* FEAT-20 — the four questions, in household English, before anything
+          technical. This is the card that reduces the fear of agents. */}
+      <div style={{ ...card, padding: "6px 17px", marginTop: 18, borderColor: "rgba(231,181,60,.35)" }}>
+        <div style={{ ...eyebrow(C.gold), fontSize: 10, margin: "12px 0 2px" }}>In plain English</div>
+        <PlainRow q="What does it read?" a={a.plain.reads} />
+        <PlainRow q="What does it produce?" a={a.plain.produces} />
+        <PlainRow q="What can it never do?" a={a.plain.never} />
+        <PlainRow q="Who decides?" a={a.plain.decides} last />
+      </div>
+
+      <div style={{ ...card, padding: 17, marginTop: 14, display: "grid", gap: 11 }}>
         <Field k="What it does" v={a.job} />
         <Field k="Autonomy" v={<span><span style={{ ...pill(tone[a.autonomy], "rgba(var(--ink),.07)"), fontWeight: 700, marginRight: 7 }}>{a.autonomy}</span>{AUTONOMY_LABEL[a.autonomy]}</span>} />
         <Field k="Serves" v={a.powers.join(" · ")} />
@@ -202,7 +268,18 @@ function AgentDetail({ a, onBack }: { a: CosAgent; onBack: () => void }) {
 
       <div style={{ ...eyebrow(C.dim), marginTop: 22, marginBottom: 11 }}>Recent activity</div>
       {IS_LIVE_BUILD ? (
-        <div style={{ ...card, padding: 24, textAlign: "center", color: C.dim, fontSize: 13 }}>{LIVE_ACTIVITY_NOTE}</div>
+        activity?.length ? (
+          <div style={{ ...card, overflow: "hidden" }}>
+            {activity.map((line, i) => (
+              <div key={i} style={{ display: "flex", gap: 12, padding: "13px 16px", borderBottom: i < activity.length - 1 ? "1px solid var(--c-cardbd)" : undefined, alignItems: "flex-start" }}>
+                <span style={{ width: 7, height: 7, borderRadius: 99, background: tone[a.autonomy], flexShrink: 0, marginTop: 6 }} />
+                <div style={{ flex: 1, minWidth: 0, fontSize: 13.5, color: C.text, lineHeight: 1.5 }}>{line}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ ...card, padding: 24, textAlign: "center", color: C.dim, fontSize: 13 }}>{LIVE_ACTIVITY_NOTE}</div>
+        )
       ) : a.recent.length ? (
         <div style={{ ...card, overflow: "hidden" }}>
           {a.recent.map((r, i) => {
@@ -221,6 +298,16 @@ function AgentDetail({ a, onBack }: { a: CosAgent; onBack: () => void }) {
       ) : (
         <div style={{ ...card, padding: 24, textAlign: "center", color: C.dim, fontSize: 13 }}>No activity yet — this agent is planned. Configured in Claude Code when ready.</div>
       )}
+    </div>
+  );
+}
+
+/** One question-and-answer row of the plain-English card (FEAT-20). */
+function PlainRow({ q, a, last }: { q: string; a: string; last?: boolean }) {
+  return (
+    <div style={{ padding: "11px 0", borderBottom: last ? 0 : "1px solid var(--c-cardbd)" }}>
+      <div style={{ fontFamily: FONT.serif, fontSize: 14.5, fontWeight: 600, color: C.text }}>{q}</div>
+      <div style={{ fontSize: 13.5, color: C.text2, lineHeight: 1.6, marginTop: 4 }}>{a}</div>
     </div>
   );
 }

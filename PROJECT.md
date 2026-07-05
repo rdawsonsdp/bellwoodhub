@@ -88,7 +88,7 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 | L3 | Earned intelligence: live memory verified, fix-it→style patterns, 50-question evidence engine, retire 31MB bundle on live | ⚪ pending | |
 New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor's real mailbox, not the pilot) · `LGL-1` FOIA-discoverability/retention of the hub itself — counsel question.
 
-| FEAT-20 | **Plain-language agent transparency** (RD 2026-07-03, close of day): every agent documented in household English, user-facing — "this reduces the fear of agents." Each agent card/detail answers four questions a non-technical user has: what it READS, what it PRODUCES, what it can NEVER do, and WHO DECIDES (always a human). Written for the Mayor and village staff, not engineers; the technical spec (docs/agents/*.md) stays separate. Applies to Default and future Custom agents alike — the Agent Factory interview should GENERATE this plain description as part of creating an agent. | ⚪ logged | Pairs with FEAT-19 (the card is the natural home) |
+| FEAT-20 | **Plain-language agent transparency** (RD 2026-07-03, close of day): every agent documented in household English, user-facing — "this reduces the fear of agents." Each agent card/detail answers four questions a non-technical user has: what it READS, what it PRODUCES, what it can NEVER do, and WHO DECIDES (always a human). Written for the Mayor and village staff, not engineers; the technical spec (docs/agents/*.md) stays separate. Applies to Default and future Custom agents alike — the Agent Factory interview should GENERATE this plain description as part of creating an agent. | 🔵 shipped (v1, 2026-07-05) | "In plain English" 4-question card on every agent detail (all 15 roster agents); on live, email agents describe their REAL account/lane/send-cage from connector facts + real recent activity (syncs, sends, drafts, runs). Remaining: Agent Factory generates it (RB-6); move copy to `app.agent_configs` (FEAT-19) |
 | FEAT-19 | **Agent config lives in the app, not in code** (RD 2026-07-03, via remote): each agent's configuration — charter, rules, autonomy, context — shown ON its agent card, stored in the database, editable in-app by privileged users. Today: config = code registry (`domain-agents.ts`) + versioned specs (`docs/agents/*.md`); runs/memory are already DB. Plan: `app.agent_configs` seeded from the code registry (those become the "Default" agents), runner + cards read DB-first with code fallback, edit UI on agent detail (goals/urgency rules/autonomy ceiling), every edit audited. Editing privileges = the pre-multi-user security conversation (SEC-2). | ⚪ logged | The Agent Factory (RB-6) then WRITES rows here — create + edit converge on one store |
 | FEAT-18 | **Auto sign-out** (RD 2026-07-03, safety): idle-timeout log-out, toggleable on/off in the Admin panel (device stays a risk surface — the Mayor's phone left unlocked must shed its session). Implement as session max-age + client idle timer; admin toggle persists per app config. | ⚪ logged | Pairs with FEAT-19 session-security follow-ups |
 | FEAT-17 | **Related background on emails** — agent-discovered relatedness (RD requirement 2026-07-03): under any email (urgent first), show related/background messages the agent judged similar — "Mary Joseph asks about water charges → her prior threads, the meter issue on her street, neighbors' same complaint." Non-deterministic by design. Staged: (1) related-by-record (thread/sender/entities/topic — zero AI calls), (2) + semantic neighbors (Voyage embeddings, behind the week-2 AI-exposure decision), (3) + the agent judge pass during mailbox-agent runs on RED/needs-you items — ranked background with a cited WHY per item, stored on the run so cards render instantly. Wall rule applies: relatedness NEVER crosses the gov/private mailbox boundary (DEC-6). | ⚪ logged | Surfaces: ThreadView "Background" block first, then Queue/urgent cards |
@@ -248,6 +248,24 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 ---
 
 ## Changelog
+
+- **2026-07-05 evening (FEAT-20 shipped — plain-language agent transparency)** — RD caught the Gmail
+  Email Agent detail page describing the demo persona ("merrill.bellwood@gmail.com", "walled", "never
+  sends") on the live pilot — a transparency card that lies breeds MORE agent fear (RSK-6), so FEAT-20
+  went from logged to shipped: **(1)** every roster agent (15) now carries a `plain` block in
+  `cos-agents.ts` — the four questions in household English (what it READS · what it PRODUCES · what it
+  can NEVER do · WHO DECIDES) — rendered as the gold-trimmed **"In plain English" card first** on the
+  agent detail, before anything technical; **(2)** on live builds the email agents' role/job/plain are
+  **rebuilt from connector facts** (`/api/agents/config` now returns account address, lane, mid-walk,
+  message count, send-cage state) — no persona fiction can render on the pilot; **(3)** "Recent
+  activity" is now REAL on live: connector sync state, human-approved sends, drafting outcomes
+  (waiting/approved/discarded), and each agent's latest run headline, assembled server-side from
+  `pipeline.connector_accounts` / `app.drafts` / `canonical.agent_runs`; **(4)** stale honesty fixes:
+  R3 label "never sends" → "sends only with your approval" (true since the send cage). Also this
+  session: **OPENAI_API_KEY landed in Preview** (RD supplied; validated 200) — pilot Ask synthesizes
+  again; **VOYAGE_API_KEY staged** in Preview + `.env.local` (validated 200) for ING-4. Remaining
+  FEAT-20 tail: the Agent Factory interview must GENERATE the plain block (RB-6); FEAT-19 moves the
+  copy to `app.agent_configs`. tsc + build + 5 eval suites green.
 
 - **2026-07-05 (agent activity one-stop · pilot Ask root-caused)** — RD (from the pilot, tapping the Gmail
   Email Agent box): "show emails sent the past 3 days, grouped by days — this is where activities of the

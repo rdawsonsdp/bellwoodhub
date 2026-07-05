@@ -65,6 +65,18 @@ export interface WallActItem {
   rationale: string;
   citations: WallCitation[];
 }
+/** An email the system actually transmitted (app.drafts.sent_at) — the
+ *  agent's outbound record, shown on its digest sheet grouped by day. */
+export interface SentEmail {
+  timeLabel: string; // "3:51 PM" (Mayor-local)
+  to: string;
+  subject: string;
+}
+export interface SentDay {
+  date: string; // ISO day, Mayor-local
+  label: string; // "Today" / "Yesterday" / "Friday, Jul 3"
+  items: SentEmail[];
+}
 /** One agent's full latest run, enriched for the digest sheet — carried in the
  *  same payload so the sheet can never disagree with the card that opened it. */
 export interface WallRun {
@@ -74,6 +86,9 @@ export interface WallRun {
   headline: string;
   digest: WallDigestPoint[];
   actItems: WallActItem[];
+  /** Present on agents that can transmit (the Gmail seat): what actually went
+   *  out in the past 3 days. Empty array = honest "nothing sent". */
+  sent?: SentDay[];
 }
 
 /** The Schedule card's calendar face — the "Coming up" idiom: today (even if
@@ -176,6 +191,7 @@ async function addConnectorCards(wall: WallPayload): Promise<void> {
             (SELECT count(*) FROM app.calendar_events) AS calendar`,
   );
   const t = totals[0];
+  const sentDays = await recentSentDays();
   for (const a of accounts) {
     const agentKey = a.provider === "gmail" ? "email-gmail" : "email-outlook";
     if (off.has(agentKey)) continue;
@@ -206,11 +222,53 @@ async function addConnectorCards(wall: WallPayload): Promise<void> {
         ...(a.status === "error" ? [{ point: "Connector is in an error state — the Sources screen has the message; a fresh sign-in usually clears it.", sources: [] }] : []),
       ],
       actItems: [],
+      // sends are wired for Gmail only (approvals route) — the outbound
+      // record belongs to the seat that can transmit
+      ...(a.provider === "gmail" ? { sent: sentDays } : {}),
     };
   }
   // registry cards are code-defined too — mark them Default so the
   // Default-vs-Custom vocabulary is ready for the Agent Factory
   for (const c of wall.cabinet) if (!c.origin) c.origin = "default";
+}
+
+/** What actually went out (app.drafts.sent_at) in the past 3 days, grouped by
+ *  Mayor-local day, newest first. A failed lookup yields [] — the sheet then
+ *  states "nothing sent" rather than the Wall failing. */
+const MAYOR_TZ = "America/Chicago";
+async function recentSentDays(): Promise<SentDay[]> {
+  const { query } = await import("./db");
+  type Row = { recipients: string | null; subject: string | null; sent_at: string };
+  const rows = await query<Row>(
+    `SELECT recipients, subject, sent_at::text AS sent_at
+       FROM app.drafts
+      WHERE sent_at IS NOT NULL AND sent_at > now() - interval '3 days'
+      ORDER BY sent_at DESC LIMIT 100`,
+  ).catch(() => [] as Row[]);
+  const dayKey = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: MAYOR_TZ });
+  const now = new Date();
+  const todayKey = dayKey(now);
+  const yesterdayKey = dayKey(new Date(now.getTime() - 86_400_000));
+  const days: SentDay[] = [];
+  for (const r of rows) {
+    const at = new Date(r.sent_at);
+    const key = dayKey(at);
+    let day = days.find((d) => d.date === key);
+    if (!day) {
+      const label =
+        key === todayKey ? "Today"
+        : key === yesterdayKey ? "Yesterday"
+        : at.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: MAYOR_TZ });
+      day = { date: key, label, items: [] };
+      days.push(day);
+    }
+    day.items.push({
+      timeLabel: at.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: MAYOR_TZ }),
+      to: r.recipients ?? "—",
+      subject: r.subject ?? "(no subject)",
+    });
+  }
+  return days;
 }
 
 /** Pure assembly over a set of latest runs — exported so the eval harness can

@@ -9,7 +9,7 @@
  * disagree with the card that opened it. Citations link to the existing email
  * view until Phase 4 rebuilds the in-app thread view.
  */
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { C, FONT, card, cite, eyebrow } from "@/lib/cos-design";
 import type { WallRun, CabinetCard, WallSchedule } from "@/lib/wall";
 import { AgentAvatar } from "./AgentBadge";
@@ -24,12 +24,21 @@ interface Props {
   onClose: () => void;
   onOpenMessage: (mid: string) => void;
   onGoApprovals: () => void;
+  /** Re-pull this agent's activity (email seats: manual sync first) — the
+   *  sheet re-renders from the reloaded wall payload. */
+  onRefresh?: () => Promise<void>;
 }
 
 const URGENCY_C: Record<string, string> = { red: C.red, yellow: C.orange, clear: C.green };
 
-export default function AgentDigestSheet({ run, card: c, schedule, variant, onClose, onOpenMessage, onGoApprovals }: Props) {
+export default function AgentDigestSheet({ run, card: c, schedule, variant, onClose, onOpenMessage, onGoApprovals, onRefresh }: Props) {
   const mobile = variant === "mobile";
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = async () => {
+    if (refreshing || !onRefresh) return;
+    setRefreshing(true);
+    try { await onRefresh(); } finally { setRefreshing(false); }
+  };
   const panel: CSSProperties = mobile
     ? { position: "absolute", left: 0, right: 0, bottom: 0, maxHeight: "86dvh", borderRadius: "18px 18px 0 0", borderTop: `1px solid ${C.line}` }
     : { position: "absolute", top: 0, right: 0, bottom: 0, width: 480, maxWidth: "92vw", borderLeft: `1px solid ${C.line}` };
@@ -44,7 +53,12 @@ export default function AgentDigestSheet({ run, card: c, schedule, variant, onCl
           <span style={{ width: 9, height: 9, borderRadius: 99, background: URGENCY_C[run.urgency], flexShrink: 0 }} />
           {c.walled && <span style={privatePill}>Private</span>}
           <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{c.lastRunLabel}</span>
-          <button onClick={onClose} aria-label="Close" style={{ background: "rgba(var(--ink),.06)", border: `1px solid ${C.line}`, borderRadius: 99, width: 30, height: 30, color: C.text2, cursor: "pointer", fontSize: 14, lineHeight: 1 }}>✕</button>
+          {onRefresh && (
+            <button onClick={refresh} aria-label="Refresh this agent's activity" title="Refresh activity" style={{ ...roundBtn, opacity: refreshing ? 0.6 : 1 }}>
+              <span style={{ display: "inline-block", animation: refreshing ? "cosSpin 1s linear infinite" : undefined }}>↻</span>
+            </button>
+          )}
+          <button onClick={onClose} aria-label="Close" style={roundBtn}>✕</button>
         </div>
 
         <div style={{ fontFamily: FONT.serif, fontSize: 19, fontWeight: 600, lineHeight: 1.25, margin: "14px 0 4px" }}>{run.headline}</div>
@@ -77,6 +91,42 @@ export default function AgentDigestSheet({ run, card: c, schedule, variant, onCl
             </div>
           ))}
         </div>
+
+        {/* sent — what actually went out, grouped by day (the one-stop
+            activity record for seats that can transmit) */}
+        {run.sent && (
+          <div style={{ marginTop: 20 }}>
+            <div style={{ ...eyebrow(C.dim), marginBottom: 10 }}>Sent — past 3 days</div>
+            {run.sent.length === 0 ? (
+              <div style={{ ...card, padding: 14, textAlign: "center", color: C.dim, fontSize: 12.5 }}>Nothing sent in the past 3 days.</div>
+            ) : (
+              <div style={{ display: "grid", gap: 14 }}>
+                {run.sent.map((day) => (
+                  <div key={day.date}>
+                    <div style={{ fontFamily: FONT.serif, fontSize: 14.5, fontWeight: 600, color: C.text2, marginBottom: 6 }}>
+                      {day.label}
+                      <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim, marginLeft: 8 }}>{day.items.length} sent</span>
+                    </div>
+                    <div style={{ ...card, overflow: "hidden" }}>
+                      {day.items.map((s, i) => (
+                        <div key={i} style={{ padding: "10px 13px", borderTop: i ? `1px solid ${C.line2}` : undefined, display: "flex", gap: 10, alignItems: "baseline" }}>
+                          <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim, width: 54, flexShrink: 0 }}>{s.timeLabel}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.to}</div>
+                            <div style={{ fontSize: 12, color: C.text3, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.subject}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ marginTop: 8, textAlign: "center", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>
+              every send human-approved · full record in the audit ledger
+            </div>
+          </div>
+        )}
 
         {/* actItems — the human gate */}
         {run.actItems.length > 0 && (
@@ -111,6 +161,11 @@ export default function AgentDigestSheet({ run, card: c, schedule, variant, onCl
     </div>
   );
 }
+
+const roundBtn: CSSProperties = {
+  background: "rgba(var(--ink),.06)", border: `1px solid ${C.line}`, borderRadius: 99,
+  width: 30, height: 30, color: C.text2, cursor: "pointer", fontSize: 14, lineHeight: 1, flexShrink: 0,
+};
 
 const privatePill: CSSProperties = {
   padding: "2px 8px", borderRadius: 99, fontSize: 9.5, fontWeight: 800, letterSpacing: ".08em",

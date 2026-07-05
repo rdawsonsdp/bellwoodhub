@@ -8,7 +8,7 @@
 > This file is the durable copy that survives across sessions.
 
 **📡 Shareable status page (live):** https://project-status-ten.vercel.app — public, no login. Source: `project-status/index.html`. Redeploy: `vercel deploy --prod --yes --cwd project-status`.
-**Last updated:** 2026-07-03 (evening) — **PRODUCTION LOCKDOWN executed** (RD: Tuesday = production data, Google mail + calendar). Gaps register closed or staged: CA pinned, tokens→Vault, audit trigger-guarded, strict live mode (no fixtures in the pilot, ever), gcal connector, access telemetry (ip/device/geo on every action), **Sentinel monitoring agent** (hourly baseline-deviation watch), SECURITY_POLICY + RETENTION_POLICY docs. 10 migrations applied to `bellwood-mayor`. URLs: demo=**bellwood-hub.vercel.app** (public), pilot=**bellwood-hub-pilot.vercel.app** (SSO). Remaining unblocks: RD's OAuth apps + DATABASE_URL password (docs/OAUTH_SETUP.md)
+**Last updated:** 2026-07-05 — **Agent activity, one stop** (RD directive): the email agent's digest sheet now shows **"Sent — past 3 days" grouped by day** (what actually went out, from `app.drafts.sent_at`) + an **↻ refresh** on the box (email seats fire the same manual sync as the Sources button). Root-caused the pilot **Ask failure**: the `web` Vercel project's **Preview env (= the pilot) has no `OPENAI_API_KEY`** — it's Sensitive (write-only) so RD must supply it (dashboard → Preview, or paste into gitignored `web/.env.local` for Claude to sync up). The "Root Directory `web` does not exist" build error = redeploying pre-GitHub CLI deployments; harmless, settings correct. URLs: demo=**bellwood-hub.vercel.app** (public, Production env), pilot=**bellwood-hub-pilot.vercel.app** (SSO, Preview env, auto-deploys on push to `live-pilot`)
 **Project:** AI Chief of Staff platform, built on the Bellwood municipal email RAG POC
 **Authoritative spec:** `cto-architecture-brief.md` (R. Dawson, SDP Chicago, 2026-06-24) — three-plane
 design (Ingestion → Canonical → Capability), 6 architectural decision records (AD-1…AD-6), 5-phase plan.
@@ -248,6 +248,21 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 ---
 
 ## Changelog
+
+- **2026-07-05 (agent activity one-stop · pilot Ask root-caused)** — RD (from the pilot, tapping the Gmail
+  Email Agent box): "show emails sent the past 3 days, grouped by days — this is where activities of the
+  agent should be seen, one stop," + a refresh on the box. Shipped both, mobile + desktop (shared
+  components): `getWall()`'s connector cards now carry **`WallRun.sent`** — actual transmissions
+  (`app.drafts.sent_at`, past 3 days, grouped by Mayor-local day, "every send human-approved · full record
+  in the audit ledger") — rendered as a day-grouped **"Sent" section on the AgentDigestSheet**, honest
+  empty state included; **↻ refresh** in the sheet header re-pulls the wall payload, email seats fire the
+  same manual `/api/sync` as the Sources button first (one ingest code path). tsc + build + 5 eval suites
+  green. **Ops findings** (RD updated the OpenAI key, hit a failed build, Ask down on the pilot): the
+  pilot = the `web` project's **Preview** lane (alias on the latest `live-pilot` GitHub build); Preview
+  **never had `OPENAI_API_KEY`** → Ask's planner throws — and the key is **Sensitive** (write-only), so
+  only RD can supply it; the "Root Directory `web` does not exist" failure was a dashboard Redeploy of a
+  pre-GitHub CLI deployment (source root IS the web folder) — harmless, no settings change needed, but
+  **old CLI deployments can't be redeployed anymore**; deploy via git push (or CLI from repo root).
 
 - **2026-07-03 night (GO-LIVE DAY — real mail flowing, first live agent runs, in-app agent controls)** —
   The rehearsal became real: RD's Google OAuth client + sign-in (consent captured to Vault after fixing a

@@ -53,15 +53,35 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
     setOpenAgent(agentKey);
   };
 
+  const loadWall = async (): Promise<WallPayload> => {
+    const persona = getCosPersona();
+    const r = await fetch(`/api/wall?hour=${new Date().getHours()}&name=${encodeURIComponent(persona.mayorName)}`);
+    if (!r.ok) throw new Error("wall unavailable");
+    return (await r.json()) as WallPayload;
+  };
+
   useEffect(() => {
     let live = true;
-    const persona = getCosPersona();
-    fetch(`/api/wall?hour=${new Date().getHours()}&name=${encodeURIComponent(persona.mayorName)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
+    loadWall()
       .then((w) => live && setWall(w))
       .catch(() => live && setFailed(true));
     return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ↻ on the digest sheet: email seats fire the same manual sync as the
+  // Sources button first (one ingest code path), then the whole wall payload
+  // reloads — the open sheet re-renders from it in place.
+  const refreshAgent = async (agentKey: string) => {
+    if (agentKey === "email-gmail" || agentKey === "email-outlook") {
+      await fetch("/api/sync", { method: "POST" }).catch(() => {});
+    }
+    try {
+      const w = await loadWall();
+      setWall(w);
+      setFailed(false);
+    } catch { /* a failed refresh keeps the wall it already has */ }
+  };
 
   const act = (it: WallItem) => {
     if (it.target.kind === "queue") onGoApprovals();
@@ -163,6 +183,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
           onClose={() => setOpenAgent(null)}
           onOpenMessage={(mid) => onOpenEmail?.(mid)}
           onGoApprovals={() => { setOpenAgent(null); onGoApprovals(); }}
+          onRefresh={() => refreshAgent(openAgent)}
         />
       )}
     </div>

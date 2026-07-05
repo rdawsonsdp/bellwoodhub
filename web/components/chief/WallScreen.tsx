@@ -20,6 +20,7 @@ import { getCosPersona } from "@/lib/morning";
 import type { WallPayload, WallItem, CabinetCard, WallSchedule } from "@/lib/wall";
 import AgentDigestSheet from "./AgentDigestSheet";
 import AddAgentSheet from "./AddAgentSheet";
+import SendLivePill from "./SendLivePill";
 import ComingUp from "./ComingUp";
 import { AgentAvatar, AgentChip } from "./AgentBadge";
 import { logUsage } from "@/lib/usage";
@@ -110,6 +111,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
           <div style={{ fontFamily: FONT.serif, fontSize: "clamp(21px, 5vw, 30px)", fontWeight: 600, color: "#14335c", lineHeight: 1.12, marginTop: 9, letterSpacing: "-.01em" }}>
             {wall?.greeting ?? (failed ? "The Wall is unavailable." : "Reading the cabinet…")}
           </div>
+          {wall?.sendLive && <div style={{ marginTop: 10 }}><SendLivePill /></div>}
         </div>
       </div>
 

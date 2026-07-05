@@ -26,6 +26,7 @@ import WallScreen from "./WallScreen";
 import QueueScreen from "./QueueScreen";
 import ThreadView from "./ThreadView";
 import SyncButton from "./SyncButton";
+import SendLivePill from "./SendLivePill";
 
 /** Open the actual source document from anywhere a message is referenced —
  *  in-app (Phase 4), never the old standalone page. */
@@ -1237,7 +1238,7 @@ function SourcesRepresentative() {
 
 /* ════════════════════════ APPROVALS ════════════════════════ */
 function Approvals() {
-  const { data, reload } = useApi<{ drafts: DraftRow[] }>("/api/approvals");
+  const { data, reload } = useApi<{ drafts: DraftRow[]; sendLive?: boolean }>("/api/approvals");
   const drafts = data?.drafts ?? [];
   const act = async (draftId: string, action: "approve" | "discard") => {
     await postJson("/api/approvals", { action, draftId });
@@ -1245,7 +1246,13 @@ function Approvals() {
   };
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
-      <div style={{ marginBottom: 20 }}><div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Approvals</div><div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>Staff Agents draft. You decide.</div></div>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Approvals</div>
+          {data?.sendLive && <SendLivePill />}
+        </div>
+        <div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>Staff Agents draft. You decide.</div>
+      </div>
       <div style={{ display: "flex", gap: 28, alignItems: "flex-start" }}>
         <div style={{ flex: 1.5, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}><span style={{ ...eyebrow(C.dim), fontSize: 10.5 }}>Awaiting you</span><Badge color={C.purpleText} bg="rgba(157,139,255,.16)">{drafts.length} draft{drafts.length === 1 ? "" : "s"}</Badge></div>

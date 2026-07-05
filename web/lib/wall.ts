@@ -121,6 +121,9 @@ export interface WallPayload {
   footer: { handled: number; waiting: number; etaMinutes: number };
   runs: Record<string, WallRun>;
   generatedAt: string;
+  /** The send cage is armed (SEND_ENABLED=1): Approve really transmits.
+   *  Drives the pulsing "Live send on" pill. Always false in DEMO. */
+  sendLive: boolean;
 }
 
 export interface WallOpts {
@@ -153,6 +156,8 @@ export async function getWall(opts: WallOpts = {}): Promise<WallPayload> {
       r.output.actItems.forEach((a) => a.citations.forEach((id) => ids.add(id)));
     }
     const wall = assembleWall(runs, new Date().toISOString(), opts, await liveMessageMeta([...ids]));
+    // the cage state rides the same payload as everything else (invariant 9)
+    wall.sendLive = process.env.SEND_ENABLED === "1";
     // "Coming up" reads the live calendar mirror — fixture events never leak here
     wall.schedule = await buildLiveSchedule(wall.generatedAt);
     // The email agents hold cabinet seats from connector STATUS alone (RD
@@ -433,6 +438,7 @@ export function assembleWall(runs: AgentRun[], now: string, opts: WallOpts = {},
     footer: { handled, waiting, etaMinutes },
     runs: runsOut,
     generatedAt: now,
+    sendLive: false, // the live branch of getWall() arms this from the env
   };
 }
 

@@ -84,8 +84,9 @@ async function sendApprovedDraft(draftId: string, req: NextRequest): Promise<Sen
 
 export async function GET() {
   try {
-    if (DEMO) return NextResponse.json({ drafts: demoDrafts("pending") });
-    return NextResponse.json({ drafts: await listDrafts("pending") });
+    if (DEMO) return NextResponse.json({ drafts: demoDrafts("pending"), sendLive: false });
+    // sendLive: the cage is armed — approving here really transmits
+    return NextResponse.json({ drafts: await listDrafts("pending"), sendLive: process.env.SEND_ENABLED === "1" });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";
     return NextResponse.json({ error: message }, { status: 500 });

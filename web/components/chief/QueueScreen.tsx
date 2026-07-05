@@ -23,6 +23,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { C, FONT, card, cite, eyebrow } from "@/lib/cos-design";
 import type { QueueItem } from "@/lib/queue";
+import SendLivePill from "./SendLivePill";
 import {
   loadQueueLocal, saveQueueLocal, orderQueue, newSinceLastVisit, itemState,
   approveItem, restoreItem, skipItem, startRevision, completeRevision,
@@ -62,6 +63,7 @@ export default function QueueScreen({ variant, onOpenEmail }: Props) {
   const [recState, setRecState] = useState<"idle" | "rec" | "busy">("idle");
   const [voiceErr, setVoiceErr] = useState<string | null>(null);
   const [toast, setToast] = useState<{ id: string; prev: ItemState; until: number } | null>(null);
+  const [sendLive, setSendLive] = useState(false); // cage armed → warning pill
   const [, setTick] = useState(0); // toast countdown repaint
   const [sel, setSel] = useState<string | null>(null); // desktop selection
   const mediaRef = useRef<MediaRecorder | null>(null);
@@ -74,7 +76,8 @@ export default function QueueScreen({ variant, onOpenEmail }: Props) {
     const l = loadQueueLocal();
     fetch("/api/queue")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: { items: QueueItem[] }) => {
+      .then((d: { items: QueueItem[]; sendLive?: boolean }) => {
+        setSendLive(!!d.sendLive);
         itemsRef.current = d.items;
         const ids = d.items.map((i) => i.id);
         setWywo(newSinceLastVisit(ids, l.lastSeenIds));
@@ -312,12 +315,13 @@ export default function QueueScreen({ variant, onOpenEmail }: Props) {
 
   return (
     <Shell mobile={mobile}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: sendLive ? 8 : 12, flexWrap: "wrap" }}>
         <div style={{ fontFamily: FONT.serif, fontSize: 22, fontWeight: 600, color: C.text, letterSpacing: "-.01em" }}>The queue</div>
         <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: C.muted }}>
           {live.length} to clear{skipped > 0 && ` · ${skipped} skipped`}
         </span>
       </div>
+      {sendLive && <div style={{ marginBottom: 12 }}><SendLivePill /></div>}
 
       {wywo > 0 && (
         <div style={{ ...card, padding: "10px 14px", marginBottom: 12, fontSize: 12.5, color: C.text2 }}>

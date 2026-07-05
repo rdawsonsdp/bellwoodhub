@@ -249,6 +249,16 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 
 ## Changelog
 
+- **2026-07-05 late (send-cage visibility — the "Live send on" pill)** — RD, seeing the holiday drafts
+  in the queue, asked where "auto send" was configured and wanted a flashing label. Clarified the truth
+  (nothing auto-sends: drafts sit until a human taps Approve; THEN the cage checks SEND_ENABLED +
+  SAFE_SEND_ALLOWLIST — both currently armed on the pilot from 7/03, allowlist `*`), and shipped the
+  visibility: a pulsing amber **"Live send on — Approve really sends"** pill on the Wall hero, the
+  Queue header, and the desktop Approvals header. Each surface learns cage state from its own single
+  API call (`WallPayload.sendLive` via getWall — invariant 9; queue + approvals GET add the flag);
+  always false in DEMO; pill absent = sending disabled. Turning send OFF remains an env change
+  (SEND_ENABLED=0 + redeploy) — an in-app master switch belongs to FEAT-19. tsc + build + 6 suites green.
+
 - **2026-07-05 night (ING-4 shipped — Voyage embeddings + Ask over real mail)** — RD's test question
   ("emails from coachmj@…") returned nothing; root cause logged this morning (canonical.chunks never
   written, Ask searching the empty poc store). RD: "let's get ING-4 done." Shipped: **(1) the embed

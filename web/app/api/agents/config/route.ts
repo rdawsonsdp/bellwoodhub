@@ -48,6 +48,9 @@ export async function GET() {
     ).catch(() => [] as CountRow[]);
     const email: Record<string, unknown> = {};
     const activity: Record<string, string[]> = {};
+    // ING-4 reconciliation: how much of the mirror is embedded for search
+    const { embedCounts } = await import("@/lib/embed-mail");
+    const idx = await embedCounts().catch(() => null);
     for (const a of accounts) {
       const key = a.provider === "gmail" ? "email-gmail" : "email-outlook";
       const messages = Number(counts.find((c) => c.account === a.address)?.n ?? 0);
@@ -59,6 +62,7 @@ export async function GET() {
       };
       activity[key] = [
         `${messages.toLocaleString()} messages mirrored into the record${midWalk ? " — initial mailbox walk still in progress" : ""}`,
+        ...(idx && idx.messages > 0 ? [`Search index: ${idx.indexed.toLocaleString()} of ${idx.messages.toLocaleString()} messages embedded`] : []),
         ...(a.last_synced_at ? [`Last sync · ${fmtCT(a.last_synced_at)}`] : []),
       ];
     }

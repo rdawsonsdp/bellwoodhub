@@ -64,6 +64,33 @@ function streamFromSource(source: string): StreamKey {
   }
 }
 
+/** Literal email addresses in the question resolve directly against the
+ *  message headers — sender questions work even before the identity ledger
+ *  (stage 5) is populated on a fresh mailbox. */
+const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+export function extractEmails(question: string): string[] {
+  return [...new Set((question.match(EMAIL_RE) ?? []).map((e) => e.toLowerCase()))];
+}
+
+async function emailPass(emails: string[]): Promise<string[]> {
+  if (!emails.length) return [];
+  const rows = await query<{ message_id: string }>(
+    `SELECT m.message_id
+       FROM canonical.messages m
+      WHERE m.tenant_id = $1 AND (
+        lower(m.from_email) = ANY($2::text[])
+        OR EXISTS (
+          SELECT 1 FROM unnest($2::text[]) a
+           WHERE m.to_email ILIKE '%' || a || '%' OR m.cc ILIKE '%' || a || '%'
+        )
+      )
+      ORDER BY m.sent_at DESC
+      LIMIT 400`,
+    [TENANT, emails],
+  );
+  return rows.map((r) => r.message_id);
+}
+
 /** Resolve question text to canonical identities via the alias ledger (replaces the POC's hard-coded lists). */
 export async function resolveAnchors(question: string): Promise<Anchor[]> {
   const qn = norm(question);
@@ -250,21 +277,23 @@ export async function plan(question: string, f: PlanFilters = {}): Promise<PlanR
     embedQuery(question).then(toVector),
   ]);
 
-  const [structured, graph] = await Promise.all([
+  const [structured, graph, byAddress] = await Promise.all([
     structuredPass(f, anchors),
     graphPass(anchors),
+    emailPass(extractEmails(question)),
   ]);
 
-  const candidatePool = Array.from(new Set([...structured, ...graph.messageIds]));
+  const candidatePool = Array.from(new Set([...structured, ...graph.messageIds, ...byAddress]));
   const [inSet, straggler] = await Promise.all([
     candidatePool.length ? semanticPass(qvec, candidatePool, Math.max(k * 2, 20)) : Promise.resolve<string[]>([]),
     semanticPass(qvec, null, Math.max(k * 2, 20)),
   ]);
 
-  // RRF fuse: structured & graph (primary) + semantic in-set + straggler (safety net).
+  // RRF fuse: structured & graph & literal-address (primary) + semantic in-set + straggler (safety net).
   const cross = CROSS_INTENT.test(question);
   let fused = rrf([
     { ids: structured, w: W_STRUCTURED },
+    { ids: byAddress, w: W_STRUCTURED },
     { ids: graph.messageIds, w: W_GRAPH },
     { ids: inSet, w: W_SEMANTIC },
     { ids: straggler, w: W_SEMANTIC * (cross ? 1.0 : 0.7) },
@@ -284,7 +313,7 @@ export async function plan(question: string, f: PlanFilters = {}): Promise<PlanR
     crossSource: new Set(sources.map((s) => s.stream)).size >= 3,
     commitments: graph.commitments,
     anchors,
-    structuredComplete: structured.length,
+    structuredComplete: new Set([...structured, ...byAddress]).size,
   };
 }
 

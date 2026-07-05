@@ -100,7 +100,7 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 | ING-1 | Registrations, OAuth (Graph delegated Mail.Read / gmail.readonly), vault, dry-run pull CLI | ⚪ pending | blocked on §8 decisions + ISS-4/TASK-7 prep |
 | ING-2 | Backfill → RAW + Envelope normalize (clean_text parity evals on real formats) | ⚪ pending | |
 | ING-3 | Canonical writes: identity, topics, **the wall stamped at ingest**, RLS on, audit rows | ⚪ pending | ISS-4/ISS-5 enforced here |
-| ING-4 | Voyage embeddings + Ask over real mail; reconciliation counts; canonical read-path smoke (#2) | ⚪ pending | |
+| ING-4 | Voyage embeddings + Ask over real mail; reconciliation counts; canonical read-path smoke (#2) | 🔵 shipped 2026-07-05 (backfill runs via Sync) | `lib/embed-mail.ts` + `/api/cron/embed-mail`; sync button drives backfill; `RETRIEVAL_BACKEND=canonical` on pilot; planner literal-address pass; counts on Sync button + agent card |
 | ING-5 | Cron routines (rt-outlook/rt-gmail real), live Sources health, 48h soak | ⚪ pending | |
 
 **Post-demo product work — pending:**
@@ -248,6 +248,27 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 ---
 
 ## Changelog
+
+- **2026-07-05 night (ING-4 shipped — Voyage embeddings + Ask over real mail)** — RD's test question
+  ("emails from coachmj@…") returned nothing; root cause logged this morning (canonical.chunks never
+  written, Ask searching the empty poc store). RD: "let's get ING-4 done." Shipped: **(1) the embed
+  stage** — `lib/embed-mail.ts` (paragraph-aware chunker ~1400 chars + 200 overlap, one-line
+  From/date/subject header stamped on every chunk so sender questions match pre-identity-ledger;
+  Voyage voyage-4-large @1024 batch embedding; per-message atomic INSERT so reconciliation is exactly
+  messages == chunked-messages; empty bodies embed their header so every message closes) +
+  `/api/cron/embed-mail` (CRON_SECRET-gated, time-budgeted, resumable, cron 7/22/37/52); **(2) the
+  driver** — `/api/sync` POST now runs email → calendar → embed (60s sub-budget) and the Sync button
+  auto-continues while `backfillRemaining || embedRemaining` (one press mirrors AND indexes the
+  mailbox; counter reads "N synced · M searchable"); **(3) Ask flipped to canonical** —
+  `RETRIEVAL_BACKEND=canonical` on the pilot Preview env: the existing 3-pass planner (structured/
+  graph/semantic + RRF + Sonnet synthesis, deterministic no-records short-circuit) now serves Ask,
+  with a new **literal-address pass** (emails named in the question match from/to/cc directly —
+  RD's exact test case works with an empty alias ledger); **(4) reconciliation counts** on the Sync
+  line and the email agents' FEAT-20 activity ("Search index: M of N messages embedded"). New eval
+  suite `eval/embed.test.ts` (chunker coverage/termination, header stamp, address extraction) —
+  6 suites green + tsc + build. VOYAGE_API_KEY validated + staged (Preview + .env.local). Demo
+  untouched (poc default). **Next press of Sync starts the ~12k backfill.** Stage 5–6 (identity
+  aliases, topics) remain the ING-3 tail — History/entity anchoring still empty until then.
 
 - **2026-07-05 evening (FEAT-20 shipped — plain-language agent transparency)** — RD caught the Gmail
   Email Agent detail page describing the demo persona ("merrill.bellwood@gmail.com", "walled", "never

@@ -14,14 +14,17 @@ import { IS_LIVE_BUILD } from "@/lib/live";
 export default function SyncButton({ compact }: { compact?: boolean }) {
   const [state, setState] = useState<"idle" | "busy" | "err">("idle");
   const [count, setCount] = useState<number | null>(null);
+  const [indexed, setIndexed] = useState<number | null>(null);
 
   useEffect(() => {
     if (!IS_LIVE_BUILD) return;
     let live = true;
     fetch("/api/sync")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: { messages: number | null }) => {
-        if (live && typeof d.messages === "number") setCount(d.messages);
+      .then((d: { messages: number | null; indexed?: number | null }) => {
+        if (!live) return;
+        if (typeof d.messages === "number") setCount(d.messages);
+        if (typeof d.indexed === "number") setIndexed(d.indexed);
       })
       .catch(() => { /* counter is best-effort */ });
     return () => { live = false; };
@@ -32,6 +35,7 @@ export default function SyncButton({ compact }: { compact?: boolean }) {
       const r = await fetch("/api/sync");
       const d = await r.json();
       if (typeof d.messages === "number") setCount(d.messages);
+      if (typeof d.indexed === "number") setIndexed(d.indexed);
     } catch { /* best-effort */ }
   }
 
@@ -40,14 +44,15 @@ export default function SyncButton({ compact }: { compact?: boolean }) {
     setState("busy");
     try {
       // auto-continue: each pass walks up to the server's time budget; keep
-      // going while the account is mid-backfill so ONE press mirrors the
-      // whole mailbox, the counter climbing between passes (RD 2026-07-03)
-      for (let pass = 0; pass < 40; pass++) {
+      // going while the account is mid-backfill OR the search index (ING-4
+      // embeddings) still trails the mirror, so ONE press finishes both,
+      // the counters climbing between passes (RD 2026-07-03)
+      for (let pass = 0; pass < 120; pass++) {
         const r = await fetch("/api/sync", { method: "POST" });
         const d = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(d.error || "sync failed");
         await refreshCount();
-        if (!d.backfillRemaining) break;
+        if (!d.backfillRemaining && !d.embedRemaining) break;
       }
       window.location.reload();
     } catch (err) {
@@ -81,7 +86,7 @@ export default function SyncButton({ compact }: { compact?: boolean }) {
       </button>
       {count !== null && (
         <span style={{ fontFamily: FONT.mono, fontSize: 8.5, color: C.dim, lineHeight: 1, whiteSpace: "nowrap" }}>
-          {count.toLocaleString()} synced
+          {count.toLocaleString()} synced{indexed !== null ? ` · ${indexed.toLocaleString()} searchable` : ""}
         </span>
       )}
     </span>

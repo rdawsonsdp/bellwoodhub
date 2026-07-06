@@ -17,6 +17,7 @@
 import { query, toVector } from "./db";
 import { embedQuery } from "./agents/voyage";
 import { complete } from "./agents/claude";
+import { snippetText } from "./clean-text";
 import type { Source, StreamKey } from "./types";
 
 const TENANT = "00000000-0000-0000-0000-000000000001";
@@ -237,7 +238,9 @@ async function buildSources(messageIds: string[], qvec: string): Promise<Source[
     subject: r.subject,
     topic: r.topic,
     stream: streamFromSource(r.source),
-    snippet: (r.snippet ?? "").slice(0, 600),
+    // snippetText drops the URL soup / tracking links a newsletter chunk
+    // still carries — the excerpt reads like an email, not markup
+    snippet: snippetText(r.snippet ?? "", 600),
     messageId: r.source_ref,
     threadId: r.thread_id,
   }));

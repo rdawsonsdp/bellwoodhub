@@ -1008,7 +1008,19 @@ function AskScreen() {
             )}
           </div>
         )}
-        {res && <AskResult res={res} />}
+        {res && (
+          <>
+            {/* drill-down affordance (RD): keep asking about these results,
+                or purge the session and start clean */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 16 }}>
+              <span style={{ flex: 1, fontFamily: FONT.mono, fontSize: 10, color: C.dim, letterSpacing: ".06em" }}>ASK MORE — or start clean:</span>
+              <button onClick={() => { setRes(null); setQ(""); setErr(null); }} style={{ flexShrink: 0, background: "rgba(var(--ink),.07)", border: "1px solid var(--c-cardbd)", borderRadius: 9, padding: "7px 14px", cursor: "pointer", color: C.text2, fontSize: 12.5, fontWeight: 700, fontFamily: FONT.sans }}>
+                ✦ New Ask
+              </button>
+            </div>
+            <AskResult res={res} />
+          </>
+        )}
       </div>
     </div>
   );

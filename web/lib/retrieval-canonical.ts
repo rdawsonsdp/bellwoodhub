@@ -7,6 +7,7 @@
 import { query } from "./db";
 import { plan } from "./planner";
 import { synthesize } from "./planner";
+import { snippetText } from "./clean-text";
 import type {
   AskResponse, AppliedFilters, Direction, EmailDetail, EntityResponse,
   OpenItem, Source, StreamKey, TimelineMessage, WhoRow,
@@ -173,7 +174,7 @@ export async function getEntity(type: "person" | "address", value: string): Prom
   const messages: TimelineMessage[] = rows.map((r) => ({
     id: r.message_id, date: r.sent_at.toISOString(), direction: (r.direction === "outbound" ? "outbound" : "inbound") as Direction,
     fromName: r.from_name, fromEmail: r.from_email, subject: r.subject, topic: r.topic,
-    stream: streamFromSource(r.source), snippet: (r.snippet ?? "").slice(0, 400),
+    stream: streamFromSource(r.source), snippet: snippetText(r.snippet ?? "", 400),
     messageId: r.source_ref, threadId: r.thread_id,
   }));
   const dates = messages.map((m) => m.date).sort();

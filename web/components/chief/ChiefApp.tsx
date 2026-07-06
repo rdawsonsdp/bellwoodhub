@@ -549,7 +549,7 @@ function Ask({ asked, loading, res, err, q, setQ, runAsk, resetAsk, go }:
       <div style={{ display: "flex", alignItems: "center", gap: 12, ...card, borderRadius: 14, padding: "14px 16px", marginBottom: 22 }}>
         <Star w={19} />
         <span style={{ flex: 1, fontSize: 14.5, color: C.text, lineHeight: 1.35 }}>{q || "…"}</span>
-        <button onClick={resetAsk} style={{ flexShrink: 0, background: "rgba(var(--ink),.07)", border: 0, borderRadius: 9, padding: "6px 13px", cursor: "pointer", color: C.text3, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans }}>New question</button>
+        <button onClick={resetAsk} style={{ flexShrink: 0, background: "rgba(var(--ink),.07)", border: 0, borderRadius: 9, padding: "6px 13px", cursor: "pointer", color: C.text3, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans }}>✦ New Ask</button>
       </div>
 
       <div style={{ display: "flex", gap: 28, alignItems: "flex-start" }}>

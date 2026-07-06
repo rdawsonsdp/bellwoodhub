@@ -231,6 +231,19 @@ export default function SyncScreen() {
                   </div>
                   <Bar num={a.mirrored} den={a.mailboxTotal} tone={a.phase === "error" ? C.red : "linear-gradient(90deg,#D7991C,#F4CB63)"} />
                   {a.lastError && <div style={{ marginTop: 6, fontSize: 12, color: C.redText, overflowWrap: "anywhere" }}>{a.lastError}</div>}
+                  {a.phase === "error" && s.live && (
+                    // a dead token (invalid_grant) is fixed by consenting again —
+                    // the re-consent rotates the vault secret and re-activates the row
+                    <button
+                      onClick={() => void signIn(a.provider === "outlook" ? "microsoft-entra-id" : "google", { callbackUrl: "/chief" })}
+                      style={{
+                        marginTop: 8, cursor: "pointer", border: `1px solid ${C.red}`, background: "rgba(224,108,95,.10)",
+                        color: C.redText, borderRadius: 99, padding: "7px 14px", fontFamily: FONT.sans, fontWeight: 700, fontSize: 12.5,
+                      }}
+                    >
+                      ↻ Reconnect — sign in with {a.provider === "outlook" ? "Microsoft" : "Google"} again
+                    </button>
+                  )}
                 </div>
               );
             })}

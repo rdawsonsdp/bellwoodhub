@@ -41,11 +41,17 @@ export async function storeRefreshToken({
 }): Promise<void> {
   // Account row first: status stays 'pending' on insert — an operator flips
   // it to 'active' before the ingest cron will touch it (006_connectors.sql).
+  // Re-consent HEALS an errored row (fresh token = the fix for invalid_grant,
+  // e.g. Google's 7-day Testing-mode expiry) — but never skips the pending
+  // gate: only 'error' flips back to 'active'.
   const rows = await query<{ id: string; refresh_token_ref: string | null }>(
     `INSERT INTO pipeline.connector_accounts (provider, address, mailbox_id)
      VALUES ($1, $2, COALESCE($3, 'gov'))
      ON CONFLICT (provider, address) DO UPDATE
-        SET mailbox_id = COALESCE($3, pipeline.connector_accounts.mailbox_id)
+        SET mailbox_id = COALESCE($3, pipeline.connector_accounts.mailbox_id),
+            status = CASE WHEN pipeline.connector_accounts.status = 'error'
+                          THEN 'active' ELSE pipeline.connector_accounts.status END,
+            last_error = NULL
      RETURNING id, refresh_token_ref`,
     [provider, address, mailboxId ?? null],
   );

@@ -107,6 +107,7 @@ fail-closed**; native Vercel crons (his lane is Production). Features promote by
 | MH-3 | Google OAuth client: add the Mayor as test user + the new instance's redirect URI | ⚪ Monday | |
 | MH-4 | End-to-end onboarding smoke test (temporary RD login, deleted same day) | ⚪ Monday | |
 | MH-5 | **Tuesday, ~15 min with the Mayor**: open URL → Google sign-in (Gmail mirrors) → Microsoft sign-in (Outlook connects) → crons take over; RD watches counters, never content | ⚪ Tuesday | Outlook calendar via Graph = fast-follow |
+| MH-6 | **Application overview document for the Mayor** (hand-out, Tuesday AM): what it is / is not, the three screens, the staff in plain English (FEAT-20 four-questions table), data + FOIA posture, the 15-min setup, week-one asks | ✅ done 2026-07-05 | `docs/MAYOR_ONBOARDING_OVERVIEW.md` + Notion copy (printable) |
 Decisions pending (RD): **MH-D1** who owns his infra — Village-owned Supabase/Vercel (true no-access) vs. RD-owned with audit · **MH-D2** his URL (vercel.app alias vs. real domain) · **MH-D3** separate API keys for his instance (recommended) · **MH-D4** his exact allowlist addresses + temp smoke-test login · **MH-D5** confirm send stays OFF until his own day-two test.
 
 **Email ingestion (real mail — `docs/EMAIL_INGESTION.md`; absorbs TASK-1 + #3; spec'd 2026-07-02):**

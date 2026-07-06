@@ -20,6 +20,7 @@ import SyncButton from "./SyncButton";
 import ReleaseTag from "./ReleaseTag";
 import AnswerMd from "./AnswerMd";
 import ActivityScreen from "./ActivityScreen";
+import SyncScreen from "./SyncScreen";
 import DraftCard from "./DraftCard";
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
@@ -83,7 +84,7 @@ function Svg({ d, w = 22, sw = 1.9, fill = "none" }: { d: string; w?: number; sw
   return <svg width={w} height={w} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d.split("M").filter(Boolean).map((p, i) => <path key={i} d={"M" + p} />)}</svg>;
 }
 
-type Screen = "today" | "queue" | "ask" | "emails" | "events" | "history" | "agents" | "sources" | "activity" | "admin";
+type Screen = "today" | "queue" | "ask" | "emails" | "events" | "history" | "agents" | "sources" | "sync" | "activity" | "admin";
 /** Mayor mode = exactly these three destinations (Phase 4 nav collapse). */
 const MAYOR_SCREENS: Screen[] = ["today", "queue", "ask"];
 const THEME_CYCLE = ["auto", "midnight", "dim", "daylight", "contrast"];
@@ -159,6 +160,7 @@ export default function MobileApp() {
             {screen === "history" && <HistoryScreen />}
             {screen === "agents" && <AgentsPage key={`${agentFocus ?? "all"}:${agentSection ?? ""}`} initialAgentKey={agentFocus ?? undefined} initialSection={agentSection ?? undefined} />}
             {screen === "sources" && <div><ScreenHead title="Sources" sub="Connectors, mailboxes, and document upload." /><SourcesView /></div>}
+            {screen === "sync" && <SyncScreen />}
             {screen === "activity" && <ActivityScreen />}
             {screen === "admin" && <AdminPanel />}
           </div>
@@ -271,6 +273,7 @@ const NAV_ITEMS: [Screen, string, string][] = [
   ["history", I.history, "History"],
   ["agents", NAV_STAR, "Staff Agents"],
   ["sources", I.sources, "Sources"],
+  ["sync", "M21 12a9 9 0 1 1-2.6-6.3M21 3v6h-6", "Sync"],
   ["activity", I.history, "Activity"],
   ["admin", I.admin, "Admin"],
 ];

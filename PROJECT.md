@@ -8,7 +8,7 @@
 > This file is the durable copy that survives across sessions.
 
 **📡 Shareable status page (live):** https://project-status-ten.vercel.app — public, no login. Source: `project-status/index.html`. Redeploy: `vercel deploy --prod --yes --cwd project-status`.
-**Last updated:** 2026-07-05 (night close) — the marathon session: **ING-4 live** (Voyage embeddings + Ask over real mail — proven on RD's own questions; the scheduler runs ingest+embed every 15 min autonomously via GitHub Actions + protection bypass), **agents became configuration** (FEAT-19 slice 2: prompt/urgency rules editable on the card · FEAT-21 skills upload · FEAT-20 plain-English cards), **DEC-13 vocabulary** (Agent / Capability / Connector — Staff Agents in three tinted collapsible sections + nav sub-menu), **Activity console** (the audit ledger live in-app), send-cage pill, dashboard email-agent box, formatted Ask answers, mobile above-the-fold pass, **Ask-as-mic** + desktop topbar Ask box. **Tuesday = Mayor Harvey onboarding** (MH board; decisions MH-D1…D5 pending; hand-out ready: `docs/MAYOR_ONBOARDING_OVERVIEW.md`). URLs: demo=**bellwood-hub.vercel.app** (public), pilot=**bellwood-hub-pilot.vercel.app** (SSO, auto-deploys on push to `live-pilot`)
+**Last updated:** 2026-07-06 — **MH-D1…D5 all decided** (RD-owned + audit w/ transfer path · vercel.app alias · shared model keys · interim allowlist = RD's address until the Mayor's Gmail arrives 7/07 · send off till day-two; Outlook target `aharvey@vil.bellwood.il.us`; **MH-2 fully unblocked**). Night close 2026-07-05 — the marathon session: **ING-4 live** (Voyage embeddings + Ask over real mail — proven on RD's own questions; the scheduler runs ingest+embed every 15 min autonomously via GitHub Actions + protection bypass), **agents became configuration** (FEAT-19 slice 2: prompt/urgency rules editable on the card · FEAT-21 skills upload · FEAT-20 plain-English cards), **DEC-13 vocabulary** (Agent / Capability / Connector — Staff Agents in three tinted collapsible sections + nav sub-menu), **Activity console** (the audit ledger live in-app), send-cage pill, dashboard email-agent box, formatted Ask answers, mobile above-the-fold pass, **Ask-as-mic** + desktop topbar Ask box. **Tuesday = Mayor Harvey onboarding** (MH board; decisions MH-D1…D5 pending; hand-out ready: `docs/MAYOR_ONBOARDING_OVERVIEW.md`). URLs: demo=**bellwood-hub.vercel.app** (public), pilot=**bellwood-hub-pilot.vercel.app** (SSO, auto-deploys on push to `live-pilot`)
 **Project:** AI Chief of Staff platform, built on the Bellwood municipal email RAG POC
 **Authoritative spec:** `cto-architecture-brief.md` (R. Dawson, SDP Chicago, 2026-06-24) — three-plane
 design (Ingestion → Canonical → Capability), 6 architectural decision records (AD-1…AD-6), 5-phase plan.
@@ -88,6 +88,7 @@ Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
 | L3 | Earned intelligence: live memory verified, fix-it→style patterns, 50-question evidence engine, retire 31MB bundle on live | ⚪ pending | |
 New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor's real mailbox, not the pilot) · `LGL-1` FOIA-discoverability/retention of the hub itself — counsel question.
 
+| FEAT-24 | **Sync page — transparency over every mirror process** (RD 2026-07-06: "for transparency, we need a Sync page that shows the syncing processes... the Mayor's sync will take hours, especially Voyage"): operator screen on BOTH apps (nav: Sources → **Sync** → Activity) showing per-account mail progress with a real denominator (new read-only `Connector.mailboxTotal` — Graph folder counts / Gmail profile), the Voyage index gauge with throughput + ETA computed from `embed.run` ledger rows, calendar mirror state, scheduler liveness (stale warning past 2× cadence), the recent-run feed, and a **"Run sync until caught up"** control that strings `POST /api/sync` passes together (pass-by-pass results, Stop button, loop halts on page-leave; the 15-min scheduler covers unattended). New: `/api/sync/status` (+`?totals=0` for cheap auto-refresh), `lib/sync-status.ts`, `SyncScreen.tsx`, demo fixture `sync-status.json`. | ✅ shipped 2026-07-06 | Built for Tuesday: MH-5's hours-long first mirror is watchable end-to-end |
 | FEAT-23 | **Agent-to-agent collaboration** (RD 2026-07-05, long-term): agents should eventually talk to other agents — e.g. the Constituent desk asks History for a sender's record mid-run, or hands a scheduling ask to the Schedule agent. Builds on VIS-1 (agent-to-agent / MCP is the long-term shape) and the Agent Factory constitution (DEC-12): inter-agent calls must stay wall-respecting, cited, and human-gated at the action boundary. | ⚪ logged (long-term) | Sequence after RB-6; the MCP server is the natural transport |
 | FEAT-22 | **Email agents clean up the emails** (RD 2026-07-05, from Ask source cards showing newsletter URL-soup): hygiene becomes an agent JOB, not just an ingest filter. Staged: (1) harden `cleanEmailText` for bracketed tracking links, base64-ish token runs, unsubscribe footers; (2) **re-clean + re-chunk + re-embed** the already-mirrored corpus (today's `canonical.chunks` carry the junk; display-level `snippetText` de-noising shipped 7/05 as the stopgap); (3) optional Haiku pass classifying boilerplate vs. content per message at ingest; (4) discuss with RD whether "clean up" also means inbox triage (auto-labeling/archiving commercial noise — R2, human-review queue). | ⚪ logged | Snippet display fix shipped; deep clean needs the re-embed pass |
 | FEAT-21 | **Uploadable Skills, referenceable by agents** (RD 2026-07-05, from Admin → Skills): the Skills tab grows an **Upload skill** path — a skill is a reusable module (voice/style guide, prompt block, checklist, knowledge doc) stored versioned in the DB (`app.skills`: name, kind, content, version, uploaded_by, audited), not code. Agents then **reference** skills in their config (FEAT-19 `app.agent_configs.skills[]`; Factory rows too): e.g. upload the **"Mayor Harvey Voice Skill"** and the Drafting/Gmail agent cites it so every reply is written in that voice. Runner injects referenced skill content into the prompt; constitution (citations, human gate) still binds. Converges with L3's learned style-memory (fix-it patterns could *draft* a skill) and DEC-12 (skills become part of the Factory interview). Open questions for RD: skill format (guide doc vs. example replies vs. both) · upload privileges pre-SEC-2 · scope (per-agent vs. per-mailbox vs. tenant-wide). | ⚪ logged | RD: "we don't have to do this now" — design conversation first |
@@ -103,13 +104,13 @@ instead of user roles (sidesteps SEC-2 for now). His login allowlist = his email
 fail-closed**; native Vercel crons (his lane is Production). Features promote by fast-forwarding `main`.
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| MH-1 | **Outlook framework**: Entra app registration (delegated Mail.Read/Calendars.Read/offline_access) + first live Graph pull + fixes (sent-items TODO, `bf:` walk parity) | ⚪ Monday | Graph connector code exists, never live-tested; registration needs RD's Microsoft account |
-| MH-2 | Provision the Mayor's stack: Supabase project (13 migrations + RLS verify) + Vercel project (same repo, root `web`, prod branch `main`) + full env (fresh secrets, `ALLOWED_EMAILS`=his, DEMO_MODE=0, send vars ABSENT) | ⚪ Monday | gated by MH-D1 ownership decision |
+| MH-1 | **Outlook framework**: Entra app registration (delegated Mail.Read/Calendars.Read/offline_access) + first live Graph pull + fixes (sent-items TODO, `bf:` walk parity) | 🔵 code done 2026-07-06 | Both fixes shipped: sentitems delta pass (outbound mail) + `bf:` cursor parity (two-folder JSON cursor, legacy upgrade, ingest-loop drain + UI mid-walk now work for Graph) · `Calendars.Read` added to the sign-in scope so the calendar fast-follow needs no re-consent · new eval `web/eval/graph-connector.test.ts` (17 checks green vs a stubbed Graph). Remaining: Entra registration (RD, in progress) + first live pull; target mailbox: `aharvey@vil.bellwood.il.us` (MH-D4) |
+| MH-2 | Provision the Mayor's stack: Supabase project (13 migrations + RLS verify) + Vercel project (same repo, root `web`, prod branch `main`) + full env (fresh app secrets, shared model keys per MH-D3, `ALLOWED_EMAILS`=his, DEMO_MODE=0, send vars ABSENT) | ⚪ Monday | fully unblocked 2026-07-06: interim allowlist = RD's address (MH-D4); swap to the Mayor's Gmail when it arrives tomorrow |
 | MH-3 | Google OAuth client: add the Mayor as test user + the new instance's redirect URI | ⚪ Monday | |
 | MH-4 | End-to-end onboarding smoke test (temporary RD login, deleted same day) | ⚪ Monday | |
 | MH-5 | **Tuesday, ~15 min with the Mayor**: open URL → Google sign-in (Gmail mirrors) → Microsoft sign-in (Outlook connects) → crons take over; RD watches counters, never content | ⚪ Tuesday | Outlook calendar via Graph = fast-follow |
 | MH-6 | **Application overview document for the Mayor** (hand-out, Tuesday AM): what it is / is not, the three screens, the staff in plain English (FEAT-20 four-questions table), data + FOIA posture, the 15-min setup, week-one asks | ✅ done 2026-07-05 | `docs/MAYOR_ONBOARDING_OVERVIEW.md` + Notion copy (printable) |
-Decisions pending (RD): **MH-D1** who owns his infra — Village-owned Supabase/Vercel (true no-access) vs. RD-owned with audit · **MH-D2** his URL (vercel.app alias vs. real domain) · **MH-D3** separate API keys for his instance (recommended) · **MH-D4** his exact allowlist addresses + temp smoke-test login · **MH-D5** confirm send stays OFF until his own day-two test.
+Decisions (RD walkthrough 2026-07-06): **MH-D1** ✅ RD-owned with audit + a documented transfer-to-Village path post-pilot (structural no-access arrives with the transfer) · **MH-D2** ✅ vercel.app alias on the new project; real domain can attach later · **MH-D3** ✅ share the pilot's model keys (RD's call over the separate-keys recommendation — one bill; revisit if cost attribution or a revocation ever needs splitting) · **MH-D4** ✅ interim (2026-07-06) — Outlook mailbox confirmed: `aharvey@vil.bellwood.il.us` (the MH-1 Graph target). Final `ALLOWED_EMAILS` = **both** his addresses — his Gmail (arrives tomorrow) **and** the Outlook address, because the Microsoft connect pass is itself a sign-in and the allowlist gates every provider. Until then: RD's own address (doubles as the MH-4 smoke-test login), deleted when his go in · **MH-D5** ✅ send stays OFF until his own day-two test (send vars absent at provision).
 
 **Email ingestion (real mail — `docs/EMAIL_INGESTION.md`; absorbs TASK-1 + #3; spec'd 2026-07-02):**
 | # | Phase | Status | Notes |
@@ -277,6 +278,37 @@ Decisions pending (RD): **MH-D1** who owns his infra — Village-owned Supabase/
 ---
 
 ## Changelog
+
+- **2026-07-06 #2 (MH-1 connector fixes · the Sync page ships)** — The Graph connector grew its two
+  known fixes: a **sentitems delta pass** (outbound mail lands; direction from the from-vs-account
+  compare, self-sends dedup on internetMessageId) and **`bf:` cursor parity** with Gmail (two-folder
+  JSON cursor, `bf:`-prefixed mid-walk so the ingest loop drains within its run budget and the UI
+  reads backfill state; legacy bare-URL cursors upgrade in place). `Calendars.Read` joined the
+  Microsoft sign-in scope so the calendar fast-follow needs no re-consent. New eval
+  `web/eval/graph-connector.test.ts` — 17 checks green against a stubbed Graph server. Then RD's
+  transparency call ("we need a Sync page that shows the syncing processes — the Mayor's sync will
+  take hours, especially Voyage") became **FEAT-24, shipped**: the Sync screen on both apps with
+  per-account progress bars (live mailbox totals as denominators), the Voyage gauge with rate + ETA
+  from the ledger, scheduler liveness, the recent-run feed, and the "Run sync until caught up" loop.
+  tsc + build clean; demo fixture serves the keyless path. Entra registration underway (RD's form
+  verified: multitenant + MSA, Web redirect to the pilot callback). RD's "when does the Microsoft
+  sign-in happen?" exposed a real gap — NOTHING in the app triggered a second-provider connect (the
+  only path was hand-typing /api/auth/signin). Fix shipped on the Sync page: **Connect buttons** —
+  any configured Auth.js provider with no connector row gets "+ Connect Outlook / Gmail" (a
+  `signIn(provider)` pass whose grant doubles as the mail consent). Tuesday's step 2 is now a
+  button, not a URL. Also logged: `ALLOWED_EMAILS` must carry BOTH the Mayor's addresses (the
+  Microsoft connect pass is itself an allowlist-gated sign-in).
+
+- **2026-07-06 (MH decisions walkthrough — four of five settled)** — RD decided: **MH-D1** the
+  Mayor's stack provisions under RD's accounts with audit logging and a documented transfer-to-Village
+  path once the pilot proves out (Tuesday holds; structural no-access arrives with the transfer) ·
+  **MH-D2** vercel.app alias on the new project, real domain attachable later · **MH-D3** his instance
+  shares the pilot's model keys — one bill; the separate-keys recommendation stays on record if usage
+  ever needs splitting · **MH-D5** send provisions fail-closed (vars absent) until his own day-two
+  test. **MH-D4** settled interim later the same session: Outlook mailbox = `aharvey@vil.bellwood.il.us`
+  (the MH-1 Graph target); `ALLOWED_EMAILS` starts as RD's own address, doubling as the MH-4 smoke-test
+  login, until RD gets the Mayor's Gmail tomorrow (2026-07-07) and it replaces RD's. **All five decided
+  enough to build — MH-2 provisioning fully unblocked.**
 
 - **2026-07-05 close #7 (UX structure pass · Ask becomes the mic · night closed)** — Final volley:
   **agent detail page** re-cut into five tinted panels (plain-English / profile / instructions / skills /

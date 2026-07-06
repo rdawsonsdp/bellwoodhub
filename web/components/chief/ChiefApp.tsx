@@ -30,6 +30,7 @@ import ReleaseTag from "./ReleaseTag";
 import SendLivePill from "./SendLivePill";
 import AnswerMd from "./AnswerMd";
 import ActivityScreen from "./ActivityScreen";
+import SyncScreen from "./SyncScreen";
 
 /** Open the actual source document from anywhere a message is referenced —
  *  in-app (Phase 4), never the old standalone page. */
@@ -69,7 +70,7 @@ async function postJson<T>(url: string, body: unknown): Promise<T | null> {
   } catch { return null; }
 }
 
-type Screen = "today" | "queue" | "brief" | "ask" | "track" | "memory" | "sources" | "settings" | "admin" | "agents" | "activity";
+type Screen = "today" | "queue" | "brief" | "ask" | "track" | "memory" | "sources" | "sync" | "settings" | "admin" | "agents" | "activity";
 type Filter = "all" | "open" | "late" | "broken" | "kept";
 
 /* ── tiny SVG helpers (stroke icons, 24×24) ── */
@@ -187,6 +188,7 @@ export default function ChiefApp() {
           {screen === "sources" && <Sources />}
           {screen === "settings" && <Approvals />}
           {screen === "admin" && <AdminPanel />}
+          {screen === "sync" && <SyncScreen />}
           {screen === "activity" && <ActivityScreen />}
           {screen === "agents" && <AgentsPage key={`${agentFocus ?? "all"}:${agentSection ?? ""}`} initialAgentKey={agentFocus ?? undefined} initialSection={agentSection ?? undefined} />}
         </div>
@@ -255,6 +257,7 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
             {item("track", "Calendar", <Ico d={ICON.events ?? ICON.track} />)}
             {item("memory", "History", <Ico d={ICON.memory} />)}
             {item("sources", "Sources", <Ico d={ICON.sources} />)}
+            {item("sync", "Sync", <Ico d={["M21 12a9 9 0 1 1-2.6-6.3", "M21 3v6h-6"]} />)}
             {item("activity", "Activity", <Ico d={["M12 7v5l3.5 2", "M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z"]} />)}
             {item("settings", "Approvals", <Ico d={ICON.approvals} />)}
             {item("agents", "Staff Agents", <Star w={18} c="currentColor" />)}

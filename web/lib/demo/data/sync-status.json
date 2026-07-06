@@ -1,0 +1,50 @@
+{
+  "live": false,
+  "accounts": [
+    {
+      "provider": "outlook",
+      "address": "mayor@bellwood-demo.gov",
+      "mailbox": "gov",
+      "status": "active",
+      "phase": "backfill",
+      "mirrored": 8412,
+      "mailboxTotal": 19634,
+      "lastSyncedAt": "2026-07-06T14:52:00Z",
+      "lastError": null
+    },
+    {
+      "provider": "gmail",
+      "address": "merrill.bellwood@gmail.com",
+      "mailbox": "biz",
+      "status": "active",
+      "phase": "incremental",
+      "mirrored": 3120,
+      "mailboxTotal": 3120,
+      "lastSyncedAt": "2026-07-06T14:53:00Z",
+      "lastError": null
+    }
+  ],
+  "index": {
+    "messages": 11532,
+    "indexed": 9847,
+    "remaining": 1685,
+    "ratePerMin": 208,
+    "etaMinutes": 8
+  },
+  "calendar": { "events": 214, "lastRunAt": "2026-07-06T14:05:00Z" },
+  "scheduler": {
+    "lastIngestAt": "2026-07-06T14:52:00Z",
+    "lastEmbedAt": "2026-07-06T14:53:30Z",
+    "cadenceMinutes": 15,
+    "stale": false
+  },
+  "recent": [
+    { "at": "2026-07-06T14:53:30Z", "action": "embed.run", "summary": "indexed 96 msgs · 233 chunks · 1,685 to go" },
+    { "at": "2026-07-06T14:52:00Z", "action": "ingest.run", "summary": "pulled 200 · landed 197 · backfill continues" },
+    { "at": "2026-07-06T14:37:10Z", "action": "embed.run", "summary": "indexed 102 msgs · 251 chunks · 1,781 to go" },
+    { "at": "2026-07-06T14:36:40Z", "action": "ingest.run", "summary": "pulled 200 · landed 200 · backfill continues" },
+    { "at": "2026-07-06T14:21:15Z", "action": "ingest.run", "summary": "pulled 200 · landed 198 · backfill continues" },
+    { "at": "2026-07-06T14:05:00Z", "action": "ingest.calendar", "summary": "2 account(s) mirrored" },
+    { "at": "2026-07-06T14:04:30Z", "action": "sync.manual", "summary": "manual pass — more to do" }
+  ]
+}

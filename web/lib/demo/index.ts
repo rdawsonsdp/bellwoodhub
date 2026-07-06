@@ -26,6 +26,7 @@ import events from "./data/events.json";
 import businessInbox from "./data/business-inbox.json";
 import corpusDocs from "./data/corpus-docs.json";
 import gmailCalendar from "./data/gmail-calendar.json";
+import syncStatus from "./data/sync-status.json";
 import { DEMO_RUN_AT } from "./data/domain-agents";
 import { COS_AGENTS } from "../cos-agents";
 import {
@@ -545,4 +546,10 @@ export function demoMessageMeta(ids: string[]): Map<string, MessageMeta> {
       map.set(d.messageId, { messageId: d.messageId, threadId: d.messageId, subject: d.subject, fromName: d.fromName, date: d.date, direction: "inbound" });
   }
   return map;
+}
+
+/** The Sync page in demo: a representative mid-backfill snapshot so the
+ *  transparency story shows without a database (live:false tags it). */
+export function demoSyncStatus() {
+  return syncStatus;
 }

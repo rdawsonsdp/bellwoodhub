@@ -113,6 +113,11 @@ export default function MobileApp() {
   // the cabinet gear deep-links Staff Agents to one agent's detail
   const [agentFocus, setAgentFocus] = useState<string | null>(null);
   const [agentSection, setAgentSection] = useState<string | null>(null); // nav sub-menu target
+  // Ask tab = the mic (RD 2026-07-05): one tap starts voice immediately;
+  // a second tap within 450ms switches to the text interface.
+  const [askMode, setAskMode] = useState<"voice" | "text" | null>(null);
+  const [askSeq, setAskSeq] = useState(0);
+  const askTapAt = useRef(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [operator, setOperator] = useState(false);
@@ -148,7 +153,7 @@ export default function MobileApp() {
           <div key={refreshKey} style={{ padding: "8px 0 20px" }}>
             {screen === "today" && <WallScreen variant="mobile" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} onOpenAgent={(k) => { setAgentFocus(k); setScreen("agents"); }} />}
             {screen === "queue" && <QueueScreen variant="mobile" onOpenEmail={setEmailMid} />}
-            {screen === "ask" && <AskScreen />}
+            {screen === "ask" && <AskScreen key={`${askMode ?? "plain"}:${askSeq}`} autoVoice={askMode === "voice"} textFocus={askMode === "text"} />}
             {screen === "emails" && <EmailsScreen onAsk={() => setScreen("ask")} />}
             {screen === "events" && <EventsScreen />}
             {screen === "history" && <HistoryScreen />}
@@ -161,7 +166,15 @@ export default function MobileApp() {
 
         {/* Mayor mode nav: three thumb-zone tabs. The Ask FAB is gone — Ask is
             a destination, and scroll containers keep bottom padding clear. */}
-        <TabBar current={screen} go={setScreen} />
+        <TabBar current={screen} go={(s) => {
+          if (s === "ask") {
+            const now = Date.now();
+            setAskMode(now - askTapAt.current < 450 ? "text" : "voice");
+            askTapAt.current = now;
+            setAskSeq((x) => x + 1);
+          }
+          setScreen(s);
+        }} />
         <FeedbackButton raised />
         {menuOpen && (
           <NavMenu
@@ -199,7 +212,7 @@ export default function MobileApp() {
 const TABS: [Screen, string, string][] = [
   ["today", I.today, "Wall"],
   ["queue", I.approvals, "Queue"],
-  ["ask", I.search, "Ask"],
+  ["ask", I.mic, "Ask"],
 ];
 function TabBar({ current, go }: { current: Screen; go: (s: Screen) => void }) {
   return (
@@ -439,27 +452,29 @@ function Header({ operator, onMenu, onProfile }: { operator: boolean; onMenu: ()
   }
   const light = ["daylight", "am", "midday"].includes(resolveTheme(theme, new Date().getHours()));
   return (
-    <div style={{ position: "sticky", top: 0, zIndex: 10, display: "flex", alignItems: "center", gap: 11, padding: "calc(env(safe-area-inset-top) + 12px) 16px 12px", background: "rgba(var(--ink),.04)", backdropFilter: "blur(14px)", borderBottom: "1px solid var(--c-cardbd)" }}>
+    <div style={{ position: "sticky", top: 0, zIndex: 10, display: "flex", alignItems: "center", gap: 9, padding: "calc(env(safe-area-inset-top) + 7px) 12px 7px", background: "rgba(var(--ink),.04)", backdropFilter: "blur(14px)", borderBottom: "1px solid var(--c-cardbd)" }}>
       {/* the menu is ALWAYS reachable (RD 2026-07-02) — Mayor mode lists its
           three destinations; the Operator switch inside reveals the rest */}
-      <button onClick={onMenu} aria-label="Menu" style={{ width: 38, height: 38, borderRadius: 11, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <button onClick={onMenu} aria-label="Menu" style={{ width: 33, height: 33, borderRadius: 11, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
       </button>
-      <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(135deg,var(--c-goldhi),var(--c-goldlo))", display: "flex", alignItems: "center", justifyContent: "center", color: "#0a1322", flexShrink: 0 }}>
-        <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z" /></svg>
+      <div style={{ width: 25, height: 25, borderRadius: 8, background: "linear-gradient(135deg,var(--c-goldhi),var(--c-goldlo))", display: "flex", alignItems: "center", justifyContent: "center", color: "#0a1322", flexShrink: 0 }}>
+        <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z" /></svg>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: FONT.serif, fontSize: 16, fontWeight: 600, lineHeight: 1, whiteSpace: "nowrap" }}>Chief of Staff</div>
-        <div style={{ fontFamily: FONT.mono, fontSize: 9, letterSpacing: ".12em", color: C.dim, marginTop: 2 }}>INSTITUTIONAL MEMORY</div>
-        <ReleaseTag size={8} />
+        <div style={{ fontFamily: FONT.serif, fontSize: 14.5, fontWeight: 600, lineHeight: 1, whiteSpace: "nowrap" }}>Chief of Staff</div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 7, whiteSpace: "nowrap", overflow: "hidden" }}>
+          <span style={{ fontFamily: FONT.mono, fontSize: 7.5, letterSpacing: ".1em", color: C.dim }}>INSTITUTIONAL MEMORY</span>
+          <ReleaseTag size={7.5} />
+        </div>
       </div>
-      <button onClick={cycle} aria-label="Theme" style={{ width: 36, height: 36, borderRadius: 99, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <button onClick={cycle} aria-label="Theme" style={{ width: 31, height: 31, borderRadius: 99, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, display: "flex", alignItems: "center", justifyContent: "center" }}>
         {light
           ? <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="4.2" /><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M5 5l1.8 1.8M17.2 17.2l1.8 1.8M19 5l-1.8 1.8M6.8 17.2 5 19" /></svg>
           : <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>}
       </button>
       <SyncButton compact />
-      <button onClick={onProfile} aria-label="Profile & workspace mode" style={{ width: 36, height: 36, borderRadius: 99, border: `1.5px solid ${C.gold}`, background: "linear-gradient(135deg,#1d3f6b,#0e2440)", color: C.gold, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 15, flexShrink: 0 }}>M</button>
+      <button onClick={onProfile} aria-label="Profile & workspace mode" style={{ width: 31, height: 31, borderRadius: 99, border: `1.5px solid ${C.gold}`, background: "linear-gradient(135deg,#1d3f6b,#0e2440)", color: C.gold, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 15, flexShrink: 0 }}>M</button>
     </div>
   );
 }
@@ -912,7 +927,7 @@ function IngestedSection({ records }: { records: IngestedRecord[] }) {
   );
 }
 /* ── ASK — the KNOW tab (voice-first: hold-to-talk primary) ── */
-function AskScreen() {
+function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: boolean } = {}) {
   const [q, setQ] = useState("");
   const [res, setRes] = useState<AskResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -962,6 +977,14 @@ function AskScreen() {
   const status = rec === "rec" ? "Listening… release to search" : rec === "busy" ? "Transcribing your voice…" : loading ? "Searching the record…" : null;
 
   // hold-to-talk: press starts recording, release stops → transcribe → search
+  // mic-tab behavior (RD): arriving in voice mode starts listening at once;
+  // tapping the big button stops it. Unmount (mode switch) releases the mic.
+  useEffect(() => {
+    if (autoVoice) void mic();
+    return () => { try { if (recRef.current?.state === "recording") recRef.current.stop(); } catch { /* released */ } };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const holdStart = () => { if (rec === "idle") mic(); };
   const holdStop = () => { if (rec === "rec") mic(); };
 
@@ -971,7 +994,7 @@ function AskScreen() {
       <div style={{ padding: "0 16px" }}>
         {/* the floating pill (design ref 2026-07-02) */}
         <form onSubmit={(e) => { e.preventDefault(); run(); }} style={{ display: "flex", gap: 9, alignItems: "center", background: "var(--c-sidebar, rgba(var(--ink),.05))", border: "1px solid var(--c-cardbd)", borderRadius: 999, padding: "6px 6px 6px 18px", boxShadow: "0 6px 22px rgba(20,20,10,.08)" }}>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask anything" style={{ flex: 1, minWidth: 0, background: "transparent", border: 0, outline: "none", fontSize: 16, color: C.text, fontFamily: FONT.sans }} />
+          <input autoFocus={!!textFocus} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask anything" style={{ flex: 1, minWidth: 0, background: "transparent", border: 0, outline: "none", fontSize: 16, color: C.text, fontFamily: FONT.sans }} />
           <button type="submit" disabled={loading || rec !== "idle"} style={{ padding: "10px 18px", borderRadius: 999, border: 0, background: loading ? "rgba(231,181,60,.85)" : C.gold, color: "#081627", fontWeight: 700, fontSize: 14, minWidth: loading ? 96 : undefined, animation: loading ? "bwPulse 1.2s ease-in-out infinite" : undefined }}>{loading ? "Searching…" : "Ask"}</button>
         </form>
 

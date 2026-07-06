@@ -99,9 +99,9 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
           wordmark and only the bell emblem shows). Fixed palette, like real
           letterhead, so it reads in all four themes; dated by the SAME clock
           as the content below it (invariant 9). ── */}
-      <div style={{ position: "relative", overflow: "hidden", borderRadius: 20, marginTop: mobile ? 14 : 0, padding: mobile ? "24px 20px 22px" : "30px 28px 26px", background: "linear-gradient(120deg,#FDFAF1 0%,#FAF3E2 55%,#F3E7CB 100%)", border: "1px solid rgba(180,140,60,.28)", boxShadow: "0 14px 36px rgba(20,40,80,.16)" }}>
+      <div style={{ position: "relative", overflow: "hidden", borderRadius: 20, marginTop: mobile ? 8 : 0, padding: mobile ? "12px 15px 11px" : "30px 28px 26px", background: "linear-gradient(120deg,#FDFAF1 0%,#FAF3E2 55%,#F3E7CB 100%)", border: "1px solid rgba(180,140,60,.28)", boxShadow: "0 14px 36px rgba(20,40,80,.16)" }}>
         {(() => {
-          const h = mobile ? 205 : 285; // logo is 400×170; bell ≈ left 37.5%
+          const h = mobile ? 130 : 285; // logo is 400×170; bell ≈ left 37.5%
           const w = h * (400 / 170);
           return (
             /* eslint-disable-next-line @next/next/no-img-element */
@@ -110,7 +110,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
         })()}
         <div style={{ position: "relative", maxWidth: mobile ? "78%" : "72%" }}>
           <div style={{ ...eyebrow("#8a6a1f"), fontWeight: 700 }}>Your Chief of Staff · {wall?.dateLabel ?? "—"}</div>
-          <div style={{ fontFamily: FONT.serif, fontSize: "clamp(21px, 5vw, 30px)", fontWeight: 600, color: "#14335c", lineHeight: 1.12, marginTop: 9, letterSpacing: "-.01em" }}>
+          <div style={{ fontFamily: FONT.serif, fontSize: mobile ? "clamp(16px, 4.4vw, 21px)" : "clamp(21px, 5vw, 30px)", fontWeight: 600, color: "#14335c", lineHeight: 1.12, marginTop: 9, letterSpacing: "-.01em" }}>
             {wall?.greeting ?? (failed ? "The Wall is unavailable." : "Reading the cabinet…")}
           </div>
           {wall?.sendLive && <div style={{ marginTop: 10 }}><SendLivePill /></div>}
@@ -118,7 +118,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
       </div>
 
       {/* ── NEEDS YOU NOW ── */}
-      <div style={{ marginTop: 24 }}>
+      <div style={{ marginTop: mobile ? 13 : 24 }}>
         <div style={sectionHead}>Needs you now</div>
         <div style={{ ...card, overflow: "hidden" }}>
           {!wall && !failed && <Empty text="…" />}
@@ -145,7 +145,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
       </div>
 
       {/* ── THE CABINET ── */}
-      <div style={{ marginTop: 26 }}>
+      <div style={{ marginTop: mobile ? 13 : 26 }}>
         <div style={sectionHead}>The cabinet</div>
         {/* Mobile is a two-column GRID — the whole cabinet visible in one
             vertical scroll (horizontal decks fight the thumb; RD 2026-07-02).
@@ -153,7 +153,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
         <div
           style={
             mobile
-              ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, alignItems: "start" }
+              ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, alignItems: "start" }
               : { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 12, alignItems: "start" }
           }
         >
@@ -202,7 +202,7 @@ const cardShell = (mobile: boolean): CSSProperties => ({
   ...card,
   textAlign: "left",
   cursor: "pointer",
-  padding: mobile ? "12px 13px" : "14px 15px",
+  padding: mobile ? "9px 11px" : "14px 15px",
   minWidth: 0,
   display: "flex",
   flexDirection: "column",
@@ -213,11 +213,11 @@ const cardShell = (mobile: boolean): CSSProperties => ({
 
 const headlineClamp = (mobile: boolean): CSSProperties => ({
   fontFamily: FONT.serif,
-  fontSize: mobile ? 13 : 14.5,
+  fontSize: mobile ? 12 : 14.5,
   color: C.text2,
-  lineHeight: 1.38,
+  lineHeight: 1.35,
   display: "-webkit-box",
-  WebkitLineClamp: mobile ? 3 : 2,
+  WebkitLineClamp: 2,
   WebkitBoxOrient: "vertical",
   overflow: "hidden",
   overflowWrap: "anywhere",
@@ -256,7 +256,7 @@ function ScheduleCardView({ c, schedule, mobile, unseen, onOpen }: { c: CabinetC
         {unseen && <span style={newPill}>new</span>}
         <span style={{ width: 9, height: 9, borderRadius: 99, background: URGENCY_C[c.statusDot], flexShrink: 0, boxShadow: c.statusDot !== "clear" ? `0 0 0 3px ${URGENCY_C[c.statusDot]}22` : undefined }} />
       </div>
-      <ComingUp schedule={schedule} />
+      <ComingUp schedule={mobile ? { ...schedule, days: schedule.days.slice(0, 2) } : schedule} />
       <div style={{ textAlign: "right", marginTop: "auto", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{c.lastRunLabel}</div>
     </div>
   );
@@ -265,7 +265,7 @@ function ScheduleCardView({ c, schedule, mobile, unseen, onOpen }: { c: CabinetC
 /** The growth story, visible: a new cabinet seat is one interview away. */
 function AddAgentCard({ mobile, onOpen }: { mobile: boolean; onOpen: () => void }) {
   return (
-    <button onClick={onOpen} style={{ minWidth: 0, minHeight: mobile ? 104 : 118, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7, padding: "16px 12px", borderRadius: 16, border: "1.5px dashed rgba(var(--ink),.28)", background: "transparent", cursor: "pointer", color: C.muted, fontFamily: FONT.sans }}>
+    <button onClick={onOpen} style={{ minWidth: 0, minHeight: mobile ? 80 : 118, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7, padding: "16px 12px", borderRadius: 16, border: "1.5px dashed rgba(var(--ink),.28)", background: "transparent", cursor: "pointer", color: C.muted, fontFamily: FONT.sans }}>
       <span style={{ width: 34, height: 34, borderRadius: 99, border: "1.5px dashed rgba(var(--ink),.32)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, lineHeight: 1, fontWeight: 600 }}>+</span>
       <span style={{ fontSize: 13, fontWeight: 800, color: C.text2 }}>Add an agent</span>
       <span style={{ fontSize: 10.5, color: C.dim, textAlign: "center", lineHeight: 1.4 }}>Interview-onboarded · starts observe-only</span>
@@ -279,8 +279,8 @@ function Empty({ text }: { text: string }) {
 
 /** Serif section heading — the "Coming up" idiom: quiet, readable, no caps. */
 const sectionHead: CSSProperties = {
-  fontFamily: FONT.serif, fontSize: 20, fontWeight: 600, color: C.text,
-  letterSpacing: "-.01em", marginBottom: 11,
+  fontFamily: FONT.serif, fontSize: 17, fontWeight: 600, color: C.text,
+  letterSpacing: "-.01em", marginBottom: 8,
 };
 
 /** The notification cue: a desk reported in since you last opened its box. */

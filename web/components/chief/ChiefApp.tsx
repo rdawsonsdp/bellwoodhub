@@ -176,7 +176,7 @@ export default function ChiefApp() {
       <Sidebar screen={screen} go={go} operator={operator} onToggleOperator={(on) => { saveOperatorMode(on); setOperator(on); }} goAgentSection={(sec) => { setAgentFocus(null); setAgentSection(sec); setScreen("agents"); }} agentSection={agentSection} />
 
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-        <Topbar />
+        <Topbar onAsk={(question) => { setScreen("ask"); runAsk(question); }} />
         <div className="scrl" style={{ flex: 1, overflowY: "auto" }}>
           {screen === "today" && <WallScreen variant="desktop" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} onOpenAgent={(k) => { setAgentFocus(k); setScreen("agents"); }} />}
           {screen === "queue" && <QueueScreen variant="desktop" onOpenEmail={setEmailMid} />}
@@ -329,11 +329,57 @@ function ThemeToggle() {
   );
 }
 
-function Topbar() {
-  // One entry point for KNOW (Phase 4): the pseudo-search bar is gone — Ask
-  // lives in the rail. The topbar keeps only ambient controls.
+function Topbar({ onAsk }: { onAsk?: (q: string) => void }) {
+  // Ask lives at the TOP on desktop (RD 2026-07-05): an open box + a mic.
+  // Enter or the mic's transcript routes straight to the Ask screen.
+  const [v, setV] = useState("");
+  const [rec, setRec] = useState<"idle" | "rec" | "busy">("idle");
+  const mrRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  async function mic() {
+    if (rec === "rec") { mrRef.current?.stop(); return; }
+    if (rec !== "idle") return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        stream.getTracks().forEach((tr) => tr.stop());
+        setRec("busy");
+        try {
+          const type = mr.mimeType || "audio/webm";
+          const blob = new Blob(chunksRef.current, { type });
+          const fd = new FormData();
+          fd.append("audio", blob, type.includes("mp4") ? "ask.m4a" : "ask.webm");
+          const r = await fetch("/api/transcribe", { method: "POST", body: fd });
+          const d = await r.json().catch(() => ({}));
+          if (d.text) { setV(d.text); onAsk?.(d.text); }
+        } finally { setRec("idle"); }
+      };
+      mr.start();
+      mrRef.current = mr;
+      setRec("rec");
+    } catch { setRec("idle"); }
+  }
   return (
-    <div style={{ flexShrink: 0, height: 58, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, padding: "0 22px", borderBottom: `1px solid ${C.line2}`, background: "rgba(var(--ink),.035)", backdropFilter: "blur(14px)" }}>
+    <div style={{ flexShrink: 0, height: 58, display: "flex", alignItems: "center", gap: 10, padding: "0 22px", borderBottom: `1px solid ${C.line2}`, background: "rgba(var(--ink),.035)", backdropFilter: "blur(14px)" }}>
+      <div style={{ flex: 1, maxWidth: 560, margin: "0 auto", display: "flex", alignItems: "center", gap: 9, background: "rgba(var(--ink),.05)", border: `1px solid ${C.line}`, borderRadius: 99, padding: "7px 8px 7px 16px" }}>
+        <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth={2} strokeLinecap="round"><path d="M11 11m-7 0a7 7 0 1 0 14 0a7 7 0 1 0-14 0M21 21l-4.3-4.3" /></svg>
+        <input
+          value={v}
+          onChange={(e) => setV(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && v.trim()) { onAsk?.(v.trim()); } }}
+          placeholder="Ask anything about the record…"
+          style={{ flex: 1, minWidth: 0, background: "transparent", border: 0, outline: "none", fontSize: 13.5, color: C.text, fontFamily: FONT.sans }}
+        />
+        <button onClick={mic} aria-label={rec === "rec" ? "Stop and search" : "Ask by voice"} title={rec === "rec" ? "Listening — click to search" : "Ask by voice"}
+          style={{ width: 30, height: 30, borderRadius: 99, border: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: rec === "rec" ? "#fff" : "#0a1322", background: rec === "rec" ? "linear-gradient(135deg,#e8574a,#c23a2e)" : "linear-gradient(135deg,#F4CB63,#D7991C)", animation: rec === "rec" ? "cosPulse 1.1s infinite" : undefined }}>
+          {rec === "busy"
+            ? <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" style={{ animation: "cosSpin .8s linear infinite" }}><path d="M21 12a9 9 0 0 0-9-9" /></svg>
+            : <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M9 2h6v12a3 3 0 0 1-6 0zM5 11a7 7 0 0 0 14 0M12 18v3" /></svg>}
+        </button>
+      </div>
       <SyncButton />
       <ThemeToggle />
     </div>

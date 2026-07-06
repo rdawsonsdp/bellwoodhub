@@ -105,7 +105,7 @@ fail-closed**; native Vercel crons (his lane is Production). Features promote by
 | # | Task | Status | Notes |
 |---|------|--------|-------|
 | MH-1 | **Outlook framework**: Entra app registration (delegated Mail.Read/Calendars.Read/offline_access) + first live Graph pull + fixes (sent-items TODO, `bf:` walk parity) | 🔵 code done 2026-07-06 | Both fixes shipped: sentitems delta pass (outbound mail) + `bf:` cursor parity (two-folder JSON cursor, legacy upgrade, ingest-loop drain + UI mid-walk now work for Graph) · `Calendars.Read` added to the sign-in scope so the calendar fast-follow needs no re-consent · new eval `web/eval/graph-connector.test.ts` (17 checks green vs a stubbed Graph). Remaining: Entra registration (RD, in progress) + first live pull; target mailbox: `aharvey@vil.bellwood.il.us` (MH-D4) |
-| MH-2 | Provision the Mayor's stack: Supabase project (13 migrations + RLS verify) + Vercel project (same repo, root `web`, prod branch `main`) + full env (fresh app secrets, shared model keys per MH-D3, `ALLOWED_EMAILS`=his, DEMO_MODE=0, send vars ABSENT) | ⚪ Monday | fully unblocked 2026-07-06: interim allowlist = RD's address (MH-D4); swap to the Mayor's Gmail when it arrives tomorrow |
+| MH-2 | Provision the Mayor's stack: Supabase project (migrations + RLS verify) + Vercel project (same repo, root `web`, prod branch `main`) + full env (fresh app secrets, shared model keys per MH-D3, `ALLOWED_EMAILS`=his, DEMO_MODE=0, send vars ABSENT) | 🔵 provisioned 2026-07-06 | LIVE: Supabase **BellwoodHub-Mayor** (`vlbabdaaebffpcdtanqt`, us-east-1) — 18 migrations applied, RLS verified 29/29 (incl. enabling it on `app.audit_log`, a gap 003's list misses) · Vercel **bellwood-mayor** (root `web`, prod=`main`, 12 env vars, send vars ABSENT) → **https://bellwood-mayor.vercel.app** deployed; auth gate up (`/`→307→sign-in 200). ⚠ NAMING TRAP found: the Supabase project *named* `bellwood-mayor` (`nxumwxzmnvjmeexknhde`) is actually the PILOT's live DB — RD to rename it `bellwood-pilot` in the dashboard. Remaining: RD sets the DB password → `DATABASE_URL` into the bellwood-mayor Vercel env · Google redirect URI + **publish the OAuth consent screen** (Testing mode killed the pilot's Gmail token today — 7-day expiry) · Entra redirect URI + env values (with MH-1) |
 | MH-3 | Google OAuth client: add the Mayor as test user + the new instance's redirect URI | ⚪ Monday | |
 | MH-4 | End-to-end onboarding smoke test (temporary RD login, deleted same day) | ⚪ Monday | |
 | MH-5 | **Tuesday, ~15 min with the Mayor**: open URL → Google sign-in (Gmail mirrors) → Microsoft sign-in (Outlook connects) → crons take over; RD watches counters, never content | ⚪ Tuesday | Outlook calendar via Graph = fast-follow |
@@ -278,6 +278,22 @@ Decisions (RD walkthrough 2026-07-06): **MH-D1** ✅ RD-owned with audit + a doc
 ---
 
 ## Changelog
+
+- **2026-07-06 #3 (one codebase, three sites · Gmail token death → Reconnect · MH-2 PROVISIONED)** —
+  RD's pilot hit `invalid_grant` on the Gmail refresh (Google kills Testing-mode tokens after 7 days
+  — consent was 6/29): shipped **Reconnect** on Sync-page error rows + `storeRefreshToken` now heals
+  'error'→'active' on fresh consent (pending gate intact); durable fix = RD publishes the OAuth
+  consent screen. Branch reconciliation per RD ("all three sites same code base"): merged main's
+  two scheduler-workflow commits into `live-pilot`, then fast-forwarded `main` — demo, pilot, and
+  the Mayor's instance all build `fd95fcd`. **MH-2 executed**: found the Supabase project *named*
+  `bellwood-mayor` is actually the pilot's DB (the local DATABASE_URL ref proves it) — dodged wiring
+  the Mayor to RD's mailbox; created the real **BellwoodHub-Mayor** ($10/mo confirmed), applied all
+  18 migrations (incl. init_canonical/pipeline/app from the schema dirs + a mayor_tenant_identity
+  step: tenant = Village of Bellwood, domains `vil.bellwood.il.us`), RLS 29/29; created Vercel
+  **bellwood-mayor** (git-connected, root `web`, prod=`main`, domain bellwood-mayor.vercel.app,
+  12 env vars — shared model keys per MH-D3, fresh AUTH/CRON secrets, RD interim allowlist,
+  DEMO_MODE=0, NO send vars) and deployed: auth gate answering. Remaining on RD: DB password →
+  DATABASE_URL, Google redirect URI + consent publish, Entra values, rename the misnamed project.
 
 - **2026-07-06 #2 (MH-1 connector fixes · the Sync page ships)** — The Graph connector grew its two
   known fixes: a **sentitems delta pass** (outbound mail lands; direction from the from-vs-account

@@ -249,6 +249,15 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 
 ## Changelog
 
+- **2026-07-05 late #2 (mobile polish from RD's phone screenshot · Gmail leads the cabinet)** — RD's
+  screenshot showed the Sent rows overflowing the phone viewport (long addresses in nowrap blocks) and
+  the new sync counter squeezing the topbar ("Chief of Staff" wrapped to 3 lines). Fixed per mobile-UX
+  basics: Sent rows now **wrap-then-clamp** (recipient 1 line, subject 2, `overflowWrap:anywhere` so
+  unbroken strings can never widen the sheet), sizes stepped down; the compact topbar counter
+  abbreviates ("18.2k · 1.3k", max-width capped) while desktop keeps the full words. Also per RD:
+  **the mail desks now lead the cabinet, Gmail in the upper-left seat** (connector seats unshift to the
+  front of `wall.cabinet`, gmail-first). tsc + build + 6 suites green.
+
 - **2026-07-05 late (send-cage visibility — the "Live send on" pill)** — RD, seeing the holiday drafts
   in the queue, asked where "auto send" was configured and wanted a flashing label. Clarified the truth
   (nothing auto-sends: drafts sit until a human taps Approve; THEN the cage checks SEND_ENABLED +

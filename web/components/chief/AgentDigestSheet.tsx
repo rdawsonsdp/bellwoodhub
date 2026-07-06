@@ -102,18 +102,20 @@ export default function AgentDigestSheet({ run, card: c, schedule, variant, onCl
             ) : (
               <div style={{ display: "grid", gap: 14 }}>
                 {run.sent.map((day) => (
-                  <div key={day.date}>
+                  <div key={day.date} style={{ minWidth: 0 }}>
                     <div style={{ fontFamily: FONT.serif, fontSize: 14.5, fontWeight: 600, color: C.text2, marginBottom: 6 }}>
                       {day.label}
                       <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim, marginLeft: 8 }}>{day.items.length} sent</span>
                     </div>
-                    <div style={{ ...card, overflow: "hidden" }}>
+                    {/* wrap-then-clamp (never nowrap): unbroken strings like
+                        long addresses must not widen the sheet on a phone */}
+                    <div style={{ ...card, overflow: "hidden", maxWidth: "100%" }}>
                       {day.items.map((s, i) => (
-                        <div key={i} style={{ padding: "10px 13px", borderTop: i ? `1px solid ${C.line2}` : undefined, display: "flex", gap: 10, alignItems: "baseline" }}>
-                          <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim, width: 54, flexShrink: 0 }}>{s.timeLabel}</span>
+                        <div key={i} style={{ padding: "10px 13px", borderTop: i ? `1px solid ${C.line2}` : undefined, display: "flex", gap: 10, alignItems: "baseline", minWidth: 0 }}>
+                          <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim, width: 50, flexShrink: 0 }}>{s.timeLabel}</span>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.to}</div>
-                            <div style={{ fontSize: 12, color: C.text3, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.subject}</div>
+                            <div style={{ fontSize: 12.5, fontWeight: 700, color: C.text, ...clampLines(1) }}>{s.to}</div>
+                            <div style={{ fontSize: 11.5, color: C.text3, marginTop: 2, lineHeight: 1.45, ...clampLines(2) }}>{s.subject}</div>
                           </div>
                         </div>
                       ))}
@@ -161,6 +163,13 @@ export default function AgentDigestSheet({ run, card: c, schedule, variant, onCl
     </div>
   );
 }
+
+/** Wrap up to n lines, then ellipsize — and break even unbroken strings
+ *  (emails, URLs) so they can never widen the sheet past the viewport. */
+const clampLines = (n: number): CSSProperties => ({
+  display: "-webkit-box", WebkitLineClamp: n, WebkitBoxOrient: "vertical",
+  overflow: "hidden", overflowWrap: "anywhere",
+});
 
 const roundBtn: CSSProperties = {
   background: "rgba(var(--ink),.06)", border: `1px solid ${C.line}`, borderRadius: 99,

@@ -197,6 +197,7 @@ async function addConnectorCards(wall: WallPayload): Promise<void> {
   );
   const t = totals[0];
   const sentDays = await recentSentDays();
+  const seats: CabinetCard[] = [];
   for (const a of accounts) {
     const agentKey = a.provider === "gmail" ? "email-gmail" : "email-outlook";
     if (off.has(agentKey)) continue;
@@ -209,7 +210,7 @@ async function addConnectorCards(wall: WallPayload): Promise<void> {
       : midWalk ? `Mirroring the mailbox — ${Number(t.messages).toLocaleString()} messages so far.`
       : `${Number(t.messages).toLocaleString()} messages mirrored · watching for new mail.`;
     const freshAt = a.last_synced_at ?? wall.generatedAt;
-    wall.cabinet.push({
+    seats.push({
       agentKey, name, icon: "mail", color: a.provider === "gmail" ? "#5b8def" : "#67adff",
       statusDot, walled: a.mailbox_id === "biz", origin: "default",
       headline, counts: { newItems: Number(t.today), needsYou: 0 },
@@ -232,6 +233,10 @@ async function addConnectorCards(wall: WallPayload): Promise<void> {
       ...(a.provider === "gmail" ? { sent: sentDays } : {}),
     };
   }
+  // the mail desks lead the cabinet, Gmail in the upper-left seat
+  // (RD 2026-07-05) — on the pilot the mailbox IS the working surface
+  seats.sort((a, b) => Number(b.agentKey === "email-gmail") - Number(a.agentKey === "email-gmail"));
+  wall.cabinet.unshift(...seats);
   // registry cards are code-defined too — mark them Default so the
   // Default-vs-Custom vocabulary is ready for the Agent Factory
   for (const c of wall.cabinet) if (!c.origin) c.origin = "default";

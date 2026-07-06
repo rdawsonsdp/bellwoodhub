@@ -11,6 +11,9 @@ import { useEffect, useState } from "react";
 import { C, FONT } from "@/lib/cos-design";
 import { IS_LIVE_BUILD } from "@/lib/live";
 
+/** 18197 → "18.2k" — the compact topbar caption must stay narrower than the button. */
+const abbr = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10_000 ? 0 : 1).replace(/\.0$/, "")}k` : String(n));
+
 export default function SyncButton({ compact }: { compact?: boolean }) {
   const [state, setState] = useState<"idle" | "busy" | "err">("idle");
   const [count, setCount] = useState<number | null>(null);
@@ -85,8 +88,12 @@ export default function SyncButton({ compact }: { compact?: boolean }) {
         {!compact && (state === "busy" ? "Syncing…" : "Sync")}
       </button>
       {count !== null && (
-        <span style={{ fontFamily: FONT.mono, fontSize: 8.5, color: C.dim, lineHeight: 1, whiteSpace: "nowrap" }}>
-          {count.toLocaleString()} synced{indexed !== null ? ` · ${indexed.toLocaleString()} searchable` : ""}
+        // compact (mobile topbar): abbreviated so the caption can never widen
+        // the button column and squeeze the title (RD screenshot 2026-07-05)
+        <span style={{ fontFamily: FONT.mono, fontSize: 8.5, color: C.dim, lineHeight: 1, whiteSpace: "nowrap", maxWidth: compact ? 64 : undefined, overflow: "hidden", textOverflow: "ellipsis" }}>
+          {compact
+            ? `${abbr(count)}${indexed !== null ? ` · ${abbr(indexed)}` : ""}`
+            : `${count.toLocaleString()} synced${indexed !== null ? ` · ${indexed.toLocaleString()} searchable` : ""}`}
         </span>
       )}
     </span>

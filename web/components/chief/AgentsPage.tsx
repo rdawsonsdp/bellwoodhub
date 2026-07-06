@@ -268,6 +268,8 @@ function AgentDetail({ a, activity, onBack }: { a: CosAgent; activity?: string[]
         {a.spec && <Field k="Full spec" v={<span>Defined in <code style={{ fontFamily: FONT.mono, fontSize: 12, color: C.gold }}>{a.spec}</code> — versioned in the repo, not the UX.</span>} />}
       </div>
 
+      {IS_LIVE_BUILD && <SkillsSection agentKey={a.key} />}
+
       <div style={{ ...eyebrow(C.dim), marginTop: 22, marginBottom: 11 }}>Recent activity</div>
       {IS_LIVE_BUILD ? (
         activity?.length ? (
@@ -300,6 +302,86 @@ function AgentDetail({ a, activity, onBack }: { a: CosAgent; activity?: string[]
       ) : (
         <div style={{ ...card, padding: 24, textAlign: "center", color: C.dim, fontSize: 13 }}>No activity yet — this agent is planned. Configured in Claude Code when ready.</div>
       )}
+    </div>
+  );
+}
+
+/** FEAT-21 — Skills on the agent console (RD 2026-07-05: "skills are the way
+ *  to have specific rules for each agent; the skill.md is uploaded from the
+ *  UX"). Upload a markdown file, attach/detach existing skills; the runner
+ *  injects attached content into this agent's prompt. Live builds only. */
+interface SkillRow { skillId: string; name: string; kind: string; version: number; updatedAt: string; chars: number; attached: boolean }
+
+function SkillsSection({ agentKey }: { agentKey: string }) {
+  const [skills, setSkills] = useState<SkillRow[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = () =>
+    fetch(`/api/agents/skills?agent=${encodeURIComponent(agentKey)}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d: { skills?: SkillRow[] }) => setSkills(d.skills ?? []))
+      .catch(() => setSkills([]));
+  useEffect(() => { void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [agentKey]);
+
+  const post = async (payload: Record<string, unknown>) => {
+    setBusy(true); setErr(null);
+    try {
+      const r = await fetch("/api/agents/skills", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "request failed");
+      await load();
+    } catch (e) { setErr(e instanceof Error ? e.message : "failed"); } finally { setBusy(false); }
+  };
+
+  const onFile = (f: File | null) => {
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const content = String(reader.result ?? "");
+      const name = f.name.replace(/\.(md|markdown|txt)$/i, "").replace(/[-_]/g, " ").trim() || f.name;
+      void post({ action: "upload", name, content, agentKey });
+    };
+    reader.readAsText(f);
+  };
+
+  const attached = (skills ?? []).filter((s) => s.attached);
+  const others = (skills ?? []).filter((s) => !s.attached);
+  return (
+    <div style={{ marginTop: 22 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
+        <span style={{ fontFamily: FONT.serif, fontSize: 17, fontWeight: 700, color: C.text }}>Skills</span>
+        <span style={{ fontSize: 12, color: C.text3 }}>rules this agent follows — uploaded, versioned, audited</span>
+      </div>
+      <div style={{ ...card, padding: 15, display: "grid", gap: 10 }}>
+        {skills === null && <div style={{ fontSize: 12.5, color: C.dim }}>Loading skills…</div>}
+        {skills !== null && attached.length === 0 && <div style={{ fontSize: 12.5, color: C.dim }}>No skills attached yet. Upload a skill.md below — e.g. a voice guide or drafting rules.</div>}
+        {attached.map((s) => (
+          <div key={s.skillId} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 13.5, fontWeight: 700, color: C.text, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</span>
+            <span style={{ ...pill(C.muted, "rgba(var(--ink),.06)"), fontSize: 10 }}>{s.kind} · v{s.version} · {(s.chars / 1000).toFixed(1)}k</span>
+            <button disabled={busy} onClick={() => post({ action: "detach", skillId: s.skillId, agentKey })} style={{ cursor: "pointer", background: "rgba(var(--ink),.06)", border: "1px solid var(--c-cardbd)", borderRadius: 8, padding: "5px 11px", color: C.text3, fontSize: 11.5, fontWeight: 600, fontFamily: FONT.sans }}>Detach</button>
+          </div>
+        ))}
+        {others.length > 0 && (
+          <div style={{ borderTop: "1px solid var(--c-cardbd)", paddingTop: 10, display: "grid", gap: 8 }}>
+            <div style={{ ...eyebrow(C.dim2), fontSize: 9 }}>In the library, not attached here</div>
+            {others.map((s) => (
+              <div key={s.skillId} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 13, color: C.text2, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</span>
+                <button disabled={busy} onClick={() => post({ action: "attach", skillId: s.skillId, agentKey })} style={{ cursor: "pointer", background: "rgba(52,201,139,.12)", border: "1px solid rgba(52,201,139,.35)", borderRadius: 8, padding: "5px 11px", color: C.greenText, fontSize: 11.5, fontWeight: 700, fontFamily: FONT.sans }}>Attach</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, border: "1.5px dashed rgba(var(--ink),.28)", borderRadius: 11, padding: "12px 14px", cursor: "pointer", color: C.text2, fontSize: 13, fontWeight: 700, fontFamily: FONT.sans }}>
+          <span style={{ fontSize: 16, lineHeight: 1 }}>⇪</span> {busy ? "Working…" : "Upload skill (.md)"}
+          <input type="file" accept=".md,.markdown,.txt" style={{ display: "none" }} disabled={busy}
+            onChange={(e) => { onFile(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+        </label>
+        {err && <div style={{ fontSize: 12, color: C.redText ?? C.red, fontWeight: 600 }}>{err}</div>}
+        <div style={{ fontFamily: FONT.mono, fontSize: 9.5, color: C.dim, textAlign: "center" }}>skills shape voice &amp; judgment · they can never send, delete, or override the human gate</div>
+      </div>
     </div>
   );
 }

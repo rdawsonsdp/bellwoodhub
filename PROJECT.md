@@ -266,6 +266,26 @@ Decisions pending (RD): **MH-D1** who owns his infra — Village-owned Supabase/
 
 ## Changelog
 
+- **2026-07-05 close #4 (SCHEDULER LIVE · skills built · embed poison-batch fixed)** — RD approved the
+  protection bypass: generated via Vercel API (Preview protection stays ON for humans; the automation
+  header is the machine lane), mirrored to `PILOT_BYPASS_SECRET`, workflow updated on both branches.
+  **Proof run: the pilot ran itself** — ingest 200 (pulled 1,200 messages autonomously), calendar 200,
+  and **Sentinel fired exactly as designed** (503 + alarms on the night's two genuinely-new access
+  patterns: RD's phone and the GitHub runner IPs). The run also exposed a real bug: **the embed stage
+  was STUCK** — newsletter bodies carry invalid UTF-8 (lone surrogates) and NULs; Voyage 400s the whole
+  batch and the newest-first pass retried the same poison batch forever. Fixed: `toWellFormedText`
+  sanitizer (replace unpaired surrogates, strip NULs) + per-message fallback that degrades a poison
+  message to its header line and keeps walking; 4 new eval checks. **FEAT-21 skills BUILT** (RD: "the
+  skill.md will be uploaded from the UX"): migration 013 (`app.skills` + `app.agent_skills`, deny-all
+  RLS) — **awaiting RD's word to apply to the live DB**; `/api/agents/skills` (upload as new version by
+  name / attach / detach, all audited); a Skills section on every agent's console page (upload .md,
+  attach/detach); the runner injects attached skill content into that agent's prompt (draft-autonomy
+  agents also inherit the Drafting desk's skills — where a voice skill lives). Constitution unchanged:
+  skills shape voice/judgment, never autonomy. **Activity console readability pass** (RD screenshot:
+  "we can't read this") — bigger type, real contrast, labeled meta pairs. Follow-up logged: teach
+  Sentinel the automation lane is a known principal (else rotating GitHub runner IPs alarm hourly).
+  tsc + build + 6 suites green.
+
 - **2026-07-05 close #3 (Activity console · scheduler registered on main · ONE bypass approval left)** —
   **Activity console shipped** (RD: "I need a log file or console so I can see what's happening"): new
   operator screen (mobile menu + desktop rail → Activity) reading `app.audit_log` newest-first —

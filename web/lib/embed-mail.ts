@@ -61,6 +61,16 @@ export function chunkHeader(m: {
 
 const estTokens = (s: string) => Math.ceil(s.length / 4);
 
+/** Real mail carries invalid UTF-8 (lone surrogates from newsletter tooling);
+ *  Voyage 400s the whole batch on one bad byte. Replace unpaired surrogates
+ *  and strip NULs so every chunk is well-formed before it leaves the house. */
+export function toWellFormedText(s: string): string {
+  return s
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, "�") // high surrogate w/o partner
+    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "�") // low surrogate w/o partner
+    .replace(/\u0000/g, "");
+}
+
 // Voyage batch endpoint takes up to 128 inputs; 64 stays comfortably under
 // the per-request token ceiling at our chunk size.
 const EMBED_BATCH = 64;
@@ -118,12 +128,28 @@ export async function embedPendingMessages(budgetMs = 200_000, perLoop = 48): Pr
 
     // chunk everything first so one Voyage call covers the whole batch
     const perMessage = batch.map((m) => {
-      const header = chunkHeader(m);
-      const parts = chunkText(m.clean_body ?? "");
+      const header = toWellFormedText(chunkHeader(m));
+      const parts = chunkText(toWellFormedText(m.clean_body ?? ""));
       return { messageId: m.message_id, texts: parts.length ? parts.map((p) => `${header}\n${p}`) : [header] };
     });
     const flat = perMessage.flatMap((m) => m.texts);
-    const vectors = await embedDocuments(flat);
+    let vectors: number[][];
+    try {
+      vectors = await embedDocuments(flat);
+    } catch {
+      // a poison message must not stall the pipeline: retry per message,
+      // degrade the offender to its header line, and keep walking
+      vectors = [];
+      for (const m of perMessage) {
+        try {
+          vectors.push(...(await embedDocuments(m.texts)));
+        } catch {
+          const header = m.texts[0].split("\n")[0];
+          m.texts = [header];
+          vectors.push(...(await embedDocuments([header]).catch(() => [new Array(1024).fill(0) as number[]])));
+        }
+      }
+    }
 
     // one INSERT per message = atomic per message; a crash between messages
     // leaves the rest cleanly pending

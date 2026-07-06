@@ -35,10 +35,16 @@ const TENANT = "00000000-0000-0000-0000-000000000001";
 
 /** The memory-aware prompt. Stable agent identity rides in `system` (cached
  *  block); the volatile slice + memory ride in `user`. */
+export interface AgentSkill {
+  name: string;
+  content: string;
+}
+
 export function buildAgentPrompt(
   agent: DomainAgent,
   memory: AgentMemoryItem[],
   messages: AgentSliceMessage[],
+  skills: AgentSkill[] = [],
 ): { system: string; user: string } {
   const actShape =
     agent.autonomy === "draft"
@@ -49,6 +55,14 @@ export function buildAgentPrompt(
     agent.charter,
     `Your goals:\n${agent.goals.map((g) => `- ${g}`).join("\n")}`,
     `Urgency rules for YOUR desk (what is red/yellow HERE):\n${agent.urgencyRules}`,
+    // FEAT-21: operator-uploaded skills refine voice and judgment — they can
+    // NEVER override the hard rules below or grant autonomy the code denies.
+    ...(skills.length
+      ? [
+          `Operator-uploaded skills for your desk (follow these; the hard rules still win on any conflict):\n` +
+            skills.map((s) => `### ${s.name}\n${s.content.slice(0, 6000)}`).join("\n\n"),
+        ]
+      : []),
     `Respond with ONLY a JSON object:\n` +
       `{"headline": string (one line for your cabinet card),\n` +
       ` "urgency": "red"|"yellow"|"clear",\n` +
@@ -215,7 +229,19 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
       return { agentKey: agent.key, ok: true, slice: 0, digest: 0, actItems: 0 };
     }
 
-    const { system, user } = buildAgentPrompt(agent, memory, slice);
+    // FEAT-21: attached skills join the prompt. Draft-autonomy agents also
+    // inherit skills attached to the Drafting Agent's console page — that is
+    // where a voice skill naturally lives. Absent table (pre-013) → none.
+    const skillKeys = [agent.key, ...(agent.autonomy === "draft" ? ["drafting"] : [])];
+    const skills = await query<AgentSkill>(
+      `SELECT DISTINCT s.name, s.content
+         FROM app.skills s JOIN app.agent_skills a ON a.skill_id = s.skill_id
+        WHERE a.agent_key = ANY($1::text[])
+        ORDER BY s.name LIMIT 6`,
+      [skillKeys],
+    ).catch(() => [] as AgentSkill[]);
+
+    const { system, user } = buildAgentPrompt(agent, memory, slice, skills);
     const task = (process.env.AGENT_RUN_TASK as Task) || "draft"; // Sonnet; flagship gated by eval evidence
     const raw = await complete({ task, system, user, maxTokens: 2048 });
     const parsed = parseRunOutput(raw) as { digest?: { sourceMessageIds?: unknown[] }[] };

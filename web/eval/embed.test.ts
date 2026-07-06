@@ -10,7 +10,7 @@
  * sender-shaped questions match semantically; and the planner's literal
  * address extractor finds the addresses a question names.
  */
-import { chunkText, chunkHeader } from "../lib/embed-mail";
+import { chunkText, chunkHeader, toWellFormedText } from "../lib/embed-mail";
 import { extractEmails } from "../lib/planner";
 
 let failures = 0;
@@ -54,6 +54,14 @@ console.log("chunkHeader — the sender/date/subject stamp");
 
   const bare = chunkHeader({ from_name: null, from_email: null, subject: null, sent_at: "2026-07-01T00:00:00Z" });
   check("degrades honestly with no sender/subject", bare.includes("unknown") && bare.includes("(no subject)"));
+}
+
+console.log("toWellFormedText — the Voyage 400 guard (real-mail invalid UTF-8)");
+{
+  check("lone high surrogate replaced", toWellFormedText("before \uD83D after") === "before \uFFFD after");
+  check("lone low surrogate replaced", toWellFormedText("x\uDC00y") === "x\uFFFDy");
+  check("valid emoji pair survives", toWellFormedText("ok \uD83D\uDE00 ok") === "ok \uD83D\uDE00 ok");
+  check("NUL bytes stripped", toWellFormedText("a\u0000b") === "ab");
 }
 
 console.log("extractEmails — literal addresses in a question");

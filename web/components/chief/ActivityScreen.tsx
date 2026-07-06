@@ -77,21 +77,27 @@ export default function ActivityScreen() {
       {live && rows !== null && rows.length > 0 && (
         <div style={{ ...card, overflow: "hidden" }}>
           {rows.map((r, i) => (
-            <div key={i} style={{ display: "flex", gap: 11, padding: "11px 15px", borderBottom: i < rows.length - 1 ? `1px solid ${C.line2}` : undefined, alignItems: "flex-start" }}>
-              <span style={{ width: 8, height: 8, borderRadius: 99, background: tone(r.action), flexShrink: 0, marginTop: 5 }} />
+            // readability first (RD 2026-07-05: "we can't read this") —
+            // bigger type, real contrast; mono stays only on the verb + time
+            <div key={i} style={{ display: "flex", gap: 12, padding: "13px 16px", borderBottom: i < rows.length - 1 ? `1px solid ${C.line2}` : undefined, alignItems: "flex-start" }}>
+              <span style={{ width: 9, height: 9, borderRadius: 99, background: tone(r.action), flexShrink: 0, marginTop: 6 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", gap: 9, alignItems: "baseline", flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: C.text, fontFamily: FONT.mono }}>{r.action}</span>
-                  {r.objectRef && <span style={{ fontSize: 11, color: C.text3, fontFamily: FONT.mono, overflow: "hidden", textOverflow: "ellipsis", maxWidth: 220, whiteSpace: "nowrap" }}>{r.objectType ? `${r.objectType}:` : ""}{r.objectRef}</span>}
-                  {r.actor && <span style={{ ...pill(C.muted, "rgba(var(--ink),.06)"), fontSize: 9.5 }}>{r.actor}</span>}
+                <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 14.5, fontWeight: 800, color: C.text, fontFamily: FONT.mono, letterSpacing: ".01em" }}>{r.action}</span>
+                  {r.objectRef && <span style={{ fontSize: 12.5, color: C.text2, overflow: "hidden", textOverflow: "ellipsis", maxWidth: 260, whiteSpace: "nowrap" }}>{r.objectType ? `${r.objectType}: ` : ""}{r.objectRef}</span>}
+                  {r.actor && <span style={{ ...pill(C.text2, "rgba(var(--ink),.08)"), fontSize: 11 }}>{r.actor}</span>}
                 </div>
                 {Object.keys(r.meta).length > 0 && (
-                  <div style={{ marginTop: 3, fontFamily: FONT.mono, fontSize: 10.5, color: C.dim, lineHeight: 1.6, overflowWrap: "anywhere" }}>
-                    {Object.entries(r.meta).map(([k, v]) => `${k}=${String(v)}`).join(" · ")}
+                  <div style={{ marginTop: 4, fontSize: 12.5, color: C.text3, lineHeight: 1.55, overflowWrap: "anywhere" }}>
+                    {Object.entries(r.meta).map(([k, v]) => (
+                      <span key={k} style={{ marginRight: 12 }}>
+                        <span style={{ color: C.muted }}>{k}</span> <b style={{ color: C.text2, fontWeight: 600 }}>{String(v)}</b>
+                      </span>
+                    ))}
                   </div>
                 )}
               </div>
-              <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim, flexShrink: 0, marginTop: 2 }}>{fmt(r.at)}</span>
+              <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: C.muted, flexShrink: 0, marginTop: 3, whiteSpace: "nowrap" }}>{fmt(r.at)}</span>
             </div>
           ))}
         </div>

@@ -7,7 +7,7 @@
  */
 import { useEffect, useState } from "react";
 import { C, FONT, card, eyebrow, pill } from "@/lib/cos-design";
-import { COS_AGENTS, AUTONOMY_LABEL, type CosAgent } from "@/lib/cos-agents";
+import { COS_AGENTS, AUTONOMY_LABEL, agentByKey, type CosAgent } from "@/lib/cos-agents";
 import { IS_LIVE_BUILD } from "@/lib/live";
 import UsagePanel from "./UsagePanel";
 
@@ -125,8 +125,10 @@ function RunAgentsButton({ running, onRunning }: { running: boolean; onRunning: 
   );
 }
 
-export default function AgentsPage() {
-  const [sel, setSel] = useState<CosAgent | null>(null);
+export default function AgentsPage({ initialAgentKey }: { initialAgentKey?: string } = {}) {
+  // Deep link from a cabinet box's gear (RD 2026-07-05): land directly on
+  // that agent's detail. Keys without a roster entry fall back to the list.
+  const [sel, setSel] = useState<CosAgent | null>(() => (initialAgentKey ? agentByKey(initialAgentKey) ?? null : null));
   // Running state lifted here so every card can flip its badge to "Running…"
   // while a manual pass is in flight (RD 2026-07-03).
   const [running, setRunning] = useState(false);

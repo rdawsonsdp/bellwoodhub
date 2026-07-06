@@ -17,6 +17,7 @@ import { ASK_SEEDS } from "@/lib/ask-seeds";
 import { loadOperatorMode, saveOperatorMode } from "@/lib/operator-mode";
 import { logUsage } from "@/lib/usage";
 import SyncButton from "./SyncButton";
+import AnswerMd from "./AnswerMd";
 import DraftCard from "./DraftCard";
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
@@ -107,6 +108,8 @@ function audioExt(mime: string): string {
 
 export default function MobileApp() {
   const [screen, setScreen] = useState<Screen>("today");
+  // the cabinet gear deep-links Staff Agents to one agent's detail
+  const [agentFocus, setAgentFocus] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [operator, setOperator] = useState(false);
@@ -140,13 +143,13 @@ export default function MobileApp() {
         <Header operator={operator} onMenu={() => setMenuOpen(true)} onProfile={() => setProfileOpen(true)} />
         <PullToRefresh onRefresh={doRefresh}>
           <div key={refreshKey} style={{ padding: "8px 0 20px" }}>
-            {screen === "today" && <WallScreen variant="mobile" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} />}
+            {screen === "today" && <WallScreen variant="mobile" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} onOpenAgent={(k) => { setAgentFocus(k); setScreen("agents"); }} />}
             {screen === "queue" && <QueueScreen variant="mobile" onOpenEmail={setEmailMid} />}
             {screen === "ask" && <AskScreen />}
             {screen === "emails" && <EmailsScreen onAsk={() => setScreen("ask")} />}
             {screen === "events" && <EventsScreen />}
             {screen === "history" && <HistoryScreen />}
-            {screen === "agents" && <AgentsPage />}
+            {screen === "agents" && <AgentsPage key={agentFocus ?? "all"} initialAgentKey={agentFocus ?? undefined} />}
             {screen === "sources" && <div><ScreenHead title="Sources" sub="Connectors, mailboxes, and document upload." /><SourcesView /></div>}
             {screen === "admin" && <AdminPanel />}
           </div>
@@ -1014,7 +1017,7 @@ function AskResult({ res }: { res: AskResponse }) {
   const openEmail = useOpenEmail();
   return (
     <div style={{ marginTop: 18 }}>
-      {res.answer && <div style={{ fontFamily: FONT.serif, fontSize: 19, lineHeight: 1.5, color: C.text, whiteSpace: "pre-wrap", marginBottom: 18 }}>{res.answer}</div>}
+      {res.answer && <div style={{ marginBottom: 18 }}><AnswerMd text={res.answer} size={15.5} /></div>}
       {res.who && (
         <div style={{ display: "grid", gap: 8 }}>
           {res.who.constituents.slice(0, 6).map((w, i) => (

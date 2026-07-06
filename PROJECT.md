@@ -250,6 +250,20 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 
 ## Changelog
 
+- **2026-07-05 late #4 (the email agent's box becomes a dashboard · Ask answers formatted · ASK OVER
+  REAL MAIL PROVEN)** — RD's screenshot showed Ask answering "emails from Coach MJ" with 8 real cited
+  emails — ING-4's first live proof, ~90 minutes after shipping. Session of rapid directives, all
+  shipped: **(1) the box is a dashboard** — "Agent responded" (bold) replaces "Sent"; each day leads
+  with its answered-count as a big numeral ("15 · Friday, Jul 3 · emails answered" — "that's where the
+  business value is"); days **collapse by date** (Today open, older days a header + count);
+  **waiting-approval replies sit at the TOP** of the box (big number + Review → the Queue; deciding
+  stays in the Queue — `WallRun.waitingApproval` from app.drafts); **(2) a gear icon** in the box
+  header deep-links to the agent's detail view (Staff Agents; `AgentsPage initialAgentKey`; domain
+  desks without a roster entry fall back to the list — unification is FEAT-19/Factory work);
+  **(3) Ask answers render formatted** — new dependency-free `AnswerMd` (headings, bold, lists, pipe
+  tables, [n] chips that still scroll to source cards) replaces raw-markdown pre-wrap on BOTH shells.
+  tsc + build + 6 suites green.
+
 - **2026-07-05 late #3 (liveness dots · the pilot's scheduler)** — Two RD directives: **(1) "if the
   agent is live the light should be green; if not, red"** — on live builds the cabinet dot is now the
   LIVENESS channel (urgency keeps needsYouNow + digest sheets): email seats green when the connector is

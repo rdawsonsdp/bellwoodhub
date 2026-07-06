@@ -32,13 +32,15 @@ interface Props {
   /** Until the Phase 3 Queue lands, "Approve" deep-links to the existing
    *  approvals surface (mobile: Emails · Agent Answered, desktop: Approvals). */
   onGoApprovals: () => void;
+  /** The digest sheet's gear → this agent's detail on Staff Agents. */
+  onOpenAgent?: (agentKey: string) => void;
 }
 
 const URGENCY_C: Record<string, string> = { red: C.red, yellow: C.orange, clear: C.green };
 
 const shortName = (name: string) => name.replace(/ Agent$/, "");
 
-export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Props) {
+export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpenAgent }: Props) {
   const [wall, setWall] = useState<WallPayload | null>(null);
   const [failed, setFailed] = useState(false);
   const [openAgent, setOpenAgent] = useState<string | null>(null);
@@ -186,6 +188,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals }: Prop
           onOpenMessage={(mid) => onOpenEmail?.(mid)}
           onGoApprovals={() => { setOpenAgent(null); onGoApprovals(); }}
           onRefresh={() => refreshAgent(openAgent)}
+          onOpenAgentDetail={onOpenAgent ? () => { setOpenAgent(null); onOpenAgent(openAgent); } : undefined}
         />
       )}
     </div>

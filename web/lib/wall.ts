@@ -89,6 +89,9 @@ export interface WallRun {
   /** Present on agents that can transmit (the Gmail seat): what actually went
    *  out in the past 3 days. Empty array = honest "nothing sent". */
   sent?: SentDay[];
+  /** Drafts pending a human decision — shown at the top of the box as the
+   *  dashboard's first number; deciding happens in the Queue. */
+  waitingApproval?: number;
 }
 
 /** The Schedule card's calendar face — the "Coming up" idiom: today (even if
@@ -197,6 +200,10 @@ async function addConnectorCards(wall: WallPayload): Promise<void> {
   );
   const t = totals[0];
   const sentDays = await recentSentDays();
+  const waiting = await query<{ n: string }>(
+    `SELECT count(*) AS n FROM app.drafts WHERE status = 'pending'`,
+  ).catch(() => [{ n: "0" }]);
+  const waitingApproval = Number(waiting[0]?.n ?? 0);
   const seats: CabinetCard[] = [];
   for (const a of accounts) {
     const agentKey = a.provider === "gmail" ? "email-gmail" : "email-outlook";
@@ -229,8 +236,9 @@ async function addConnectorCards(wall: WallPayload): Promise<void> {
       ],
       actItems: [],
       // sends are wired for Gmail only (approvals route) — the outbound
-      // record belongs to the seat that can transmit
-      ...(a.provider === "gmail" ? { sent: sentDays } : {}),
+      // record belongs to the seat that can transmit, and so does the
+      // waiting-approval number (RD: the box is a dashboard)
+      ...(a.provider === "gmail" ? { sent: sentDays, waitingApproval } : {}),
     };
   }
   // the mail desks lead the cabinet, Gmail in the upper-left seat

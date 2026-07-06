@@ -27,6 +27,7 @@ import QueueScreen from "./QueueScreen";
 import ThreadView from "./ThreadView";
 import SyncButton from "./SyncButton";
 import SendLivePill from "./SendLivePill";
+import AnswerMd from "./AnswerMd";
 
 /** Open the actual source document from anywhere a message is referenced —
  *  in-app (Phase 4), never the old standalone page. */
@@ -111,6 +112,8 @@ const MAYOR_SCREENS: Screen[] = ["today", "queue", "ask", "memory"];
 
 export default function ChiefApp() {
   const [screen, setScreen] = useState<Screen>("today");
+  // the cabinet gear deep-links Staff Agents to one agent's detail
+  const [agentFocus, setAgentFocus] = useState<string | null>(null);
   const [asked, setAsked] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
@@ -172,7 +175,7 @@ export default function ChiefApp() {
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <Topbar />
         <div className="scrl" style={{ flex: 1, overflowY: "auto" }}>
-          {screen === "today" && <WallScreen variant="desktop" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} />}
+          {screen === "today" && <WallScreen variant="desktop" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} onOpenAgent={(k) => { setAgentFocus(k); setScreen("agents"); }} />}
           {screen === "queue" && <QueueScreen variant="desktop" onOpenEmail={setEmailMid} />}
           {screen === "brief" && <Brief go={go} onAsk={() => runAsk("Every flooding conversation, in order — who promised what and whether it happened.")} />}
           {screen === "ask" && <Ask asked={asked} loading={loading} res={res} err={err} q={q} setQ={setQ} runAsk={runAsk} resetAsk={resetAsk} go={go} />}
@@ -181,7 +184,7 @@ export default function ChiefApp() {
           {screen === "sources" && <Sources />}
           {screen === "settings" && <Approvals />}
           {screen === "admin" && <AdminPanel />}
-          {screen === "agents" && <AgentsPage />}
+          {screen === "agents" && <AgentsPage key={agentFocus ?? "all"} initialAgentKey={agentFocus ?? undefined} />}
         </div>
       </div>
       {/* Ask is ONE destination in the rail — the floating pill and the topbar
@@ -658,8 +661,8 @@ function AnswerBody({ res }: { res: AskResponse }) {
   const text = res.answer || (res.openItems ? "Here's what's still open." : "");
   return (
     <div>
-      <div style={{ fontFamily: FONT.serif, fontSize: 22, fontWeight: 400, color: C.text, lineHeight: 1.5, marginBottom: 24, whiteSpace: "pre-wrap" }}>
-        {renderCitations(text)}
+      <div style={{ marginBottom: 24 }}>
+        <AnswerMd text={text} size={17} />
       </div>
       {res.crossSource && (
         <div style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "6px 12px", borderRadius: 99, background: "rgba(52,201,139,.1)", border: "1px solid rgba(52,201,139,.24)", marginBottom: 18 }}>

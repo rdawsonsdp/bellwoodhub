@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { C, FONT, card, eyebrow, pill } from "@/lib/cos-design";
 import { COS_AGENTS, AUTONOMY_LABEL, agentByKey, type CosAgent } from "@/lib/cos-agents";
+import { domainAgentByKey } from "@/lib/domain-agents";
 import { IS_LIVE_BUILD } from "@/lib/live";
 import UsagePanel from "./UsagePanel";
 
@@ -125,10 +126,30 @@ function RunAgentsButton({ running, onRunning }: { running: boolean; onRunning: 
   );
 }
 
+/** A cabinet desk (domain registry) viewed as a console card — so the gear on
+ *  any box lands on a real detail page even before the rosters unify. */
+function domainAsCos(key: string): CosAgent | null {
+  const d = domainAgentByKey(key);
+  if (!d) return null;
+  const autonomy = d.autonomy === "draft" ? "R3" : d.autonomy === "suggest" ? "R2" : "R1";
+  return {
+    key: d.key, name: d.name, autonomy, status: d.active ? "active" : "planned",
+    powers: d.domains, role: d.charter.split(". ")[0], job: d.charter,
+    produces: d.autonomy === "draft" ? "Cited cabinet digests + draft replies for your approval." : "Cited cabinet digests.",
+    plain: {
+      reads: `Mail routed to the ${d.name.replace(/ Agent$/, "")} desk${d.walled ? " — its walled, private lane" : ""}. Nothing else.`,
+      produces: d.autonomy === "draft" ? "A cited digest on its cabinet card, and draft replies that wait for you." : "A cited digest on its cabinet card.",
+      never: "It never sends anything itself, never cites evidence it wasn't given, and never speaks outside its desk.",
+      decides: "You.",
+    },
+    recent: [],
+  };
+}
+
 export default function AgentsPage({ initialAgentKey }: { initialAgentKey?: string } = {}) {
   // Deep link from a cabinet box's gear (RD 2026-07-05): land directly on
-  // that agent's detail. Keys without a roster entry fall back to the list.
-  const [sel, setSel] = useState<CosAgent | null>(() => (initialAgentKey ? agentByKey(initialAgentKey) ?? null : null));
+  // that agent's detail. Cabinet desks resolve via the domain registry.
+  const [sel, setSel] = useState<CosAgent | null>(() => (initialAgentKey ? agentByKey(initialAgentKey) ?? domainAsCos(initialAgentKey) : null));
   // Running state lifted here so every card can flip its badge to "Running…"
   // while a manual pass is in flight (RD 2026-07-03).
   const [running, setRunning] = useState(false);
@@ -268,6 +289,7 @@ function AgentDetail({ a, activity, onBack }: { a: CosAgent; activity?: string[]
         {a.spec && <Field k="Full spec" v={<span>Defined in <code style={{ fontFamily: FONT.mono, fontSize: 12, color: C.gold }}>{a.spec}</code> — versioned in the repo, not the UX.</span>} />}
       </div>
 
+      {IS_LIVE_BUILD && <InstructionsSection agentKey={a.key} />}
       {IS_LIVE_BUILD && <SkillsSection agentKey={a.key} />}
 
       <div style={{ ...eyebrow(C.dim), marginTop: 22, marginBottom: 11 }}>Recent activity</div>
@@ -302,6 +324,103 @@ function AgentDetail({ a, activity, onBack }: { a: CosAgent; activity?: string[]
       ) : (
         <div style={{ ...card, padding: 24, textAlign: "center", color: C.dim, fontSize: 13 }}>No activity yet — this agent is planned. Configured in Claude Code when ready.</div>
       )}
+    </div>
+  );
+}
+
+/** FEAT-19 slice 2 — the agent's PROMPT, editable by the end user (RD
+ *  2026-07-05: "this needs to be configured on the Agent Card and stored in
+ *  the database, not hard-coded"). Charter, goals, and the urgency directives
+ *  ("these types of emails are ALWAYS urgent") load from the code registry as
+ *  defaults; edits land in app.agent_configs.overrides, beat the defaults at
+ *  run time, and are audited. Autonomy is deliberately not editable here. */
+function InstructionsSection({ agentKey }: { agentKey: string }) {
+  const d = domainAgentByKey(agentKey);
+  const [charter, setCharter] = useState("");
+  const [goals, setGoals] = useState("");
+  const [urgency, setUrgency] = useState("");
+  const [edited, setEdited] = useState(false); // an override row exists
+  const [state, setState] = useState<"loading" | "idle" | "saving" | "saved" | "err">("loading");
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!d) return;
+    fetch("/api/agents/config")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((cfg: { overrides?: Record<string, { charter?: string; goals?: string[]; urgencyRules?: string }> }) => {
+        const ov = cfg.overrides?.[agentKey] ?? {};
+        setCharter(ov.charter ?? d.charter);
+        setGoals((ov.goals ?? d.goals).join("\n"));
+        setUrgency(ov.urgencyRules ?? d.urgencyRules);
+        setEdited(!!(ov.charter || ov.goals || ov.urgencyRules));
+        setState("idle");
+      })
+      .catch(() => { setCharter(d.charter); setGoals(d.goals.join("\n")); setUrgency(d.urgencyRules); setState("idle"); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentKey]);
+
+  if (!d) return null; // only the runnable desks carry a run prompt
+
+  const save = async (reset: boolean) => {
+    setState("saving"); setErr(null);
+    try {
+      const overrides = reset ? null : { charter, goals: goals.split("\n").map((g) => g.trim()).filter(Boolean), urgencyRules: urgency };
+      const r = await fetch("/api/agents/config", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ agentKey, overrides }) });
+      const dta = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(dta.error || "save failed");
+      if (reset) { setCharter(d.charter); setGoals(d.goals.join("\n")); setUrgency(d.urgencyRules); }
+      setEdited(!reset);
+      setState("saved");
+      window.setTimeout(() => setState("idle"), 1800);
+    } catch (e) { setErr(e instanceof Error ? e.message : "save failed"); setState("err"); }
+  };
+
+  const area = (v: string, set: (s: string) => void, rows: number, ph: string) => (
+    <textarea value={v} onChange={(e) => set(e.target.value)} rows={rows} placeholder={ph} disabled={state === "loading" || state === "saving"}
+      style={{ width: "100%", boxSizing: "border-box", background: "rgba(var(--ink),.04)", border: "1px solid var(--c-cardbd)", borderRadius: 10, padding: "10px 12px", color: C.text, fontSize: 13.5, lineHeight: 1.55, fontFamily: FONT.sans, resize: "vertical" }} />
+  );
+  const label = (t: string, hint?: string) => (
+    <div style={{ marginBottom: 5 }}>
+      <span style={{ fontSize: 12.5, fontWeight: 800, color: C.text }}>{t}</span>
+      {hint && <span style={{ fontSize: 11.5, color: C.text3, marginLeft: 8 }}>{hint}</span>}
+    </div>
+  );
+
+  return (
+    <div style={{ marginTop: 22 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
+        <span style={{ fontFamily: FONT.serif, fontSize: 17, fontWeight: 700, color: C.text }}>Instructions</span>
+        <span style={{ fontSize: 12, color: C.text3 }}>the prompt this agent runs with — yours to edit</span>
+        <span style={{ ...pill(edited ? C.goldHi : C.muted, edited ? "rgba(231,181,60,.14)" : "rgba(var(--ink),.06)"), fontSize: 9.5, fontWeight: 800 }}>{edited ? "EDITED" : "DEFAULT"}</span>
+      </div>
+      <div style={{ ...card, padding: 15, display: "grid", gap: 13 }}>
+        <div>
+          {label("Charter", "who this agent is and what its desk covers")}
+          {area(charter, setCharter, 3, "The agent's role, in prose…")}
+        </div>
+        <div>
+          {label("Goals", "one per line")}
+          {area(goals, setGoals, 4, "- Track every open constituent issue…")}
+        </div>
+        <div>
+          {label("Urgency rules", "what is ALWAYS red or yellow on this desk — e.g. “Any email about a water main break is always urgent”")}
+          {area(urgency, setUrgency, 4, "Red: … Yellow: …")}
+        </div>
+        <div style={{ display: "flex", gap: 9, alignItems: "center" }}>
+          <button disabled={state === "saving" || state === "loading"} onClick={() => save(false)}
+            style={{ cursor: "pointer", border: 0, borderRadius: 10, padding: "10px 18px", fontWeight: 800, fontSize: 13, fontFamily: FONT.sans, background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322" }}>
+            {state === "saving" ? "Saving…" : state === "saved" ? "Saved ✓" : "Save instructions"}
+          </button>
+          <button disabled={state === "saving" || state === "loading" || !edited} onClick={() => save(true)}
+            style={{ cursor: "pointer", background: "rgba(var(--ink),.06)", border: "1px solid var(--c-cardbd)", borderRadius: 10, padding: "10px 14px", color: C.text3, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans, opacity: edited ? 1 : 0.5 }}>
+            Reset to default
+          </button>
+          {err && <span style={{ fontSize: 12, color: C.red, fontWeight: 600 }}>{err}</span>}
+        </div>
+        <div style={{ fontFamily: FONT.mono, fontSize: 9.5, color: C.dim, textAlign: "center" }}>
+          takes effect on the agent&rsquo;s next run · every edit audited · autonomy &amp; the human gate are not editable
+        </div>
+      </div>
     </div>
   );
 }

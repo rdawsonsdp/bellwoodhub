@@ -26,11 +26,16 @@ export async function GET() {
   try {
     if (DEMO) return NextResponse.json({ configs: {} });
     const { query } = await import("@/lib/db");
-    const rows = await query<{ agent_key: string; enabled: boolean }>(
-      `SELECT agent_key, enabled FROM app.agent_configs`,
+    const rows = await query<{ agent_key: string; enabled: boolean; overrides: Record<string, unknown> }>(
+      `SELECT agent_key, enabled, overrides FROM app.agent_configs`,
     );
     const configs: Record<string, boolean> = {};
-    for (const r of rows) configs[r.agent_key] = r.enabled;
+    // FEAT-19 slice 2: the operator-edited prompt pieces per agent
+    const overrides: Record<string, Record<string, unknown>> = {};
+    for (const r of rows) {
+      configs[r.agent_key] = r.enabled;
+      if (r.overrides && Object.keys(r.overrides).length) overrides[r.agent_key] = r.overrides;
+    }
 
     // ── email-agent facts from connector reality ──
     type AccountRow = {
@@ -92,7 +97,7 @@ export async function GET() {
       activity[r.agentKey] = [`${r.output.headline} · ${fmtCT(r.ranAt)}`, ...(activity[r.agentKey] ?? [])];
     }
 
-    return NextResponse.json({ configs, email, activity });
+    return NextResponse.json({ configs, overrides, email, activity });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -108,26 +113,70 @@ export async function POST(req: NextRequest) {
     if (DEMO) {
       return NextResponse.json({ ok: true, mode: "demo", note: "Demo mode — agent switches are display-only." });
     }
-    const { agentKey, enabled } = (await req.json()) as { agentKey?: string; enabled?: boolean };
-    if (!agentKey || typeof enabled !== "boolean") {
-      return NextResponse.json({ error: "agentKey (string) and enabled (boolean) required" }, { status: 400 });
+    const body = (await req.json()) as {
+      agentKey?: string;
+      enabled?: boolean;
+      overrides?: { charter?: string; goals?: string[]; urgencyRules?: string } | null;
+    };
+    const agentKey = body.agentKey;
+    if (!agentKey) {
+      return NextResponse.json({ error: "agentKey (string) required" }, { status: 400 });
     }
     const { query } = await import("@/lib/db");
+    const actor = session?.user?.email ?? null;
+
+    // FEAT-19 slice 2: the agent's PROMPT is end-user configuration — charter,
+    // goals, and urgency directives ("these emails are ALWAYS urgent") land in
+    // overrides and beat the registry defaults at run time. `overrides: null`
+    // resets to defaults. Autonomy is not accepted here — constitution in code.
+    if (body.overrides !== undefined) {
+      const ov = body.overrides;
+      let clean: Record<string, unknown> = {};
+      if (ov !== null) {
+        if (typeof ov.charter === "string" && ov.charter.trim()) clean.charter = ov.charter.slice(0, 4000);
+        if (Array.isArray(ov.goals)) {
+          const goals = ov.goals.filter((g) => typeof g === "string" && g.trim()).map((g) => g.slice(0, 300)).slice(0, 12);
+          if (goals.length) clean.goals = goals;
+        }
+        if (typeof ov.urgencyRules === "string" && ov.urgencyRules.trim()) clean.urgencyRules = ov.urgencyRules.slice(0, 4000);
+      } else {
+        clean = {};
+      }
+      await query(
+        `INSERT INTO app.agent_configs (agent_key, overrides, updated_by)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (agent_key) DO UPDATE SET
+           overrides = EXCLUDED.overrides, updated_by = EXCLUDED.updated_by, updated_at = now()`,
+        [agentKey, JSON.stringify(clean), actor],
+      );
+      await logAudit({
+        actor,
+        action: "agent.config.instructions",
+        objectRef: agentKey,
+        meta: { agentKey, fields: Object.keys(clean), reset: ov === null },
+        req,
+      });
+      return NextResponse.json({ ok: true, agentKey, overrides: clean });
+    }
+
+    if (typeof body.enabled !== "boolean") {
+      return NextResponse.json({ error: "enabled (boolean) or overrides (object|null) required" }, { status: 400 });
+    }
     await query(
       `INSERT INTO app.agent_configs (agent_key, enabled, updated_by)
        VALUES ($1, $2, $3)
        ON CONFLICT (agent_key) DO UPDATE SET
          enabled = EXCLUDED.enabled, updated_by = EXCLUDED.updated_by, updated_at = now()`,
-      [agentKey, enabled, session?.user?.email ?? null],
+      [agentKey, body.enabled, actor],
     );
     await logAudit({
-      actor: session?.user?.email ?? null,
+      actor,
       action: "agent.config.toggle",
       objectRef: agentKey,
-      meta: { agentKey, enabled },
+      meta: { agentKey, enabled: body.enabled },
       req,
     });
-    return NextResponse.json({ ok: true, agentKey, enabled });
+    return NextResponse.json({ ok: true, agentKey, enabled: body.enabled });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";
     console.error("[/api/agents/config]", message);

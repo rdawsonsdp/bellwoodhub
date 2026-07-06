@@ -266,6 +266,21 @@ Decisions pending (RD): **MH-D1** who owns his infra — Village-owned Supabase/
 
 ## Changelog
 
+- **2026-07-05 close #5 (the agent's PROMPT becomes end-user configuration — FEAT-19 slice 2)** — RD:
+  "the prompt each agent gets before running needs to be configured on the Agent Card, stored in the
+  database, not hard-coded — written and edited by the end user… a big part will be directives like
+  which types of emails are ALWAYS urgent." Shipped: **Instructions section on every runnable desk's
+  console page** — Charter / Goals (one per line) / **Urgency rules** ("Any email about a water main
+  break is always red") — loaded from the code registry as DEFAULT, edits saved to
+  `app.agent_configs.overrides` (the column built for this in 011), **runner merges overrides over
+  registry defaults at run time**, every edit audited (`agent.config.instructions`), reset-to-default
+  one tap, EDITED/DEFAULT pill shows drift. Autonomy is deliberately NOT editable — constitution stays
+  in code. Also: the gear on any cabinet box now resolves — domain desks (police/constituent/…) render
+  a real detail page via a registry bridge, so every agent has ONE card with plain-English +
+  Instructions + Skills + activity. **Skills migration applied** (RD's word) — uploads live.
+  **Embed pipeline proven unstuck**: post-fix scheduler run embedded 1,824 messages / 10,793 chunks in
+  one pass; 5,712 of 25,797 indexed and climbing on the 15-min cadence. tsc + build + 6 suites green.
+
 - **2026-07-05 close #4 (SCHEDULER LIVE · skills built · embed poison-batch fixed)** — RD approved the
   protection bypass: generated via Vercel API (Preview protection stays ON for humans; the automation
   header is the machine lane), mirrored to `PILOT_BYPASS_SECRET`, workflow updated on both branches.

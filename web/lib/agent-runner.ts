@@ -241,7 +241,27 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
       [skillKeys],
     ).catch(() => [] as AgentSkill[]);
 
-    const { system, user } = buildAgentPrompt(agent, memory, slice, skills);
+    // FEAT-19 slice 2 (RD 2026-07-05): the prompt is configuration, not code.
+    // Operator edits in app.agent_configs.overrides beat the registry defaults
+    // — charter, goals, and the urgency directives ("these emails are ALWAYS
+    // red"). Autonomy is deliberately NOT overridable here: the constitution
+    // stays in code.
+    type Overrides = { charter?: unknown; goals?: unknown; urgencyRules?: unknown };
+    const ovRows = await query<{ overrides: Overrides }>(
+      `SELECT overrides FROM app.agent_configs WHERE agent_key = $1`,
+      [agent.key],
+    ).catch(() => [] as { overrides: Overrides }[]);
+    const ov = ovRows[0]?.overrides ?? {};
+    const effective: DomainAgent = {
+      ...agent,
+      charter: typeof ov.charter === "string" && ov.charter.trim() ? ov.charter : agent.charter,
+      goals: Array.isArray(ov.goals) && ov.goals.some((g) => typeof g === "string" && g.trim())
+        ? (ov.goals.filter((g) => typeof g === "string" && (g as string).trim()) as string[])
+        : agent.goals,
+      urgencyRules: typeof ov.urgencyRules === "string" && ov.urgencyRules.trim() ? ov.urgencyRules : agent.urgencyRules,
+    };
+
+    const { system, user } = buildAgentPrompt(effective, memory, slice, skills);
     const task = (process.env.AGENT_RUN_TASK as Task) || "draft"; // Sonnet; flagship gated by eval evidence
     const raw = await complete({ task, system, user, maxTokens: 2048 });
     const parsed = parseRunOutput(raw) as { digest?: { sourceMessageIds?: unknown[] }[] };

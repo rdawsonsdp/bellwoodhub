@@ -8,7 +8,7 @@
 import { useEffect, useState } from "react";
 import { C, FONT, card, eyebrow, pill } from "@/lib/cos-design";
 import { COS_AGENTS, AUTONOMY_LABEL, agentByKey, type CosAgent } from "@/lib/cos-agents";
-import { domainAgentByKey } from "@/lib/domain-agents";
+import { DOMAIN_AGENTS, domainAgentByKey } from "@/lib/domain-agents";
 import { IS_LIVE_BUILD } from "@/lib/live";
 import UsagePanel from "./UsagePanel";
 
@@ -181,7 +181,7 @@ export default function AgentsPage({ initialAgentKey }: { initialAgentKey?: stri
       body: JSON.stringify({ agentKey: key, enabled: next }),
     }).catch(() => setConfigs((c) => ({ ...c, [key]: !next }))); // roll back on failure
   };
-  if (sel) return <AgentDetail a={effective(sel)} activity={live.activity[sel.key]} onBack={() => setSel(null)} />;
+  if (sel) return <AgentDetail a={effective(sel)} activity={live.activity[sel.key]} onBack={() => setSel(null)} onOpenAgent={(k) => setSel(agentByKey(k) ?? domainAsCos(k))} />;
 
   const active = COS_AGENTS.filter((a) => a.status !== "planned").length;
   const actions = COS_AGENTS.reduce((n, a) => n + a.recent.length, 0);
@@ -261,7 +261,7 @@ function AgentCard({ a, activity, running, enabled = true, onFlip, onClick }: { 
   );
 }
 
-function AgentDetail({ a, activity, onBack }: { a: CosAgent; activity?: string[]; onBack: () => void }) {
+function AgentDetail({ a, activity, onBack, onOpenAgent }: { a: CosAgent; activity?: string[]; onBack: () => void; onOpenAgent?: (key: string) => void }) {
   return (
     <div className="fu" style={{ padding: "24px 20px 56px", maxWidth: 760, margin: "0 auto" }}>
       <button onClick={onBack} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(var(--ink),.05)", border: "1px solid var(--c-cardbd)", borderRadius: 99, padding: "7px 14px", cursor: "pointer", color: C.text2, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans, marginBottom: 18 }}>← All agents</button>
@@ -289,7 +289,7 @@ function AgentDetail({ a, activity, onBack }: { a: CosAgent; activity?: string[]
         {a.spec && <Field k="Full spec" v={<span>Defined in <code style={{ fontFamily: FONT.mono, fontSize: 12, color: C.gold }}>{a.spec}</code> — versioned in the repo, not the UX.</span>} />}
       </div>
 
-      {IS_LIVE_BUILD && <InstructionsSection agentKey={a.key} />}
+      {IS_LIVE_BUILD && <InstructionsSection agentKey={a.key} onOpenAgent={onOpenAgent} />}
       {IS_LIVE_BUILD && <SkillsSection agentKey={a.key} />}
 
       <div style={{ ...eyebrow(C.dim), marginTop: 22, marginBottom: 11 }}>Recent activity</div>
@@ -334,7 +334,7 @@ function AgentDetail({ a, activity, onBack }: { a: CosAgent; activity?: string[]
  *  ("these types of emails are ALWAYS urgent") load from the code registry as
  *  defaults; edits land in app.agent_configs.overrides, beat the defaults at
  *  run time, and are audited. Autonomy is deliberately not editable here. */
-function InstructionsSection({ agentKey }: { agentKey: string }) {
+function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOpenAgent?: (key: string) => void }) {
   const d = domainAgentByKey(agentKey);
   const [charter, setCharter] = useState("");
   const [goals, setGoals] = useState("");
@@ -359,7 +359,36 @@ function InstructionsSection({ agentKey }: { agentKey: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentKey]);
 
-  if (!d) return null; // only the runnable desks carry a run prompt
+  // Connector agents (Gmail/Outlook) don't run a prompt — they mirror mail.
+  // Say so honestly and point to the desks that DO read this mail and can be
+  // instructed (RD 2026-07-05: "I don't see where to update the prompt").
+  if (!d) {
+    const desks = DOMAIN_AGENTS.filter((x) => x.active);
+    return (
+      <div style={{ marginTop: 22 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
+          <span style={{ fontFamily: FONT.serif, fontSize: 17, fontWeight: 700, color: C.text }}>Instructions</span>
+        </div>
+        <div style={{ ...card, padding: 15 }}>
+          <div style={{ fontSize: 13.5, color: C.text2, lineHeight: 1.6 }}>
+            This agent mirrors your mailbox — it runs no prompt, so there is nothing to instruct here.
+            The mail it brings in is read by the <b>desk agents</b> below; each of those carries an
+            editable prompt (charter, goals, and your urgency rules — e.g. &ldquo;emails about water
+            main breaks are always urgent&rdquo;).
+          </div>
+          {onOpenAgent && (
+            <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 12 }}>
+              {desks.map((x) => (
+                <button key={x.key} onClick={() => onOpenAgent(x.key)} style={{ cursor: "pointer", border: `1px solid ${C.line}`, background: "rgba(var(--ink),.05)", borderRadius: 99, padding: "7px 14px", color: C.text2, fontSize: 12.5, fontWeight: 700, fontFamily: FONT.sans }}>
+                  {x.name.replace(/ Agent$/, "")} →
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const save = async (reset: boolean) => {
     setState("saving"); setErr(null);
@@ -394,6 +423,13 @@ function InstructionsSection({ agentKey }: { agentKey: string }) {
         <span style={{ ...pill(edited ? C.goldHi : C.muted, edited ? "rgba(231,181,60,.14)" : "rgba(var(--ink),.06)"), fontSize: 9.5, fontWeight: 800 }}>{edited ? "EDITED" : "DEFAULT"}</span>
       </div>
       <div style={{ ...card, padding: 15, display: "grid", gap: 13 }}>
+        <div style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, borderLeft: `3px solid ${C.gold}`, paddingLeft: 12 }}>
+          This is the exact material this agent is given before every run. <b>The default prompt is
+          loaded below</b> — copy it, edit any part, and <b>Save</b>; your version takes effect on the
+          agent&rsquo;s next run. <b>Reset to default</b> discards your edits and restores the original.
+          The <b>Urgency rules</b> box is where your standing directives live — for example:
+          &ldquo;Any email about a water main break is ALWAYS urgent.&rdquo;
+        </div>
         <div>
           {label("Charter", "who this agent is and what its desk covers")}
           {area(charter, setCharter, 3, "The agent's role, in prose…")}

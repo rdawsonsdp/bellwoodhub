@@ -18,6 +18,7 @@ import { loadOperatorMode, saveOperatorMode } from "@/lib/operator-mode";
 import { logUsage } from "@/lib/usage";
 import SyncButton from "./SyncButton";
 import AnswerMd from "./AnswerMd";
+import ActivityScreen from "./ActivityScreen";
 import DraftCard from "./DraftCard";
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
@@ -81,7 +82,7 @@ function Svg({ d, w = 22, sw = 1.9, fill = "none" }: { d: string; w?: number; sw
   return <svg width={w} height={w} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d.split("M").filter(Boolean).map((p, i) => <path key={i} d={"M" + p} />)}</svg>;
 }
 
-type Screen = "today" | "queue" | "ask" | "emails" | "events" | "history" | "agents" | "sources" | "admin";
+type Screen = "today" | "queue" | "ask" | "emails" | "events" | "history" | "agents" | "sources" | "activity" | "admin";
 /** Mayor mode = exactly these three destinations (Phase 4 nav collapse). */
 const MAYOR_SCREENS: Screen[] = ["today", "queue", "ask"];
 const THEME_CYCLE = ["auto", "midnight", "dim", "daylight", "contrast"];
@@ -151,6 +152,7 @@ export default function MobileApp() {
             {screen === "history" && <HistoryScreen />}
             {screen === "agents" && <AgentsPage key={agentFocus ?? "all"} initialAgentKey={agentFocus ?? undefined} />}
             {screen === "sources" && <div><ScreenHead title="Sources" sub="Connectors, mailboxes, and document upload." /><SourcesView /></div>}
+            {screen === "activity" && <ActivityScreen />}
             {screen === "admin" && <AdminPanel />}
           </div>
         </PullToRefresh>
@@ -252,6 +254,7 @@ const NAV_ITEMS: [Screen, string, string][] = [
   ["history", I.history, "History"],
   ["agents", NAV_STAR, "Staff Agents"],
   ["sources", I.sources, "Sources"],
+  ["activity", I.history, "Activity"],
   ["admin", I.admin, "Admin"],
 ];
 

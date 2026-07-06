@@ -28,6 +28,7 @@ import ThreadView from "./ThreadView";
 import SyncButton from "./SyncButton";
 import SendLivePill from "./SendLivePill";
 import AnswerMd from "./AnswerMd";
+import ActivityScreen from "./ActivityScreen";
 
 /** Open the actual source document from anywhere a message is referenced —
  *  in-app (Phase 4), never the old standalone page. */
@@ -67,7 +68,7 @@ async function postJson<T>(url: string, body: unknown): Promise<T | null> {
   } catch { return null; }
 }
 
-type Screen = "today" | "queue" | "brief" | "ask" | "track" | "memory" | "sources" | "settings" | "admin" | "agents";
+type Screen = "today" | "queue" | "brief" | "ask" | "track" | "memory" | "sources" | "settings" | "admin" | "agents" | "activity";
 type Filter = "all" | "open" | "late" | "broken" | "kept";
 
 /* ── tiny SVG helpers (stroke icons, 24×24) ── */
@@ -184,6 +185,7 @@ export default function ChiefApp() {
           {screen === "sources" && <Sources />}
           {screen === "settings" && <Approvals />}
           {screen === "admin" && <AdminPanel />}
+          {screen === "activity" && <ActivityScreen />}
           {screen === "agents" && <AgentsPage key={agentFocus ?? "all"} initialAgentKey={agentFocus ?? undefined} />}
         </div>
       </div>
@@ -250,6 +252,7 @@ function Sidebar({ screen, go, operator, onToggleOperator }: { screen: Screen; g
             {item("track", "Calendar", <Ico d={ICON.events ?? ICON.track} />)}
             {item("memory", "History", <Ico d={ICON.memory} />)}
             {item("sources", "Sources", <Ico d={ICON.sources} />)}
+            {item("activity", "Activity", <Ico d={["M12 7v5l3.5 2", "M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z"]} />)}
             {item("settings", "Approvals", <Ico d={ICON.approvals} />)}
             {item("agents", "Staff Agents", <Star w={18} c="currentColor" />)}
             {item("admin", "Admin", <Ico d={ICON.admin} />)}

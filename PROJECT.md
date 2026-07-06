@@ -266,6 +266,21 @@ Decisions pending (RD): **MH-D1** who owns his infra — Village-owned Supabase/
 
 ## Changelog
 
+- **2026-07-05 close #3 (Activity console · scheduler registered on main · ONE bypass approval left)** —
+  **Activity console shipped** (RD: "I need a log file or console so I can see what's happening"): new
+  operator screen (mobile menu + desktop rail → Activity) reading `app.audit_log` newest-first —
+  syncs, embed passes, agent runs, drafts, sends, asks, config flips — with prefix filters
+  (All/Mail/Index/Sync/Agents/Drafts/Ask), 30s auto-refresh (pausable), compact meta line per row;
+  `/api/activity` (live-only, session-gated by middleware; ISS-5's ledger finally has a UI — the
+  Approvals "audit trail" card is no longer decorative). **Scheduler**: RD authorized the push — the
+  workflow file landed on `main` (80697ba; GitHub only runs schedules from the default branch); first
+  dispatched run SUCCEEDED but every endpoint returned **302: Vercel Deployment Protection** walls the
+  Preview lane against machines too. Correct fix = Vercel's **Protection Bypass for Automation**
+  (secret header, protection stays ON for humans) — generating it was permission-gated as a security
+  change; **blocked-on-RD**: approve "generate the protection bypass" (or dashboard → Settings →
+  Deployment Protection → Protection Bypass for Automation, then hand the secret via `.env.local`).
+  Until then, agents still run manually. tsc + build + 6 suites green.
+
 - **2026-07-05 close #2 (Tuesday plan — Mayor Harvey onboarding)** — RD set Tuesday's goal: the Mayor
   on the same codebase, self-serve login + Gmail & Outlook connect, **RD without access to his data**,
   while RD keeps building features on his own pilot. Plan logged as the **MH board** (above): two

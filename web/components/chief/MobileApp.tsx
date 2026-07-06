@@ -17,6 +17,7 @@ import { ASK_SEEDS } from "@/lib/ask-seeds";
 import { loadOperatorMode, saveOperatorMode } from "@/lib/operator-mode";
 import { logUsage } from "@/lib/usage";
 import SyncButton from "./SyncButton";
+import ReleaseTag from "./ReleaseTag";
 import AnswerMd from "./AnswerMd";
 import ActivityScreen from "./ActivityScreen";
 import DraftCard from "./DraftCard";
@@ -432,8 +433,9 @@ function Header({ operator, onMenu, onProfile }: { operator: boolean; onMenu: ()
         <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z" /></svg>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: FONT.serif, fontSize: 16, fontWeight: 600, lineHeight: 1 }}>Chief of Staff</div>
+        <div style={{ fontFamily: FONT.serif, fontSize: 16, fontWeight: 600, lineHeight: 1, whiteSpace: "nowrap" }}>Chief of Staff</div>
         <div style={{ fontFamily: FONT.mono, fontSize: 9, letterSpacing: ".12em", color: C.dim, marginTop: 2 }}>INSTITUTIONAL MEMORY</div>
+        <ReleaseTag size={8} />
       </div>
       <button onClick={cycle} aria-label="Theme" style={{ width: 36, height: 36, borderRadius: 99, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, display: "flex", alignItems: "center", justifyContent: "center" }}>
         {light

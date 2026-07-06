@@ -26,6 +26,7 @@ import WallScreen from "./WallScreen";
 import QueueScreen from "./QueueScreen";
 import ThreadView from "./ThreadView";
 import SyncButton from "./SyncButton";
+import ReleaseTag from "./ReleaseTag";
 import SendLivePill from "./SendLivePill";
 import AnswerMd from "./AnswerMd";
 import ActivityScreen from "./ActivityScreen";
@@ -235,6 +236,7 @@ function Sidebar({ screen, go, operator, onToggleOperator }: { screen: Screen; g
         <div style={{ lineHeight: 1.15 }}>
           <div style={{ fontFamily: FONT.serif, fontSize: 18, fontWeight: 600, color: C.text }}>Chief of Staff</div>
           <div style={{ ...eyebrow(C.dim), fontSize: 9.5, letterSpacing: ".06em", marginTop: 1 }}>Institutional Memory</div>
+          <ReleaseTag />
         </div>
       </div>
 

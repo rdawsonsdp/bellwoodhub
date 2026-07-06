@@ -8,7 +8,7 @@
 > This file is the durable copy that survives across sessions.
 
 **📡 Shareable status page (live):** https://project-status-ten.vercel.app — public, no login. Source: `project-status/index.html`. Redeploy: `vercel deploy --prod --yes --cwd project-status`.
-**Last updated:** 2026-07-06 — **MH-D1…D5 all decided** (RD-owned + audit w/ transfer path · vercel.app alias · shared model keys · interim allowlist = RD's address until the Mayor's Gmail arrives 7/07 · send off till day-two; Outlook target `aharvey@vil.bellwood.il.us`; **MH-2 fully unblocked**). Night close 2026-07-05 — the marathon session: **ING-4 live** (Voyage embeddings + Ask over real mail — proven on RD's own questions; the scheduler runs ingest+embed every 15 min autonomously via GitHub Actions + protection bypass), **agents became configuration** (FEAT-19 slice 2: prompt/urgency rules editable on the card · FEAT-21 skills upload · FEAT-20 plain-English cards), **DEC-13 vocabulary** (Agent / Capability / Connector — Staff Agents in three tinted collapsible sections + nav sub-menu), **Activity console** (the audit ledger live in-app), send-cage pill, dashboard email-agent box, formatted Ask answers, mobile above-the-fold pass, **Ask-as-mic** + desktop topbar Ask box. **Tuesday = Mayor Harvey onboarding** (MH board; decisions MH-D1…D5 pending; hand-out ready: `docs/MAYOR_ONBOARDING_OVERVIEW.md`). URLs: demo=**bellwood-hub.vercel.app** (public), pilot=**bellwood-hub-pilot.vercel.app** (SSO, auto-deploys on push to `live-pilot`)
+**Last updated:** 2026-07-06 (day close) — **Tuesday is a runbook, not a plan**: MH-D1…D5 decided · MH-1 code done (sentitems delta + `bf:` parity, 17 evals green) · **FEAT-24 Sync page shipped** (progress bars w/ real denominators, Voyage ETA, keep-going loop, Connect + Reconnect buttons) · **MH-2 DONE, verified live** (Supabase `BellwoodHub-Mayor` 18 migrations/RLS 29-29 · **bellwood-mayor.vercel.app** · native Vercel crons proven firing) · Entra app registered + env live on BOTH lanes (Microsoft sign-in available; permissions trimmed to least-privilege 7) · allowlist = RD interim + `aharvey@vil.bellwood.il.us` · **one codebase, three sites** (`f269bf7`). **OPEN before Tuesday:** village-IT admin consent · publish Google consent screen (then a fresh Gmail reconnect — pre-publish tokens keep the 7-day fuse) · the Mayor's Gmail (Monday) · first live Graph pull (rehearsal declined; first run is Tuesday) · close-out lockout (allowlist swap + `AUTH_SECRET` rotation) · TASK-12 password rotations wk of 7/13. Night close 2026-07-05 — the marathon session: **ING-4 live** (Voyage embeddings + Ask over real mail — proven on RD's own questions; the scheduler runs ingest+embed every 15 min autonomously via GitHub Actions + protection bypass), **agents became configuration** (FEAT-19 slice 2: prompt/urgency rules editable on the card · FEAT-21 skills upload · FEAT-20 plain-English cards), **DEC-13 vocabulary** (Agent / Capability / Connector — Staff Agents in three tinted collapsible sections + nav sub-menu), **Activity console** (the audit ledger live in-app), send-cage pill, dashboard email-agent box, formatted Ask answers, mobile above-the-fold pass, **Ask-as-mic** + desktop topbar Ask box. **Tuesday = Mayor Harvey onboarding** (MH board; decisions MH-D1…D5 pending; hand-out ready: `docs/MAYOR_ONBOARDING_OVERVIEW.md`). URLs: demo=**bellwood-hub.vercel.app** (public), pilot=**bellwood-hub-pilot.vercel.app** (SSO, auto-deploys on push to `live-pilot`)
 **Project:** AI Chief of Staff platform, built on the Bellwood municipal email RAG POC
 **Authoritative spec:** `cto-architecture-brief.md` (R. Dawson, SDP Chicago, 2026-06-24) — three-plane
 design (Ingestion → Canonical → Capability), 6 architectural decision records (AD-1…AD-6), 5-phase plan.
@@ -281,6 +281,22 @@ Decisions (RD walkthrough 2026-07-06): **MH-D1** ✅ RD-owned with audit + a doc
 ---
 
 ## Changelog
+
+- **2026-07-06 #4 (day close — the Microsoft half goes live · Tuesday locked)** — Entra registration
+  finished and wired: values placed in BOTH Vercel lanes via the /tmp handoff (ID extracted from a
+  wrapped paste; secret validated by shape — 40 chars, not the Secret-ID GUID), both lanes
+  redeployed, `/api/auth/providers` on the Mayor's instance now returns google + microsoft-entra-id.
+  API permissions trimmed to least-privilege SEVEN on Claude's review of RD's screenshot (removed
+  Mail.ReadWrite / Mail.Send / Calendars.ReadWrite(.Shared) / Calendars.Read.Shared — the village
+  admin-consent grant covers exactly what's listed, and "send mail as a user" is a harder yes than
+  "read mail"; added openid/profile/offline_access — without offline_access in the list, the
+  admin-consent path could grant no refresh token). Outlook send later = a deliberate 4-step
+  re-add, cage still binding. `aharvey@vil.bellwood.il.us` added to the Mayor allowlist (his Gmail
+  pending). MH-5 runbook + the two activation UPDATEs logged on the board; RD confirmed the model:
+  Claude on the laptop runs activation live Tuesday. Lockout design settled: allowlist swap +
+  `AUTH_SECRET` rotation (kills lingering JWT sessions structurally) as the session's closing act.
+  Verified RD left ZERO connector rows in the Mayor DB. Status mirrored to Notion ("Project Status
+  Update — July 6, 2026 · 3:30 PM" under Go-Live Plan). All three sites on one commit.
 
 - **2026-07-06 #3 (one codebase, three sites · Gmail token death → Reconnect · MH-2 PROVISIONED)** —
   RD's pilot hit `invalid_grant` on the Gmail refresh (Google kills Testing-mode tokens after 7 days

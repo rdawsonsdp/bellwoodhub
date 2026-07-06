@@ -163,16 +163,21 @@ function domainAsCos(key: string): CosAgent | null {
   };
 }
 
-export default function AgentsPage({ initialAgentKey }: { initialAgentKey?: string } = {}) {
+export default function AgentsPage({ initialAgentKey, initialSection }: { initialAgentKey?: string; initialSection?: string } = {}) {
   // Deep link from a cabinet box's gear (RD 2026-07-05): land directly on
   // that agent's detail. Cabinet desks resolve via the domain registry.
   const [sel, setSel] = useState<CosAgent | null>(() => (initialAgentKey ? agentByKey(initialAgentKey) ?? domainAsCos(initialAgentKey) : null));
+  void initialSection; // consumed in the openSections initializer below
   // Running state lifted here so every card can flip its badge to "Running…"
   // while a manual pass is in flight (RD 2026-07-03).
   const [running, setRunning] = useState(false);
   // Section collapse (RD 2026-07-05: "collapsible … for quick reading") —
-  // Agents open by default; the other panels start as header + description.
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ agents: true, capabilities: false, connectors: false });
+  // Agents open by default; the nav sub-menu targets one section directly.
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
+    initialSection
+      ? { agents: initialSection === "agents", capabilities: initialSection === "capabilities", connectors: initialSection === "connectors" }
+      : { agents: true, capabilities: false, connectors: false },
+  );
   // Enable switches (FEAT-19): absent key = enabled; live builds load the
   // exceptions from app.agent_configs and flips persist + audit there.
   const [configs, setConfigs] = useState<Record<string, boolean>>({});

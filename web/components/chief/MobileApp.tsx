@@ -112,6 +112,7 @@ export default function MobileApp() {
   const [screen, setScreen] = useState<Screen>("today");
   // the cabinet gear deep-links Staff Agents to one agent's detail
   const [agentFocus, setAgentFocus] = useState<string | null>(null);
+  const [agentSection, setAgentSection] = useState<string | null>(null); // nav sub-menu target
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [operator, setOperator] = useState(false);
@@ -151,7 +152,7 @@ export default function MobileApp() {
             {screen === "emails" && <EmailsScreen onAsk={() => setScreen("ask")} />}
             {screen === "events" && <EventsScreen />}
             {screen === "history" && <HistoryScreen />}
-            {screen === "agents" && <AgentsPage key={agentFocus ?? "all"} initialAgentKey={agentFocus ?? undefined} />}
+            {screen === "agents" && <AgentsPage key={`${agentFocus ?? "all"}:${agentSection ?? ""}`} initialAgentKey={agentFocus ?? undefined} initialSection={agentSection ?? undefined} />}
             {screen === "sources" && <div><ScreenHead title="Sources" sub="Connectors, mailboxes, and document upload." /><SourcesView /></div>}
             {screen === "activity" && <ActivityScreen />}
             {screen === "admin" && <AdminPanel />}
@@ -168,6 +169,8 @@ export default function MobileApp() {
             operator={operator}
             onToggleOperator={(on) => { saveOperatorMode(on); setOperator(on); }}
             go={(s) => { setScreen(s); setMenuOpen(false); }}
+            goAgentSection={(sec) => { setAgentFocus(null); setAgentSection(sec); setScreen("agents"); setMenuOpen(false); }}
+            agentSection={agentSection}
             onClose={() => setMenuOpen(false)}
           />
         )}
@@ -261,7 +264,7 @@ const NAV_ITEMS: [Screen, string, string][] = [
 
 /* Slide-in menu — always reachable (RD 2026-07-02). Mayor mode lists the three
  * destinations; the Operator switch in the footer reveals every desk. */
-function NavMenu({ current, operator, onToggleOperator, go, onClose }: { current: Screen; operator: boolean; onToggleOperator: (on: boolean) => void; go: (s: Screen) => void; onClose: () => void }) {
+function NavMenu({ current, operator, onToggleOperator, go, goAgentSection, agentSection, onClose }: { current: Screen; operator: boolean; onToggleOperator: (on: boolean) => void; go: (s: Screen) => void; goAgentSection?: (sec: string) => void; agentSection?: string | null; onClose: () => void }) {
   const items = NAV_ITEMS.filter(([s]) => operator || MAYOR_SCREENS.includes(s));
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 60, display: "flex", animation: "sheetUp .18s ease-out" }}>
@@ -280,11 +283,24 @@ function NavMenu({ current, operator, onToggleOperator, go, onClose }: { current
           {items.map(([s, d, label]) => {
             const on = current === s;
             return (
-              <button key={s} onClick={() => go(s)} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", padding: "14px 14px", borderRadius: 12, marginBottom: 2, border: 0, cursor: "pointer", background: on ? "rgba(231,181,60,.12)" : "transparent", color: on ? C.gold : C.text2 }}>
-                <Svg d={d} w={21} sw={on ? 2.1 : 1.8} />
-                <span style={{ flex: 1, fontSize: 15.5, fontWeight: on ? 700 : 600, fontFamily: FONT.sans }}>{label}</span>
-                {on && <span style={{ width: 7, height: 7, borderRadius: 99, background: C.gold }} />}
-              </button>
+              <div key={s}>
+                <button onClick={() => go(s)} style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", padding: "14px 14px", borderRadius: 12, marginBottom: 2, border: 0, cursor: "pointer", background: on ? "rgba(231,181,60,.12)" : "transparent", color: on ? C.gold : C.text2 }}>
+                  <Svg d={d} w={21} sw={on ? 2.1 : 1.8} />
+                  <span style={{ flex: 1, fontSize: 15.5, fontWeight: on ? 700 : 600, fontFamily: FONT.sans }}>{label}</span>
+                  {on && <span style={{ width: 7, height: 7, borderRadius: 99, background: C.gold }} />}
+                </button>
+                {/* the staff taxonomy sub-menu (RD 2026-07-05): Agents ·
+                    Capabilities · Connectors jump to that section, open */}
+                {s === "agents" && goAgentSection && (
+                  <div style={{ display: "flex", flexDirection: "column", margin: "0 0 6px 46px" }}>
+                    {[["agents", "Agents"], ["capabilities", "Capabilities"], ["connectors", "Connectors"]].map(([id, l]) => (
+                      <button key={id} onClick={() => goAgentSection(id)} style={{ textAlign: "left", background: "none", border: 0, cursor: "pointer", padding: "7px 10px", borderRadius: 9, color: on && agentSection === id ? C.gold : C.text3, fontSize: 13.5, fontWeight: 600, fontFamily: FONT.sans }}>
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>

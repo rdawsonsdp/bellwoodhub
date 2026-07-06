@@ -116,6 +116,7 @@ export default function ChiefApp() {
   const [screen, setScreen] = useState<Screen>("today");
   // the cabinet gear deep-links Staff Agents to one agent's detail
   const [agentFocus, setAgentFocus] = useState<string | null>(null);
+  const [agentSection, setAgentSection] = useState<string | null>(null); // nav sub-menu target
   const [asked, setAsked] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
@@ -172,7 +173,7 @@ export default function ChiefApp() {
     <OpenEmailCtx.Provider value={setEmailMid}>
     <div style={{ height: "100vh", width: "100vw", display: "flex", overflow: "hidden", background: APP_BG, color: C.text, fontFamily: FONT.sans }}>
       <style>{KEYFRAMES}</style>
-      <Sidebar screen={screen} go={go} operator={operator} onToggleOperator={(on) => { saveOperatorMode(on); setOperator(on); }} />
+      <Sidebar screen={screen} go={go} operator={operator} onToggleOperator={(on) => { saveOperatorMode(on); setOperator(on); }} goAgentSection={(sec) => { setAgentFocus(null); setAgentSection(sec); setScreen("agents"); }} agentSection={agentSection} />
 
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <Topbar />
@@ -187,7 +188,7 @@ export default function ChiefApp() {
           {screen === "settings" && <Approvals />}
           {screen === "admin" && <AdminPanel />}
           {screen === "activity" && <ActivityScreen />}
-          {screen === "agents" && <AgentsPage key={agentFocus ?? "all"} initialAgentKey={agentFocus ?? undefined} />}
+          {screen === "agents" && <AgentsPage key={`${agentFocus ?? "all"}:${agentSection ?? ""}`} initialAgentKey={agentFocus ?? undefined} initialSection={agentSection ?? undefined} />}
         </div>
       </div>
       {/* Ask is ONE destination in the rail — the floating pill and the topbar
@@ -211,7 +212,7 @@ export default function ChiefApp() {
 }
 
 /* ════════════════════════ SIDEBAR ════════════════════════ */
-function Sidebar({ screen, go, operator, onToggleOperator }: { screen: Screen; go: (s: Screen) => () => void; operator: boolean; onToggleOperator: (on: boolean) => void }) {
+function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agentSection }: { screen: Screen; go: (s: Screen) => () => void; operator: boolean; onToggleOperator: (on: boolean) => void; goAgentSection?: (sec: string) => void; agentSection?: string | null }) {
   const [menu, setMenu] = useState(false);
   const item = (s: Screen, label: string, icon: ReactNode, badge?: ReactNode) => {
     const on = screen === s;
@@ -257,6 +258,15 @@ function Sidebar({ screen, go, operator, onToggleOperator }: { screen: Screen; g
             {item("activity", "Activity", <Ico d={["M12 7v5l3.5 2", "M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z"]} />)}
             {item("settings", "Approvals", <Ico d={ICON.approvals} />)}
             {item("agents", "Staff Agents", <Star w={18} c="currentColor" />)}
+            {screen === "agents" && goAgentSection && (
+              <div style={{ display: "flex", flexDirection: "column", margin: "0 0 4px 40px" }}>
+                {[["agents", "Agents"], ["capabilities", "Capabilities"], ["connectors", "Connectors"]].map(([id, l]) => (
+                  <button key={id} onClick={() => goAgentSection(id)} style={{ textAlign: "left", background: "none", border: 0, cursor: "pointer", padding: "5px 10px", borderRadius: 8, color: agentSection === id ? C.gold : C.text3, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans }}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            )}
             {item("admin", "Admin", <Ico d={ICON.admin} />)}
           </>
         )}

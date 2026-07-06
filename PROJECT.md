@@ -251,6 +251,14 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 
 ## Changelog
 
+- **2026-07-05 close (SCHEDULER ARMED — agents run by default)** — RD approved the rotation: Preview
+  `CRON_SECRET` regenerated and mirrored to repo secret `PILOT_CRON_SECRET` (write-only both sides;
+  values never in chat/repo). This deploy bakes the new secret into the pilot; `pilot-crons.yml` goes
+  live on its next tick — **every 15 min**: mail ingest + embed backfill; **hourly**: calendar mirror +
+  Sentinel access watch; **hourly 7a–5p CT**: the agent cabinet reports in. The Mayor-experience loop
+  ("email, good morning and schedule agents run by default" — RD) no longer needs a button; liveness
+  dots go green as each engine reports in. First workflow run dispatched manually as the proof.
+
 - **2026-07-05 late #5 (Ask sessions: "New Ask" · snippet hygiene · FEAT-22 logged)** — RD read the
   Coach-Bernie answer as session leakage; actual behavior: semantic nearest-neighbors landed on the
   Coach-MJ mail and the synthesizer honestly said "no record of Coach Bernie." His product call stands:

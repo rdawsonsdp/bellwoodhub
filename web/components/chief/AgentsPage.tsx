@@ -63,6 +63,23 @@ function liveEmailOverlay(a: CosAgent, f: EmailFacts): CosAgent {
 
 const tone: Record<string, string> = { R1: C.blue, R2: C.orange, R3: C.purpleText, R4: C.green };
 
+/** The section language of the staff pages (RD 2026-07-05): every section is
+ *  a tinted panel with a serif header — color is the separator. */
+const panelStyle = (hue: string): React.CSSProperties => ({
+  marginTop: 16, borderRadius: 18, border: `1px solid rgba(${hue},.32)`,
+  background: `linear-gradient(180deg, rgba(${hue},.07), rgba(${hue},.02))`,
+  padding: "14px 16px",
+});
+function PanelHead({ title, sub }: { title: string; sub?: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
+      <span style={{ fontFamily: FONT.serif, fontSize: 17, fontWeight: 700, color: C.text }}>{title}</span>
+      {sub && <span style={{ fontSize: 12, color: C.text3 }}>{sub}</span>}
+    </div>
+  );
+}
+const HUE = { plain: "231,181,60", profile: "103,173,255", instructions: "157,139,255", skills: "52,201,139", activity: "128,140,155" };
+
 // Agents read as Active (in use) or Inactive (not yet in use) — each its own colour.
 const isActive = (a: CosAgent) => a.status !== "planned";
 function StateBadge({ a, disabled }: { a: CosAgent; disabled?: boolean }) {
@@ -336,26 +353,30 @@ function AgentDetail({ a, activity, onBack, onOpenAgent }: { a: CosAgent; activi
 
       {/* FEAT-20 — the four questions, in household English, before anything
           technical. This is the card that reduces the fear of agents. */}
-      <div style={{ ...card, padding: "6px 17px", marginTop: 18, borderColor: "rgba(231,181,60,.35)" }}>
-        <div style={{ ...eyebrow(C.gold), fontSize: 10, margin: "12px 0 2px" }}>In plain English</div>
+      <div style={panelStyle(HUE.plain)}>
+        <PanelHead title="In plain English" sub="the four questions everyone should be able to answer" />
         <PlainRow q="What does it read?" a={a.plain.reads} />
         <PlainRow q="What does it produce?" a={a.plain.produces} />
         <PlainRow q="What can it never do?" a={a.plain.never} />
         <PlainRow q="Who decides?" a={a.plain.decides} last />
       </div>
 
-      <div style={{ ...card, padding: 17, marginTop: 14, display: "grid", gap: 11 }}>
-        <Field k="What it does" v={a.job} />
-        <Field k="Autonomy" v={<span><span style={{ ...pill(tone[a.autonomy], "rgba(var(--ink),.07)"), fontWeight: 700, marginRight: 7 }}>{a.autonomy}</span>{AUTONOMY_LABEL[a.autonomy]}</span>} />
-        <Field k="Serves" v={a.powers.join(" · ")} />
-        <Field k="Produces" v={a.produces} />
-        {a.spec && <Field k="Full spec" v={<span>Defined in <code style={{ fontFamily: FONT.mono, fontSize: 12, color: C.gold }}>{a.spec}</code> — versioned in the repo, not the UX.</span>} />}
+      <div style={panelStyle(HUE.profile)}>
+        <PanelHead title="Profile" sub="the technical card" />
+        <div style={{ display: "grid", gap: 11 }}>
+          <Field k="What it does" v={a.job} />
+          <Field k="Autonomy" v={<span><span style={{ ...pill(tone[a.autonomy], "rgba(var(--ink),.07)"), fontWeight: 700, marginRight: 7 }}>{a.autonomy}</span>{AUTONOMY_LABEL[a.autonomy]}</span>} />
+          <Field k="Serves" v={a.powers.join(" · ")} />
+          <Field k="Produces" v={a.produces} />
+          {a.spec && <Field k="Full spec" v={<span>Defined in <code style={{ fontFamily: FONT.mono, fontSize: 12, color: C.gold }}>{a.spec}</code> — versioned in the repo, not the UX.</span>} />}
+        </div>
       </div>
 
       {IS_LIVE_BUILD && <InstructionsSection agentKey={a.key} onOpenAgent={onOpenAgent} />}
       {IS_LIVE_BUILD && <SkillsSection agentKey={a.key} />}
 
-      <div style={{ ...eyebrow(C.dim), marginTop: 22, marginBottom: 11 }}>Recent activity</div>
+      <div style={panelStyle(HUE.activity)}>
+      <PanelHead title="Recent activity" sub="what this one has actually done" />
       {IS_LIVE_BUILD ? (
         activity?.length ? (
           <div style={{ ...card, overflow: "hidden" }}>
@@ -387,6 +408,7 @@ function AgentDetail({ a, activity, onBack, onOpenAgent }: { a: CosAgent; activi
       ) : (
         <div style={{ ...card, padding: 24, textAlign: "center", color: C.dim, fontSize: 13 }}>No activity yet — this agent is planned. Configured in Claude Code when ready.</div>
       )}
+      </div>
     </div>
   );
 }
@@ -428,11 +450,9 @@ function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOp
   if (!d) {
     const desks = DOMAIN_AGENTS.filter((x) => x.active);
     return (
-      <div style={{ marginTop: 22 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
-          <span style={{ fontFamily: FONT.serif, fontSize: 17, fontWeight: 700, color: C.text }}>Instructions</span>
-        </div>
-        <div style={{ ...card, padding: 15 }}>
+      <div style={panelStyle(HUE.instructions)}>
+        <PanelHead title="Instructions" />
+        <div>
           <div style={{ fontSize: 13.5, color: C.text2, lineHeight: 1.6 }}>
             This agent mirrors your mailbox — it runs no prompt, so there is nothing to instruct here.
             The mail it brings in is read by the <b>desk agents</b> below; each of those carries an
@@ -479,13 +499,13 @@ function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOp
   );
 
   return (
-    <div style={{ marginTop: 22 }}>
+    <div style={panelStyle(HUE.instructions)}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
         <span style={{ fontFamily: FONT.serif, fontSize: 17, fontWeight: 700, color: C.text }}>Instructions</span>
         <span style={{ fontSize: 12, color: C.text3 }}>the prompt this agent runs with — yours to edit</span>
         <span style={{ ...pill(edited ? C.goldHi : C.muted, edited ? "rgba(231,181,60,.14)" : "rgba(var(--ink),.06)"), fontSize: 9.5, fontWeight: 800 }}>{edited ? "EDITED" : "DEFAULT"}</span>
       </div>
-      <div style={{ ...card, padding: 15, display: "grid", gap: 13 }}>
+      <div style={{ display: "grid", gap: 13 }}>
         <div style={{ fontSize: 13, color: C.text2, lineHeight: 1.6, borderLeft: `3px solid ${C.gold}`, paddingLeft: 12 }}>
           This is the exact material this agent is given before every run. <b>The default prompt is
           loaded below</b> — copy it, edit any part, and <b>Save</b>; your version takes effect on the
@@ -566,12 +586,9 @@ function SkillsSection({ agentKey }: { agentKey: string }) {
   const attached = (skills ?? []).filter((s) => s.attached);
   const others = (skills ?? []).filter((s) => !s.attached);
   return (
-    <div style={{ marginTop: 22 }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
-        <span style={{ fontFamily: FONT.serif, fontSize: 17, fontWeight: 700, color: C.text }}>Skills</span>
-        <span style={{ fontSize: 12, color: C.text3 }}>rules this agent follows — uploaded, versioned, audited</span>
-      </div>
-      <div style={{ ...card, padding: 15, display: "grid", gap: 10 }}>
+    <div style={panelStyle(HUE.skills)}>
+      <PanelHead title="Skills" sub="rules this agent follows — uploaded, versioned, audited" />
+      <div style={{ display: "grid", gap: 10 }}>
         {skills === null && <div style={{ fontSize: 12.5, color: C.dim }}>Loading skills…</div>}
         {skills !== null && attached.length === 0 && <div style={{ fontSize: 12.5, color: C.dim }}>No skills attached yet. Upload a skill.md below — e.g. a voice guide or drafting rules.</div>}
         {attached.map((s) => (

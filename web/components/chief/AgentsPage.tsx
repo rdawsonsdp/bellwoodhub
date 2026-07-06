@@ -153,6 +153,9 @@ export default function AgentsPage({ initialAgentKey }: { initialAgentKey?: stri
   // Running state lifted here so every card can flip its badge to "Running…"
   // while a manual pass is in flight (RD 2026-07-03).
   const [running, setRunning] = useState(false);
+  // Section collapse (RD 2026-07-05: "collapsible … for quick reading") —
+  // Agents open by default; the other panels start as header + description.
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ agents: true, capabilities: false, connectors: false });
   // Enable switches (FEAT-19): absent key = enabled; live builds load the
   // exceptions from app.agent_configs and flips persist + audit there.
   const [configs, setConfigs] = useState<Record<string, boolean>>({});
@@ -202,9 +205,9 @@ export default function AgentsPage({ initialAgentKey }: { initialAgentKey?: stri
 
       <UsagePanel />
 
-      {/* Three kinds of staff, three sections (RD 2026-07-05: "Staff Agents
-          should be configurable. Connectors are not. Different sections with
-          an explanation for each type.") */}
+      {/* Three kinds of staff, three tinted collapsible panels + an index
+          (RD 2026-07-05: sections need color/shading, collapsible, with the
+          descriptions readable — quick reading first). */}
       {(() => {
         // DEC-13 (RD 2026-07-05): "Agent" means AUTONOMOUS — it runs on its
         // own schedule with a prompt, a task, and skills. Sentinel qualifies;
@@ -214,38 +217,56 @@ export default function AgentsPage({ initialAgentKey }: { initialAgentKey?: stri
           ...DOMAIN_AGENTS.map((d) => domainAsCos(d.key)).filter((x): x is CosAgent => !!x),
           ...(sentinel ? [sentinel] : []),
         ];
-        const connectors = COS_AGENTS.filter((a) => a.key.startsWith("email-"));
-        const capability = COS_AGENTS.filter((a) => !a.key.startsWith("email-") && a.key !== "sentinel");
-        const grid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(330px,1fr))", gap: 14 };
-        const section = (title: string, blurb: string, list: CosAgent[]) => (
-          <div style={{ marginTop: 26 }}>
-            <div style={{ fontFamily: FONT.serif, fontSize: 19, fontWeight: 700, color: C.text }}>{title}</div>
-            <div style={{ fontSize: 12.5, color: C.text3, lineHeight: 1.55, margin: "4px 0 12px", maxWidth: 720 }}>{blurb}</div>
-            <div style={grid}>
-              {list.map((a) => (
-                <AgentCard key={a.key} a={effective(a)} activity={live.activity[a.key]} running={running} enabled={enabledOf(a.key)}
-                  onFlip={IS_LIVE_BUILD ? () => flip(a.key) : undefined} onClick={() => setSel(a)} />
-              ))}
-            </div>
-          </div>
-        );
+        const SECTIONS = [
+          {
+            id: "agents", title: "Agents", sub: "autonomous staff", hue: "231,181,60", list: desks,
+            blurb: "Autonomous: each runs on its own schedule with a prompt (charter, goals, urgency rules), a task, and skills — all yours to configure. Tap a card to edit its instructions; everything an agent produces is cited, and every action stays human-gated.",
+          },
+          {
+            id: "capabilities", title: "Capabilities", sub: "on-demand abilities", hue: "157,139,255",
+            list: COS_AGENTS.filter((a) => !a.key.startsWith("email-") && a.key !== "sentinel"),
+            blurb: "Not autonomous — they act when you do: Ask answers your question, Drafting writes when a reply is needed, History assembles on request. They take skills; their base prompts become editable in a coming update.",
+          },
+          {
+            id: "connectors", title: "Connectors", sub: "the plumbing", hue: "103,173,255",
+            list: COS_AGENTS.filter((a) => a.key.startsWith("email-")),
+            blurb: "They move your mail and calendar into the record and never think. Nothing to instruct — the switch pauses their pulls; the connection itself is managed on Sources.",
+          },
+        ];
+        const toggle = (id: string) => setOpenSections((o) => ({ ...o, [id]: !o[id] }));
         return (
           <>
-            {section(
-              "Agents — autonomous staff",
-              "Agents are autonomous: they run on their own schedule with a prompt (charter, goals, urgency rules), a task, and skills — all yours to configure. Tap a card to edit its instructions; everything an agent produces is cited, and every action stays human-gated.",
-              desks,
-            )}
-            {section(
-              "Capabilities — on-demand abilities",
-              "Not autonomous — they act when you do: Ask answers your question, Drafting writes when a reply is needed, History assembles on request. They take skills (Drafting inherits your voice skill on every reply); their base prompts become editable in a coming update.",
-              capability,
-            )}
-            {section(
-              "Connectors — the plumbing",
-              "They move your mail and calendar into the record and never think. Nothing to instruct — the switch pauses their pulls; the connection itself is managed on Sources.",
-              connectors,
-            )}
+            {/* the quick-read index */}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 18 }}>
+              {SECTIONS.map((s) => (
+                <button key={s.id} onClick={() => toggle(s.id)}
+                  style={{ cursor: "pointer", borderRadius: 99, padding: "7px 14px", fontFamily: FONT.sans, fontSize: 12.5, fontWeight: 700, color: C.text2, background: `rgba(${s.hue},${openSections[s.id] ? ".16" : ".07"})`, border: `1px solid rgba(${s.hue},.4)` }}>
+                  {s.title} · {s.list.length}
+                </button>
+              ))}
+            </div>
+            {SECTIONS.map((s) => {
+              const open = !!openSections[s.id];
+              return (
+                <div key={s.id} style={{ marginTop: 14, borderRadius: 18, border: `1px solid rgba(${s.hue},.32)`, background: `linear-gradient(180deg, rgba(${s.hue},.07), rgba(${s.hue},.02))`, overflow: "hidden" }}>
+                  <button onClick={() => toggle(s.id)} aria-expanded={open} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "14px 16px 4px", background: "none", border: 0, cursor: "pointer", textAlign: "left" }}>
+                    <span style={{ fontSize: 11, color: C.text3, transform: open ? "rotate(90deg)" : undefined, transition: "transform .12s ease", flexShrink: 0 }}>▶</span>
+                    <span style={{ fontFamily: FONT.serif, fontSize: 19, fontWeight: 700, color: C.text }}>{s.title}</span>
+                    <span style={{ fontSize: 12.5, color: C.text3 }}>— {s.sub}</span>
+                    <span style={{ marginLeft: "auto", fontFamily: FONT.mono, fontSize: 11, color: C.text3, flexShrink: 0 }}>{s.list.length}{open ? "" : " · tap to expand"}</span>
+                  </button>
+                  <div style={{ fontSize: 12.5, color: C.text2, lineHeight: 1.55, padding: "4px 16px 12px 38px", maxWidth: 780 }}>{s.blurb}</div>
+                  {open && (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(330px,1fr))", gap: 14, padding: "0 14px 14px" }}>
+                      {s.list.map((a) => (
+                        <AgentCard key={a.key} a={effective(a)} activity={live.activity[a.key]} running={running} enabled={enabledOf(a.key)}
+                          onFlip={IS_LIVE_BUILD ? () => flip(a.key) : undefined} onClick={() => setSel(a)} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </>
         );
       })()}

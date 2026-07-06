@@ -26,11 +26,15 @@ jobs:
         env:
           BASE: https://bellwood-hub-pilot.vercel.app
           K: ${{ secrets.PILOT_CRON_SECRET }}
+          # Vercel Deployment Protection stays ON for humans; this header is
+          # the automation lane through it (Protection Bypass for Automation).
+          VB: ${{ secrets.PILOT_BYPASS_SECRET }}
         run: |
           if [ -z "$K" ]; then echo "PILOT_CRON_SECRET is not set — skipping (fail closed)"; exit 0; fi
+          if [ -z "$VB" ]; then echo "PILOT_BYPASS_SECRET is not set — skipping (fail closed)"; exit 0; fi
           hit() {
             echo "== GET $1"
-            code=$(curl -sS -m 290 -o /tmp/out -w '%{http_code}' -H "Authorization: Bearer $K" "$BASE$1") || code=000
+            code=$(curl -sS -m 290 -o /tmp/out -w '%{http_code}' -H "Authorization: Bearer $K" -H "x-vercel-protection-bypass: $VB" "$BASE$1") || code=000
             echo "   -> $code $(head -c 400 /tmp/out)"
           }
           # every tick: pull new mail, then index it for search

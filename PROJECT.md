@@ -8,7 +8,7 @@
 > This file is the durable copy that survives across sessions.
 
 **📡 Shareable status page (live):** https://project-status-ten.vercel.app — public, no login. Source: `project-status/index.html`. Redeploy: `vercel deploy --prod --yes --cwd project-status`.
-**Last updated:** 2026-07-05 — **Agent activity, one stop** (RD directive): the email agent's digest sheet now shows **"Sent — past 3 days" grouped by day** (what actually went out, from `app.drafts.sent_at`) + an **↻ refresh** on the box (email seats fire the same manual sync as the Sources button). Root-caused the pilot **Ask failure**: the `web` Vercel project's **Preview env (= the pilot) has no `OPENAI_API_KEY`** — it's Sensitive (write-only) so RD must supply it (dashboard → Preview, or paste into gitignored `web/.env.local` for Claude to sync up). The "Root Directory `web` does not exist" build error = redeploying pre-GitHub CLI deployments; harmless, settings correct. URLs: demo=**bellwood-hub.vercel.app** (public, Production env), pilot=**bellwood-hub-pilot.vercel.app** (SSO, Preview env, auto-deploys on push to `live-pilot`)
+**Last updated:** 2026-07-05 (night close) — the marathon session: **ING-4 live** (Voyage embeddings + Ask over real mail — proven on RD's own questions; the scheduler runs ingest+embed every 15 min autonomously via GitHub Actions + protection bypass), **agents became configuration** (FEAT-19 slice 2: prompt/urgency rules editable on the card · FEAT-21 skills upload · FEAT-20 plain-English cards), **DEC-13 vocabulary** (Agent / Capability / Connector — Staff Agents in three tinted collapsible sections + nav sub-menu), **Activity console** (the audit ledger live in-app), send-cage pill, dashboard email-agent box, formatted Ask answers, mobile above-the-fold pass, **Ask-as-mic** + desktop topbar Ask box. **Tuesday = Mayor Harvey onboarding** (MH board; decisions MH-D1…D5 pending; hand-out ready: `docs/MAYOR_ONBOARDING_OVERVIEW.md`). URLs: demo=**bellwood-hub.vercel.app** (public), pilot=**bellwood-hub-pilot.vercel.app** (SSO, auto-deploys on push to `live-pilot`)
 **Project:** AI Chief of Staff platform, built on the Bellwood municipal email RAG POC
 **Authoritative spec:** `cto-architecture-brief.md` (R. Dawson, SDP Chicago, 2026-06-24) — three-plane
 design (Ingestion → Canonical → Capability), 6 architectural decision records (AD-1…AD-6), 5-phase plan.
@@ -277,6 +277,18 @@ Decisions pending (RD): **MH-D1** who owns his infra — Village-owned Supabase/
 ---
 
 ## Changelog
+
+- **2026-07-05 close #7 (UX structure pass · Ask becomes the mic · night closed)** — Final volley:
+  **agent detail page** re-cut into five tinted panels (plain-English / profile / instructions / skills /
+  activity — color is the separator); **Staff Agents nav sub-menu** (Agents · Capabilities · Connectors)
+  on both shells, landing with that section open; **mobile above-the-fold pass** (header to one tight
+  row with the release tag inline, hero to a third of its height, compacted cards/gaps/headings,
+  Schedule face = 2 day-rows on the phone) so the cabinet shows on first paint; **Ask is the mic** —
+  one tap starts listening immediately, double-tap opens the text interface — and **desktop finally has
+  the topbar Ask box + mic** routing Enter/transcript straight to cited answers. FEAT-23 logged
+  (agent-to-agent, long-term). Every commit tonight verified (tsc + build + 6 suites) and deployed;
+  the release id under the heading now proves which build is serving. Night closed with the Tuesday
+  runway: MH board + Mayor hand-out ready, MH-D1…D5 + the Gmail-charter five questions awaiting RD.
 
 - **2026-07-05 close #6 (DEC-13 vocabulary · Staff Agents in three sections · instructions guidance)** —
   RD tightened the language ("we are not using the term Agent accurately — agents are autonomous; they

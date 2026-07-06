@@ -38,6 +38,9 @@ export interface Connector {
     cursor: string | null,
     cap: number,
   ): Promise<{ messages: PulledMessage[]; nextCursor: string | null }>;
+  /** Best-effort total message count in the source mailbox — the progress
+   *  denominator on the Sync page. null when the provider can't say. */
+  mailboxTotal(accessToken: string): Promise<number | null>;
 }
 
 /**

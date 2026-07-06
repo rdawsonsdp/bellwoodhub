@@ -21,7 +21,9 @@ if (process.env.AUTH_MICROSOFT_ENTRA_ID_ID && process.env.AUTH_MICROSOFT_ENTRA_I
       issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
       // offline_access + Mail.Read: the refresh token minted at sign-in is
       // what the Graph mail ingest reads with — no second consent screen.
-      authorization: { params: { scope: "openid profile email offline_access Mail.Read" } },
+      // Calendars.Read rides along so the Outlook-calendar fast-follow (MH-5)
+      // never needs a re-consent.
+      authorization: { params: { scope: "openid profile email offline_access Mail.Read Calendars.Read" } },
     }),
   );
 }

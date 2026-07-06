@@ -5,8 +5,13 @@
  * pipeline.connector_accounts. Throttling: Graph allows ~10k requests/10 min
  * per mailbox — 429s are honored via Retry-After, never hammered.
  *
- * Cursor = the @odata.deltaLink from /messages/delta. internetMessageId →
- * sourceRef (the cross-provider RFC id), conversationId → threadRef.
+ * Cursor = JSON {inbox, sent} of per-folder delta links (inbox + sentitems
+ * each keep their own /messages/delta chain), prefixed "bf:" while either
+ * folder is still paging — the cross-provider "backfill in progress" signal
+ * (see gmail.ts): the ingest loop keeps draining within its run budget and
+ * the UI reads mid-walk state from it. A legacy bare-URL cursor (the
+ * inbox-only era) upgrades in place. internetMessageId → sourceRef (the
+ * cross-provider RFC id), conversationId → threadRef.
  */
 import type { Connector, PulledMessage } from "./types";
 import { htmlToText } from "./types";
@@ -85,6 +90,60 @@ function toPulled(m: GraphMessage, address: string): PulledMessage | null {
   };
 }
 
+// Cursor encoding (two folders since the sentitems pass joined, MH-1):
+//   mid-walk:  "bf:" + JSON {inbox, sent} — either folder still has pages
+//   steady:            JSON {inbox, sent} — both folders hold deltaLinks
+// A null side means that folder's first walk hasn't started yet.
+const BF_PREFIX = "bf:";
+interface GraphCursor {
+  inbox: string | null;
+  sent: string | null;
+}
+
+function parseCursor(cursor: string | null): GraphCursor {
+  if (!cursor) return { inbox: null, sent: null };
+  const raw = cursor.startsWith(BF_PREFIX) ? cursor.slice(BF_PREFIX.length) : cursor;
+  if (raw.startsWith("{")) {
+    try {
+      const j = JSON.parse(raw) as Partial<GraphCursor>;
+      return { inbox: j.inbox ?? null, sent: j.sent ?? null };
+    } catch {
+      /* unparseable — treat as legacy below */
+    }
+  }
+  return { inbox: raw, sent: null }; // legacy single-URL cursor (inbox-only era)
+}
+
+/** Drain one folder's delta chain from `start` (null = first walk), up to
+ *  `room` messages. drained = reached the deltaLink; otherwise cursor is the
+ *  nextLink to resume from — pages are consumed whole (may overshoot by
+ *  <$top), so the resume point sits exactly after everything returned. */
+async function pullFolder(
+  accessToken: string,
+  address: string,
+  folder: "inbox" | "sentitems",
+  start: string | null,
+  room: number,
+): Promise<{ messages: PulledMessage[]; cursor: string | null; drained: boolean }> {
+  let url = start ?? `${GRAPH}/me/mailFolders/${folder}/messages/delta?$select=${SELECT}&$top=50`;
+  const messages: PulledMessage[] = [];
+  while (url) {
+    const page = await graphFetch(url, accessToken);
+    for (const m of (page.value ?? []) as GraphMessage[]) {
+      if (m["@removed"]) continue;
+      const pm = toPulled(m, address);
+      if (pm) messages.push(pm);
+    }
+    const deltaLink = page["@odata.deltaLink"] as string | undefined;
+    const nextLink = page["@odata.nextLink"] as string | undefined;
+    if (deltaLink) return { messages, cursor: deltaLink, drained: true };
+    if (!nextLink) break; // Graph always ends on a deltaLink — defensive only
+    if (messages.length >= room) return { messages, cursor: nextLink, drained: false };
+    url = nextLink;
+  }
+  return { messages, cursor: null, drained: true }; // null = caller keeps the old side
+}
+
 /** Build the Outlook connector for one connected account. */
 export function graphConnector(address: string): Connector {
   return {
@@ -107,6 +166,16 @@ export function graphConnector(address: string): Connector {
       return { accessToken: j.access_token, expiresIn: j.expires_in };
     },
 
+    async mailboxTotal(accessToken) {
+      // the two folders the delta passes mirror — totals track the same scope
+      const [inbox, sent] = await Promise.all([
+        graphFetch(`${GRAPH}/me/mailFolders/inbox?$select=totalItemCount`, accessToken),
+        graphFetch(`${GRAPH}/me/mailFolders/sentitems?$select=totalItemCount`, accessToken),
+      ]);
+      const n = Number(inbox.totalItemCount ?? NaN) + Number(sent.totalItemCount ?? NaN);
+      return Number.isFinite(n) ? n : null;
+    },
+
     async listNewest(accessToken, n) {
       const url =
         `${GRAPH}/me/messages?$top=${n}&$select=${SELECT}` +
@@ -117,34 +186,24 @@ export function graphConnector(address: string): Connector {
     },
 
     async pullSince(accessToken, cursor, cap) {
-      // TODO: a second delta pass over /me/mailFolders/sentitems (outbound mail);
-      // inbox-only for now — listNewest still surfaces sent items for dry-runs.
-      let url = cursor ?? `${GRAPH}/me/mailFolders/inbox/messages/delta?$select=${SELECT}&$top=50`;
-      const messages: PulledMessage[] = [];
-      let nextCursor: string | null = null;
-      while (url) {
-        const page = await graphFetch(url, accessToken);
-        for (const m of (page.value ?? []) as GraphMessage[]) {
-          if (m["@removed"]) continue;
-          const pm = toPulled(m, address);
-          if (pm) messages.push(pm);
-        }
-        const deltaLink = page["@odata.deltaLink"] as string | undefined;
-        const nextLink = page["@odata.nextLink"] as string | undefined;
-        if (deltaLink) {
-          nextCursor = deltaLink; // fully drained — this is the resume point
-          break;
-        }
-        if (!nextLink) break;
-        if (messages.length >= cap) {
-          // cap hit — pages are consumed whole (may overshoot by <$top), so the
-          // nextLink resumes exactly after everything returned here
-          nextCursor = nextLink;
-          break;
-        }
-        url = nextLink;
+      // Two delta passes sharing the cap: inbox first, then sentitems
+      // (outbound mail — direction falls out of toPulled's from-vs-account
+      // compare; a self-addressed message dedups on internetMessageId).
+      const c = parseCursor(cursor);
+      const inbox = await pullFolder(accessToken, address, "inbox", c.inbox, cap);
+      const next: GraphCursor = { inbox: inbox.cursor ?? c.inbox, sent: c.sent };
+      let messages = inbox.messages;
+      let sentDrained = false; // cap eaten before sentitems ran = not drained
+      const room = cap - messages.length;
+      if (room > 0) {
+        const sent = await pullFolder(accessToken, address, "sentitems", c.sent, room);
+        messages = messages.concat(sent.messages);
+        next.sent = sent.cursor ?? c.sent;
+        sentDrained = sent.drained;
       }
-      return { messages, nextCursor };
+      const backfill = !inbox.drained || !sentDrained;
+      const encoded = JSON.stringify(next);
+      return { messages, nextCursor: backfill ? `${BF_PREFIX}${encoded}` : encoded };
     },
   };
 }

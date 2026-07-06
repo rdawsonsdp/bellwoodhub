@@ -184,6 +184,12 @@ export function gmailConnector(address: string): Connector {
       return { accessToken: j.access_token, expiresIn: j.expires_in };
     },
 
+    async mailboxTotal(accessToken) {
+      const profile = await gmailFetch(`${GMAIL}/profile`, accessToken);
+      const n = Number(profile?.messagesTotal ?? NaN);
+      return Number.isFinite(n) ? n : null;
+    },
+
     async listNewest(accessToken, n) {
       const { ids } = await listIds(accessToken, n);
       const out: PulledMessage[] = [];

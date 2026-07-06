@@ -183,7 +183,8 @@ export default function AgentsPage({ initialAgentKey }: { initialAgentKey?: stri
   };
   if (sel) return <AgentDetail a={effective(sel)} activity={live.activity[sel.key]} onBack={() => setSel(null)} onOpenAgent={(k) => setSel(agentByKey(k) ?? domainAsCos(k))} />;
 
-  const active = COS_AGENTS.filter((a) => a.status !== "planned").length;
+  const active = COS_AGENTS.filter((a) => a.status !== "planned").length + DOMAIN_AGENTS.filter((d) => d.active).length;
+  const roster = COS_AGENTS.length + DOMAIN_AGENTS.length;
   const actions = COS_AGENTS.reduce((n, a) => n + a.recent.length, 0);
   return (
     <div className="fu" style={{ padding: "30px 20px 56px", maxWidth: 1100, margin: "0 auto" }}>
@@ -194,21 +195,62 @@ export default function AgentsPage({ initialAgentKey }: { initialAgentKey?: stri
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginTop: 16, marginBottom: 6, alignItems: "center" }}>
         <Metric n={String(active)} label="active agents" />
-        <Metric n={String(COS_AGENTS.length)} label="on the team" />
+        <Metric n={String(roster)} label="on the team" />
         <Metric n={IS_LIVE_BUILD ? "—" : String(actions)} label="recent actions" />
       </div>
       {IS_LIVE_BUILD && <RunAgentsButton running={running} onRunning={setRunning} />}
 
       <UsagePanel />
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(330px,1fr))", gap: 14, marginTop: 16 }}>
-        {COS_AGENTS.map((a) => (
-          <AgentCard key={a.key} a={effective(a)} activity={live.activity[a.key]} running={running} enabled={enabledOf(a.key)}
-            onFlip={IS_LIVE_BUILD ? () => flip(a.key) : undefined} onClick={() => setSel(a)} />
-        ))}
-      </div>
+      {/* Three kinds of staff, three sections (RD 2026-07-05: "Staff Agents
+          should be configurable. Connectors are not. Different sections with
+          an explanation for each type.") */}
+      {(() => {
+        // DEC-13 (RD 2026-07-05): "Agent" means AUTONOMOUS — it runs on its
+        // own schedule with a prompt, a task, and skills. Sentinel qualifies;
+        // Ask/Drafting/Brief/History are on-demand Capabilities, not agents.
+        const sentinel = COS_AGENTS.find((a) => a.key === "sentinel");
+        const desks = [
+          ...DOMAIN_AGENTS.map((d) => domainAsCos(d.key)).filter((x): x is CosAgent => !!x),
+          ...(sentinel ? [sentinel] : []),
+        ];
+        const connectors = COS_AGENTS.filter((a) => a.key.startsWith("email-"));
+        const capability = COS_AGENTS.filter((a) => !a.key.startsWith("email-") && a.key !== "sentinel");
+        const grid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(330px,1fr))", gap: 14 };
+        const section = (title: string, blurb: string, list: CosAgent[]) => (
+          <div style={{ marginTop: 26 }}>
+            <div style={{ fontFamily: FONT.serif, fontSize: 19, fontWeight: 700, color: C.text }}>{title}</div>
+            <div style={{ fontSize: 12.5, color: C.text3, lineHeight: 1.55, margin: "4px 0 12px", maxWidth: 720 }}>{blurb}</div>
+            <div style={grid}>
+              {list.map((a) => (
+                <AgentCard key={a.key} a={effective(a)} activity={live.activity[a.key]} running={running} enabled={enabledOf(a.key)}
+                  onFlip={IS_LIVE_BUILD ? () => flip(a.key) : undefined} onClick={() => setSel(a)} />
+              ))}
+            </div>
+          </div>
+        );
+        return (
+          <>
+            {section(
+              "Agents — autonomous staff",
+              "Agents are autonomous: they run on their own schedule with a prompt (charter, goals, urgency rules), a task, and skills — all yours to configure. Tap a card to edit its instructions; everything an agent produces is cited, and every action stays human-gated.",
+              desks,
+            )}
+            {section(
+              "Capabilities — on-demand abilities",
+              "Not autonomous — they act when you do: Ask answers your question, Drafting writes when a reply is needed, History assembles on request. They take skills (Drafting inherits your voice skill on every reply); their base prompts become editable in a coming update.",
+              capability,
+            )}
+            {section(
+              "Connectors — the plumbing",
+              "They move your mail and calendar into the record and never think. Nothing to instruct — the switch pauses their pulls; the connection itself is managed on Sources.",
+              connectors,
+            )}
+          </>
+        );
+      })()}
 
-      <div style={{ fontSize: 11.5, color: C.dim, fontFamily: FONT.mono, marginTop: 18 }}>Agents are configured &amp; tested in Claude Code · this is the Mayor&rsquo;s read-only view to track their work.</div>
+      <div style={{ fontSize: 11.5, color: C.dim, fontFamily: FONT.mono, marginTop: 18 }}>Desk &amp; capability agents are yours to configure · connectors are code, on purpose · every edit is audited.</div>
     </div>
   );
 }

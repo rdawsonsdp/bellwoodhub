@@ -93,7 +93,7 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 | FEAT-20 | **Plain-language agent transparency** (RD 2026-07-03, close of day): every agent documented in household English, user-facing — "this reduces the fear of agents." Each agent card/detail answers four questions a non-technical user has: what it READS, what it PRODUCES, what it can NEVER do, and WHO DECIDES (always a human). Written for the Mayor and village staff, not engineers; the technical spec (docs/agents/*.md) stays separate. Applies to Default and future Custom agents alike — the Agent Factory interview should GENERATE this plain description as part of creating an agent. | 🔵 shipped (v1, 2026-07-05) | "In plain English" 4-question card on every agent detail (all 15 roster agents); on live, email agents describe their REAL account/lane/send-cage from connector facts + real recent activity (syncs, sends, drafts, runs). Remaining: Agent Factory generates it (RB-6); move copy to `app.agent_configs` (FEAT-19) |
 | FEAT-19 | **Agent config lives in the app, not in code** (RD 2026-07-03, via remote): each agent's configuration — charter, rules, autonomy, context — shown ON its agent card, stored in the database, editable in-app by privileged users. Today: config = code registry (`domain-agents.ts`) + versioned specs (`docs/agents/*.md`); runs/memory are already DB. Plan: `app.agent_configs` seeded from the code registry (those become the "Default" agents), runner + cards read DB-first with code fallback, edit UI on agent detail (goals/urgency rules/autonomy ceiling), every edit audited. Editing privileges = the pre-multi-user security conversation (SEC-2). | ⚪ logged | The Agent Factory (RB-6) then WRITES rows here — create + edit converge on one store |
 | FEAT-18 | **Auto sign-out** (RD 2026-07-03, safety): idle-timeout log-out, toggleable on/off in the Admin panel (device stays a risk surface — the Mayor's phone left unlocked must shed its session). Implement as session max-age + client idle timer; admin toggle persists per app config. | ⚪ logged | Pairs with FEAT-19 session-security follow-ups |
-| FEAT-17 | **Related background on emails** — agent-discovered relatedness (RD requirement 2026-07-03): under any email (urgent first), show related/background messages the agent judged similar — "Mary Joseph asks about water charges → her prior threads, the meter issue on her street, neighbors' same complaint." Non-deterministic by design. Staged: (1) related-by-record (thread/sender/entities/topic — zero AI calls), (2) + semantic neighbors (Voyage embeddings, behind the week-2 AI-exposure decision), (3) + the agent judge pass during mailbox-agent runs on RED/needs-you items — ranked background with a cited WHY per item, stored on the run so cards render instantly. Wall rule applies: relatedness NEVER crosses the gov/private mailbox boundary (DEC-6). | ⚪ logged | Surfaces: ThreadView "Background" block first, then Queue/urgent cards |
+| FEAT-17 | **Related background on emails** — agent-discovered relatedness (RD requirement 2026-07-03): under any email (urgent first), show related/background messages the agent judged similar — "Mary Joseph asks about water charges → her prior threads, the meter issue on her street, neighbors' same complaint." Non-deterministic by design. Staged: (1) related-by-record (thread/sender/entities/topic — zero AI calls), (2) + semantic neighbors (Voyage embeddings, behind the week-2 AI-exposure decision), (3) + the agent judge pass during mailbox-agent runs on RED/needs-you items — ranked background with a cited WHY per item, stored on the run so cards render instantly. Wall rule applies: relatedness NEVER crosses the gov/private mailbox boundary (DEC-6). | 🔵 run-loop slice shipped 2026-07-05 | RD: "agents should ALWAYS find related emails when marking them" — every agent run now gathers same-thread + same-sender + Voyage semantic neighbors around the newest mail (wall-respecting, zero extra model calls) and reasons/cites over the pattern. Remaining: store ranked background on the run + ThreadView "Background" block |
 
 **Mayor Harvey onboarding (Tuesday 2026-07-07 — plan agreed 2026-07-05; DEC-9 executed):**
 Two parallel stacks, one codebase: RD keeps building on `live-pilot` (his pilot); the Mayor gets his own
@@ -188,6 +188,17 @@ Decisions pending (RD): **MH-D1** who owns his infra — Village-owned Supabase/
 
 ## Decisions log
 
+- **`DEC-13` The staff vocabulary: Agent · Capability · Connector (2026-07-05)** — RD: "We are not
+  using the term Agent accurately. Agents are autonomous. They have a prompt, task and skills."
+  **Agent** = autonomous: runs on its own schedule with a prompt (charter/goals/urgency rules), a task,
+  and skills — all end-user-configurable; the cabinet desks + Sentinel qualify. **Capability** =
+  on-demand ability that acts when the user does (Ask, Drafting, Morning Brief, History, Resolver…);
+  takes skills, prompt editing to follow. **Connector** = plumbing that moves data and never thinks
+  (Gmail/Outlook/calendar); nothing to instruct, deliberately hard-coded. **An agent points at one-to-
+  many data sources** (RD): today the routed mail streams (`domains[]`) + entity scopes; tomorrow RMS/
+  permits/docs feeds — connectors land sources, agents subscribe to them (RD's example: "the HR Agent
+  points to the Outlook mailbox and searches for HR emails"). Staff Agents renders the three types as
+  labeled sections with explanations. *Decided by RD.*
 - **`DEC-12` Agents are configuration, created by an agent (2026-07-02)** — Users add agents of **defined
   types** (email-ingest, domain-desk, entity-scope, commitments, doc-connector — distilled from today's
   roster) through an **interview** run by an Agent Builder agent; the answers become a registry row
@@ -265,6 +276,19 @@ Decisions pending (RD): **MH-D1** who owns his infra — Village-owned Supabase/
 ---
 
 ## Changelog
+
+- **2026-07-05 close #6 (DEC-13 vocabulary · Staff Agents in three sections · instructions guidance)** —
+  RD tightened the language ("we are not using the term Agent accurately — agents are autonomous; they
+  have a prompt, task and skills… all of these agents point one-to-many data sources… e.g. the HR Agent
+  points to the Outlook mailbox and searches for HR emails"). Logged **DEC-13** (Agent / Capability /
+  Connector) and rebuilt **Staff Agents into three explained sections**: *Agents — autonomous staff*
+  (the 6 cabinet desks + Sentinel — the Constituent desk is finally ON the page, previously reachable
+  only via the cabinet gear), *Capabilities — on-demand abilities* (Ask/Drafting/Brief/History/…),
+  *Connectors — the plumbing*. Instructions editor gained plain guidance (default pre-loaded to copy,
+  Save→next run, Reset restores) and connector pages now route to the instructable desks. **Queued
+  (FEAT-19 slice 3): per-agent source binding** — a Sources picker on the agent card (mailbox ×
+  stream/topic, one-to-many) so RD's HR example is literal config, not routing convention. tsc +
+  build + 6 suites green.
 
 - **2026-07-05 close #5 (the agent's PROMPT becomes end-user configuration — FEAT-19 slice 2)** — RD:
   "the prompt each agent gets before running needs to be configured on the Agent Card, stored in the

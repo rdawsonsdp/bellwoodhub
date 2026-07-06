@@ -40,11 +40,25 @@ export interface AgentSkill {
   content: string;
 }
 
+/** FEAT-17 (RD): "agents should ALWAYS find related emails when finding
+ *  emails and marking them." One background line: an email from the record
+ *  that surrounds a new message — same thread, same sender, or a semantic
+ *  neighbor via the Voyage index. Citable like any slice message. */
+export interface RelatedLine {
+  primaryId: string; // the new message this background belongs to
+  messageId: string;
+  date: string;
+  from: string;
+  subject: string;
+  why: "same thread" | "same sender" | "similar topic";
+}
+
 export function buildAgentPrompt(
   agent: DomainAgent,
   memory: AgentMemoryItem[],
   messages: AgentSliceMessage[],
   skills: AgentSkill[] = [],
+  related: RelatedLine[] = [],
 ): { system: string; user: string } {
   const actShape =
     agent.autonomy === "draft"
@@ -93,7 +107,18 @@ export function buildAgentPrompt(
         )
         .join("\n")
     : "(no new messages this run — report standing memory status honestly)";
-  const user = `YOUR OPEN MEMORY:\n${memLines}\n\nNEW MESSAGES ON YOUR DESK:\n${msgLines}\n\nProduce the run output JSON now.`;
+  // FEAT-17: the record around the new mail. Grouped per primary message so
+  // the model reasons over the pattern ("3rd complaint from this sender"),
+  // not the lone message. These ids are fully citable.
+  const relLines = related.length
+    ? related
+        .map((r) => `- around [${r.primaryId}]: [${r.messageId}] ${r.date.slice(0, 10)} · ${r.from} · "${r.subject}" (${r.why})`)
+        .join("\n")
+    : "(none found)";
+  const user =
+    `YOUR OPEN MEMORY:\n${memLines}\n\nNEW MESSAGES ON YOUR DESK:\n${msgLines}\n\n` +
+    `RELATED BACKGROUND (prior record around the new mail — weigh it when judging urgency and cite its ids when you use it):\n${relLines}\n\n` +
+    `Produce the run output JSON now.`;
   return { system, user };
 }
 
@@ -213,6 +238,60 @@ const quietRun = (): AgentRunOutput => ({
   memoryOps: [],
 });
 
+/** FEAT-17: gather the record around each new message — same thread, same
+ *  sender, semantic neighbor (Voyage index) — WITHOUT crossing the mailbox
+ *  wall (DEC-6: relatedness never bridges gov/private). Zero model calls:
+ *  the semantic arm reuses the message's own stored chunk vector. */
+async function fetchRelatedContext(primaryIds: string[]): Promise<RelatedLine[]> {
+  const out: RelatedLine[] = [];
+  for (const pid of primaryIds) {
+    type Row = { source_ref: string; sent_at: Date; from_name: string | null; from_email: string | null; subject: string | null; why: RelatedLine["why"] };
+    const rows = await query<Row>(
+      `WITH me AS (
+         SELECT message_id, thread_id, from_email,
+                COALESCE(provenance->>'_mailbox', 'gov') AS mailbox
+           FROM canonical.messages WHERE source_ref = $1 LIMIT 1
+       ),
+       vec AS (
+         SELECT c.embedding FROM canonical.chunks c JOIN me ON c.message_id = me.message_id
+          WHERE c.embedding IS NOT NULL ORDER BY c.chunk_index LIMIT 1
+       )
+       (SELECT m.source_ref, m.sent_at, m.from_name, m.from_email, m.subject, 'same thread'::text AS why
+          FROM canonical.messages m, me
+         WHERE m.thread_id = me.thread_id AND m.message_id <> me.message_id
+           AND COALESCE(m.provenance->>'_mailbox', 'gov') = me.mailbox
+         ORDER BY m.sent_at DESC LIMIT 2)
+       UNION ALL
+       (SELECT m.source_ref, m.sent_at, m.from_name, m.from_email, m.subject, 'same sender'::text
+          FROM canonical.messages m, me
+         WHERE m.from_email = me.from_email AND m.message_id <> me.message_id
+           AND m.thread_id IS DISTINCT FROM me.thread_id
+           AND COALESCE(m.provenance->>'_mailbox', 'gov') = me.mailbox
+         ORDER BY m.sent_at DESC LIMIT 2)
+       UNION ALL
+       (SELECT m.source_ref, m.sent_at, m.from_name, m.from_email, m.subject, 'similar topic'::text
+          FROM canonical.chunks c
+          JOIN canonical.messages m ON m.message_id = c.message_id, me, vec
+         WHERE c.message_id <> me.message_id AND c.embedding IS NOT NULL
+           AND COALESCE(m.provenance->>'_mailbox', 'gov') = me.mailbox
+         ORDER BY c.embedding <=> vec.embedding LIMIT 2)`,
+      [pid],
+    ).catch(() => [] as Row[]);
+    const seen = new Set<string>([pid]);
+    for (const r of rows) {
+      if (seen.has(r.source_ref)) continue;
+      seen.add(r.source_ref);
+      out.push({
+        primaryId: pid, messageId: r.source_ref, date: r.sent_at.toISOString(),
+        from: r.from_name ?? r.from_email ?? "?", subject: r.subject ?? "(no subject)", why: r.why,
+      });
+      if (out.filter((x) => x.primaryId === pid).length >= 4) break;
+    }
+    if (out.length >= 24) break; // prompt budget
+  }
+  return out;
+}
+
 export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> {
   try {
     const last = await query<{ ran_at: Date }>(
@@ -261,7 +340,11 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
       urgencyRules: typeof ov.urgencyRules === "string" && ov.urgencyRules.trim() ? ov.urgencyRules : agent.urgencyRules,
     };
 
-    const { system, user } = buildAgentPrompt(effective, memory, slice, skills);
+    // FEAT-17: the record around the newest mail rides in the prompt — the
+    // agent judges patterns, not lone messages (capped for prompt budget)
+    const related = slice.length ? await fetchRelatedContext(slice.slice(0, 8).map((m) => m.messageId)) : [];
+
+    const { system, user } = buildAgentPrompt(effective, memory, slice, skills, related);
     const task = (process.env.AGENT_RUN_TASK as Task) || "draft"; // Sonnet; flagship gated by eval evidence
     const raw = await complete({ task, system, user, maxTokens: 2048 });
     const parsed = parseRunOutput(raw) as { digest?: { sourceMessageIds?: unknown[] }[] };
@@ -276,7 +359,12 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
     }
     const output = validateRunOutput(agent, parsed); // enforce, then persist
     // guard against cited ids that weren't in the input (no invented evidence)
-    const known = new Set([...slice.map((m) => m.messageId), ...memory.flatMap((m) => m.sourceMessageIds)]);
+    // related background is citable evidence too (FEAT-17)
+    const known = new Set([
+      ...slice.map((m) => m.messageId),
+      ...memory.flatMap((m) => m.sourceMessageIds),
+      ...related.map((r) => r.messageId),
+    ]);
     const invented = output.digest.flatMap((d) => d.sourceMessageIds).filter((id) => !known.has(id));
     if (invented.length) throw new Error(`cited unknown messageIds: ${invented.slice(0, 3).join(", ")}`);
     await persistRun(agent.key, output);

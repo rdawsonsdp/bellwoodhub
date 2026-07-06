@@ -95,6 +95,20 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 | FEAT-18 | **Auto sign-out** (RD 2026-07-03, safety): idle-timeout log-out, toggleable on/off in the Admin panel (device stays a risk surface — the Mayor's phone left unlocked must shed its session). Implement as session max-age + client idle timer; admin toggle persists per app config. | ⚪ logged | Pairs with FEAT-19 session-security follow-ups |
 | FEAT-17 | **Related background on emails** — agent-discovered relatedness (RD requirement 2026-07-03): under any email (urgent first), show related/background messages the agent judged similar — "Mary Joseph asks about water charges → her prior threads, the meter issue on her street, neighbors' same complaint." Non-deterministic by design. Staged: (1) related-by-record (thread/sender/entities/topic — zero AI calls), (2) + semantic neighbors (Voyage embeddings, behind the week-2 AI-exposure decision), (3) + the agent judge pass during mailbox-agent runs on RED/needs-you items — ranked background with a cited WHY per item, stored on the run so cards render instantly. Wall rule applies: relatedness NEVER crosses the gov/private mailbox boundary (DEC-6). | ⚪ logged | Surfaces: ThreadView "Background" block first, then Queue/urgent cards |
 
+**Mayor Harvey onboarding (Tuesday 2026-07-07 — plan agreed 2026-07-05; DEC-9 executed):**
+Two parallel stacks, one codebase: RD keeps building on `live-pilot` (his pilot); the Mayor gets his own
+**Vercel project (production = `main`)** + his own **isolated Supabase project** — infrastructure isolation
+instead of user roles (sidesteps SEC-2 for now). His login allowlist = his emails only; **send starts
+fail-closed**; native Vercel crons (his lane is Production). Features promote by fast-forwarding `main`.
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| MH-1 | **Outlook framework**: Entra app registration (delegated Mail.Read/Calendars.Read/offline_access) + first live Graph pull + fixes (sent-items TODO, `bf:` walk parity) | ⚪ Monday | Graph connector code exists, never live-tested; registration needs RD's Microsoft account |
+| MH-2 | Provision the Mayor's stack: Supabase project (13 migrations + RLS verify) + Vercel project (same repo, root `web`, prod branch `main`) + full env (fresh secrets, `ALLOWED_EMAILS`=his, DEMO_MODE=0, send vars ABSENT) | ⚪ Monday | gated by MH-D1 ownership decision |
+| MH-3 | Google OAuth client: add the Mayor as test user + the new instance's redirect URI | ⚪ Monday | |
+| MH-4 | End-to-end onboarding smoke test (temporary RD login, deleted same day) | ⚪ Monday | |
+| MH-5 | **Tuesday, ~15 min with the Mayor**: open URL → Google sign-in (Gmail mirrors) → Microsoft sign-in (Outlook connects) → crons take over; RD watches counters, never content | ⚪ Tuesday | Outlook calendar via Graph = fast-follow |
+Decisions pending (RD): **MH-D1** who owns his infra — Village-owned Supabase/Vercel (true no-access) vs. RD-owned with audit · **MH-D2** his URL (vercel.app alias vs. real domain) · **MH-D3** separate API keys for his instance (recommended) · **MH-D4** his exact allowlist addresses + temp smoke-test login · **MH-D5** confirm send stays OFF until his own day-two test.
+
 **Email ingestion (real mail — `docs/EMAIL_INGESTION.md`; absorbs TASK-1 + #3; spec'd 2026-07-02):**
 | # | Phase | Status | Notes |
 |---|------|--------|-------|
@@ -250,6 +264,16 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 ---
 
 ## Changelog
+
+- **2026-07-05 close #2 (Tuesday plan — Mayor Harvey onboarding)** — RD set Tuesday's goal: the Mayor
+  on the same codebase, self-serve login + Gmail & Outlook connect, **RD without access to his data**,
+  while RD keeps building features on his own pilot. Plan logged as the **MH board** (above): two
+  parallel stacks per DEC-9 — new Vercel project (prod=`main`) + isolated Supabase for the Mayor;
+  isolation by infrastructure (not roles — SEC-2 stays parked); his allowlist only; send fail-closed;
+  native crons; features promote via fast-forwarding `main` from `live-pilot`. Monday = the Outlook
+  framework (Entra registration + first live Graph pull) + stack provisioning + OAuth updates + smoke
+  test. Five decisions queued (MH-D1…D5), ownership of his infra being the big one (Village-owned =
+  literal no-access). Plan mirrored to Notion.
 
 - **2026-07-05 close (SCHEDULER ARMED — agents run by default)** — RD approved the rotation: Preview
   `CRON_SECRET` regenerated and mirrored to repo secret `PILOT_CRON_SECRET` (write-only both sides;

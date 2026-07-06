@@ -279,7 +279,9 @@ Decisions pending (RD): **MH-D1** who owns his infra — Village-owned Supabase/
   a real detail page via a registry bridge, so every agent has ONE card with plain-English +
   Instructions + Skills + activity. **Skills migration applied** (RD's word) — uploads live.
   **Embed pipeline proven unstuck**: post-fix scheduler run embedded 1,824 messages / 10,793 chunks in
-  one pass; 5,712 of 25,797 indexed and climbing on the 15-min cadence. tsc + build + 6 suites green.
+  one pass; 5,712 of 25,797 indexed and climbing on the 15-min cadence. Also: **release id under the
+  app heading** (RD) — short SHA + branch of the serving build, inlined from `VERCEL_GIT_COMMIT_SHA`
+  at build time, linking to the GitHub commit (mobile topbar + desktop rail). tsc + build + 6 suites green.
 
 - **2026-07-05 close #4 (SCHEDULER LIVE · skills built · embed poison-batch fixed)** — RD approved the
   protection bypass: generated via Vercel API (Preview protection stays ON for humans; the automation

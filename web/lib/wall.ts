@@ -240,6 +240,26 @@ async function addConnectorCards(wall: WallPayload): Promise<void> {
   // registry cards are code-defined too — mark them Default so the
   // Default-vs-Custom vocabulary is ready for the Agent Factory
   for (const c of wall.cabinet) if (!c.origin) c.origin = "default";
+
+  // RD 2026-07-05: on live, the cabinet light is the LIVENESS channel —
+  // green = this desk's engine reported in recently, red = it is not
+  // running. (Urgency keeps its channels: needsYouNow rows + digest sheets.)
+  // Email seats: connector active + synced inside 2h. Schedule: the calendar
+  // mirror rides the Google account's token, so it is live while that
+  // connector is. Everyone else: a run inside 25h (hourly/daily cadence).
+  const googleLive = accounts.some((a) => a.provider === "gmail" && a.status === "active");
+  const fresh = (iso: string | null | undefined, hours: number) =>
+    !!iso && Date.now() - new Date(iso).getTime() < hours * 3_600_000;
+  for (const c of wall.cabinet) {
+    if (c.agentKey === "email-gmail" || c.agentKey === "email-outlook") {
+      const acct = accounts.find((x) => (x.provider === "gmail" ? "email-gmail" : "email-outlook") === c.agentKey);
+      c.statusDot = acct?.status === "active" && fresh(acct.last_synced_at, 2) ? "clear" : "red";
+    } else if (c.agentKey === "schedule") {
+      c.statusDot = googleLive ? "clear" : "red";
+    } else {
+      c.statusDot = fresh(wall.runs[c.agentKey]?.ranAt, 25) ? "clear" : "red";
+    }
+  }
 }
 
 /** What actually went out (app.drafts.sent_at) in the past 3 days, grouped by

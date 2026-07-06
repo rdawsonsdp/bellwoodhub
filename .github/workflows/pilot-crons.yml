@@ -1,0 +1,48 @@
+name: pilot-crons
+
+# The pilot's scheduler (RD 2026-07-05: "the email, good morning and schedule
+# agents should be running by default"). Vercel fires crons only on Production
+# deployments; the pilot lives on the Preview lane (live-pilot branch), so this
+# workflow drives the same CRON_SECRET-gated endpoints Vercel would, on the
+# same cadence. PILOT_CRON_SECRET (repo secret) must equal the pilot's
+# CRON_SECRET (Vercel Preview env) — until it does, every call 401s and
+# nothing runs, fail-closed.
+#
+# GitHub schedules drift a few minutes under load; that's fine for mail.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Drive the pilot's cron endpoints
+        env:
+          BASE: https://bellwood-hub-pilot.vercel.app
+          K: ${{ secrets.PILOT_CRON_SECRET }}
+        run: |
+          if [ -z "$K" ]; then echo "PILOT_CRON_SECRET is not set — skipping (fail closed)"; exit 0; fi
+          hit() {
+            echo "== GET $1"
+            code=$(curl -sS -m 290 -o /tmp/out -w '%{http_code}' -H "Authorization: Bearer $K" "$BASE$1") || code=000
+            echo "   -> $code $(head -c 400 /tmp/out)"
+          }
+          # every tick: pull new mail, then index it for search
+          hit /api/cron/ingest-email
+          hit /api/cron/embed-mail
+          # top of the hour: calendar mirror + the Sentinel access watch
+          M=$(date -u +%M); H=$(date -u +%H)
+          if [ "$M" -lt 15 ]; then
+            hit /api/cron/ingest-calendar
+            hit /api/cron/sentinel
+            # the cabinet reports in hourly, 7a–5p Chicago (12–22 UTC; DST drift accepted)
+            if [ "$H" -ge 12 ] && [ "$H" -le 22 ]; then
+              hit /api/cron/agent-runs
+            fi
+          fi

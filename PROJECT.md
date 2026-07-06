@@ -249,6 +249,19 @@ New risks registered: `SEC-2` multi-user roles/walls undesigned (gates the Mayor
 
 ## Changelog
 
+- **2026-07-05 late #3 (liveness dots · the pilot's scheduler)** — Two RD directives: **(1) "if the
+  agent is live the light should be green; if not, red"** — on live builds the cabinet dot is now the
+  LIVENESS channel (urgency keeps needsYouNow + digest sheets): email seats green when the connector is
+  active and synced within 2h; Schedule green while the Google connector is live (the calendar mirror
+  rides its token); every other desk green only if its latest run is within 25h — so today Gmail +
+  Schedule read green and the stale desks read red, honestly. **(2) "email, good morning and schedule
+  agents should be running by default"** — root cause: Vercel fires crons only on Production; the pilot
+  is Preview, so nothing was ever scheduled. Shipped `.github/workflows/pilot-crons.yml` (repo is
+  public → free Actions): every 15 min ingest-email + embed-mail; hourly calendar + Sentinel; hourly
+  agent-runs 7a–5p CT — fail-closed until `PILOT_CRON_SECRET` (repo secret) matches the pilot's
+  `CRON_SECRET`. **Blocked-on-RD:** approving the secret rotation (CRON_SECRET is write-only; Claude's
+  rotate+mirror command was permission-gated). Also flagged: the GitHub repo is PUBLIC — confirm intent.
+
 - **2026-07-05 late #2 (mobile polish from RD's phone screenshot · Gmail leads the cabinet)** — RD's
   screenshot showed the Sent rows overflowing the phone viewport (long addresses in nowrap blocks) and
   the new sync counter squeezing the topbar ("Chief of Staff" wrapped to 3 lines). Fixed per mobile-UX

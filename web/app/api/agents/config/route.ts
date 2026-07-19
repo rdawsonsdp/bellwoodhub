@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as {
       agentKey?: string;
       enabled?: boolean;
-      overrides?: { charter?: string; goals?: string[]; urgencyRules?: string } | null;
+      overrides?: { charter?: string; goals?: string[]; urgencyRules?: string; focus?: string } | null;
     };
     const agentKey = body.agentKey;
     if (!agentKey) {
@@ -139,6 +139,10 @@ export async function POST(req: NextRequest) {
           if (goals.length) clean.goals = goals;
         }
         if (typeof ov.urgencyRules === "string" && ov.urgencyRules.trim()) clean.urgencyRules = ov.urgencyRules.slice(0, 4000);
+        // FOCUS: the standing "what to watch for" instruction. Embedded as a
+        // query vector at run time (lib/agent-focus.ts), so it is kept short —
+        // a paragraph retrieves well, an essay embeds to mush.
+        if (typeof ov.focus === "string" && ov.focus.trim()) clean.focus = ov.focus.slice(0, 1000);
       } else {
         clean = {};
       }

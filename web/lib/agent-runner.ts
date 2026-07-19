@@ -25,7 +25,9 @@ import {
   validateRunOutput, type AgentMemoryItem, type AgentRunOutput, type AgentSliceMessage, type MemoryKind,
 } from "./agent-run";
 import { query } from "./db";
+import { fetchFocusSlice, focusOf, type FocusHit } from "./agent-focus";
 import { complete } from "./agents/claude";
+import { VOICE } from "./agents/voice";
 import type { Task } from "./agents/constants";
 
 // same tenant scoping as lib/capabilities.ts
@@ -59,16 +61,33 @@ export function buildAgentPrompt(
   messages: AgentSliceMessage[],
   skills: AgentSkill[] = [],
   related: RelatedLine[] = [],
+  /** The operator's standing instruction + what it matched across the whole
+   *  record (lib/agent-focus.ts). Absent focus = the desk runs on its time
+   *  window alone, exactly as before. */
+  focus: { focus: string | null; hits: FocusHit[] } = { focus: null, hits: [] },
 ): { system: string; user: string } {
   const actShape =
     agent.autonomy === "draft"
       ? '[{"type":"draft_reply","threadId":string,"draftSubject":string,"draftBody":string,"rationale":string,"citations":string[]}]'
       : '[] — your autonomy is NOT draft; actItems must be empty';
   const system = [
-    `You are the ${agent.name} on the Mayor of Bellwood's cabinet.`,
+    // Shared product voice (lib/agents/voice.ts) — the same assistant the Mayor
+    // meets in Ask. The desk's own charter follows and narrows it.
+    `${VOICE}\n\nYou are the ${agent.name} — one desk of that job.`,
     agent.charter,
     `Your goals:\n${agent.goals.map((g) => `- ${g}`).join("\n")}`,
     `Urgency rules for YOUR desk (what is red/yellow HERE):\n${agent.urgencyRules}`,
+    // FOCUS: the operator's standing instruction for this desk. It directs
+    // attention — it never grants autonomy or relaxes the citation rules below.
+    ...(focus.focus
+      ? [
+          `The Mayor's standing instruction for your desk — treat this as your first priority ` +
+            `this run:\n${focus.focus}\n\nMatching records from the whole archive are supplied below ` +
+            `under FOCUS MATCHES. They are NOT new mail — they may be months old. Summarize what they ` +
+            `show as a body of evidence (counts, patterns, recurring locations or senders), cite them ` +
+            `like any other message, and say plainly if they are too thin to support a conclusion.`,
+        ]
+      : []),
     // FEAT-21: operator-uploaded skills refine voice and judgment — they can
     // NEVER override the hard rules below or grant autonomy the code denies.
     ...(skills.length
@@ -115,7 +134,16 @@ export function buildAgentPrompt(
         .map((r) => `- around [${r.primaryId}]: [${r.messageId}] ${r.date.slice(0, 10)} · ${r.from} · "${r.subject}" (${r.why})`)
         .join("\n")
     : "(none found)";
+  const focusLines = focus.hits.length
+    ? focus.hits
+        .map(
+          (h) =>
+            `- ${h.date.slice(0, 10)} · ${h.fromName ?? h.fromEmail ?? "?"} · "${h.subject ?? "(no subject)"}" [${h.messageId}]\n  ${h.snippet}`,
+        )
+        .join("\n")
+    : "(no records in the archive matched the standing instruction)";
   const user =
+    (focus.focus ? `FOCUS MATCHES (whole archive, any date — your standing instruction):\n${focusLines}\n\n` : "") +
     `YOUR OPEN MEMORY:\n${memLines}\n\nNEW MESSAGES ON YOUR DESK:\n${msgLines}\n\n` +
     `RELATED BACKGROUND (prior record around the new mail — weigh it when judging urgency and cite its ids when you use it):\n${relLines}\n\n` +
     `Produce the run output JSON now.`;
@@ -301,9 +329,32 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
     const since = last[0]?.ran_at?.toISOString() ?? new Date(Date.now() - 7 * 86400000).toISOString();
     const [slice, memory] = await Promise.all([fetchAgentSlice(agent, since), fetchAgentMemory(agent.key)]);
 
+    // FEAT-19 slice 2 (RD 2026-07-05): the prompt is configuration, not code.
+    // Operator edits in app.agent_configs.overrides beat the registry defaults
+    // — charter, goals, and the urgency directives ("these emails are ALWAYS
+    // red"). Autonomy is deliberately NOT overridable here: the constitution
+    // stays in code.
+    //
+    // Read BEFORE the quiet-desk check: `focus` is a standing instruction over
+    // the whole record, so an agent with focus has work to do even on an hour
+    // when no new mail landed on its desk.
+    type Overrides = { charter?: unknown; goals?: unknown; urgencyRules?: unknown; focus?: unknown };
+    const ovRows = await query<{ overrides: Overrides }>(
+      `SELECT overrides FROM app.agent_configs WHERE agent_key = $1`,
+      [agent.key],
+    ).catch(() => [] as { overrides: Overrides }[]);
+    const ov = ovRows[0]?.overrides ?? {};
+
+    // FOCUS (lib/agent-focus.ts): what the operator told this desk to watch
+    // for, in plain English, matched semantically across the whole record —
+    // not just since the cursor. Fails soft: a Voyage outage or an unembedded
+    // corpus degrades the run to its time window rather than killing it.
+    const focus = focusOf(ov);
+    const focusHits = focus ? await fetchFocusSlice(agent, focus).catch(() => []) : [];
+
     // Quiet desk: nothing to read, nothing remembered — skip the model
     // entirely; an honest "nothing new" beats prompted-into-filler output.
-    if (slice.length === 0 && memory.length === 0) {
+    if (slice.length === 0 && memory.length === 0 && focusHits.length === 0) {
       await persistRun(agent.key, quietRun());
       return { agentKey: agent.key, ok: true, slice: 0, digest: 0, actItems: 0 };
     }
@@ -320,17 +371,6 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
       [skillKeys],
     ).catch(() => [] as AgentSkill[]);
 
-    // FEAT-19 slice 2 (RD 2026-07-05): the prompt is configuration, not code.
-    // Operator edits in app.agent_configs.overrides beat the registry defaults
-    // — charter, goals, and the urgency directives ("these emails are ALWAYS
-    // red"). Autonomy is deliberately NOT overridable here: the constitution
-    // stays in code.
-    type Overrides = { charter?: unknown; goals?: unknown; urgencyRules?: unknown };
-    const ovRows = await query<{ overrides: Overrides }>(
-      `SELECT overrides FROM app.agent_configs WHERE agent_key = $1`,
-      [agent.key],
-    ).catch(() => [] as { overrides: Overrides }[]);
-    const ov = ovRows[0]?.overrides ?? {};
     const effective: DomainAgent = {
       ...agent,
       charter: typeof ov.charter === "string" && ov.charter.trim() ? ov.charter : agent.charter,
@@ -344,7 +384,10 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
     // agent judges patterns, not lone messages (capped for prompt budget)
     const related = slice.length ? await fetchRelatedContext(slice.slice(0, 8).map((m) => m.messageId)) : [];
 
-    const { system, user } = buildAgentPrompt(effective, memory, slice, skills, related);
+    const { system, user } = buildAgentPrompt(effective, memory, slice, skills, related, {
+      focus,
+      hits: focusHits,
+    });
     const task = (process.env.AGENT_RUN_TASK as Task) || "draft"; // Sonnet; flagship gated by eval evidence
     const raw = await complete({ task, system, user, maxTokens: 2048 });
     const parsed = parseRunOutput(raw) as { digest?: { sourceMessageIds?: unknown[] }[] };
@@ -364,6 +407,7 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
       ...slice.map((m) => m.messageId),
       ...memory.flatMap((m) => m.sourceMessageIds),
       ...related.map((r) => r.messageId),
+      ...focusHits.map((m) => m.messageId), // focus matches are citable evidence
     ]);
     const invented = output.digest.flatMap((d) => d.sourceMessageIds).filter((id) => !known.has(id));
     if (invented.length) throw new Error(`cited unknown messageIds: ${invented.slice(0, 3).join(", ")}`);

@@ -152,10 +152,10 @@ function domainAsCos(key: string): CosAgent | null {
   return {
     key: d.key, name: d.name, autonomy, status: d.active ? "active" : "planned",
     powers: d.domains, role: d.charter.split(". ")[0], job: d.charter,
-    produces: d.autonomy === "draft" ? "Cited cabinet digests + draft replies for your approval." : "Cited cabinet digests.",
+    produces: d.autonomy === "draft" ? "Cited digests + draft replies for your approval." : "Cited digests.",
     plain: {
       reads: `Mail routed to the ${d.name.replace(/ Agent$/, "")} desk${d.walled ? " — its walled, private lane" : ""}. Nothing else.`,
-      produces: d.autonomy === "draft" ? "A cited digest on its cabinet card, and draft replies that wait for you." : "A cited digest on its cabinet card.",
+      produces: d.autonomy === "draft" ? "A cited digest on its agent card, and draft replies that wait for you." : "A cited digest on its agent card.",
       never: "It never sends anything itself, never cites evidence it wasn't given, and never speaks outside its desk.",
       decides: "You.",
     },
@@ -429,20 +429,28 @@ function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOp
   const [charter, setCharter] = useState("");
   const [goals, setGoals] = useState("");
   const [urgency, setUrgency] = useState("");
+  const [focus, setFocus] = useState("");
   const [edited, setEdited] = useState(false); // an override row exists
   const [state, setState] = useState<"loading" | "idle" | "saving" | "saved" | "err">("loading");
   const [err, setErr] = useState<string | null>(null);
+  // Focus preview: what this instruction actually pulls out of the archive.
+  // Shown BEFORE the operator trusts a digest built on it.
+  type Hit = { messageId: string; date: string; from: string; subject: string; snippet: string; score: number };
+  const [hits, setHits] = useState<Hit[] | null>(null);
+  const [pv, setPv] = useState<"idle" | "running" | "err">("idle");
+  const [pvErr, setPvErr] = useState<string | null>(null);
 
   useEffect(() => {
     if (!d) return;
     fetch("/api/agents/config")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((cfg: { overrides?: Record<string, { charter?: string; goals?: string[]; urgencyRules?: string }> }) => {
+      .then((cfg: { overrides?: Record<string, { charter?: string; goals?: string[]; urgencyRules?: string; focus?: string }> }) => {
         const ov = cfg.overrides?.[agentKey] ?? {};
         setCharter(ov.charter ?? d.charter);
         setGoals((ov.goals ?? d.goals).join("\n"));
         setUrgency(ov.urgencyRules ?? d.urgencyRules);
-        setEdited(!!(ov.charter || ov.goals || ov.urgencyRules));
+        setFocus(ov.focus ?? "");
+        setEdited(!!(ov.charter || ov.goals || ov.urgencyRules || ov.focus));
         setState("idle");
       })
       .catch(() => { setCharter(d.charter); setGoals(d.goals.join("\n")); setUrgency(d.urgencyRules); setState("idle"); });
@@ -481,15 +489,31 @@ function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOp
   const save = async (reset: boolean) => {
     setState("saving"); setErr(null);
     try {
-      const overrides = reset ? null : { charter, goals: goals.split("\n").map((g) => g.trim()).filter(Boolean), urgencyRules: urgency };
+      const overrides = reset ? null : { charter, goals: goals.split("\n").map((g) => g.trim()).filter(Boolean), urgencyRules: urgency, focus };
       const r = await fetch("/api/agents/config", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ agentKey, overrides }) });
       const dta = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(dta.error || "save failed");
-      if (reset) { setCharter(d.charter); setGoals(d.goals.join("\n")); setUrgency(d.urgencyRules); }
+      if (reset) { setCharter(d.charter); setGoals(d.goals.join("\n")); setUrgency(d.urgencyRules); setFocus(""); setHits(null); }
       setEdited(!reset);
       setState("saved");
       window.setTimeout(() => setState("idle"), 1800);
     } catch (e) { setErr(e instanceof Error ? e.message : "save failed"); setState("err"); }
+  };
+
+  /** Run the same retrieval the agent will run — no model, no writes — so the
+   *  operator sees what the instruction matches before a digest depends on it. */
+  const preview = async () => {
+    setPv("running"); setPvErr(null);
+    try {
+      const r = await fetch("/api/agents/focus-preview", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ agentKey, focus }),
+      });
+      const dta = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(dta.error || "preview failed");
+      setHits(dta.hits ?? []);
+      setPv("idle");
+    } catch (e) { setPvErr(e instanceof Error ? e.message : "preview failed"); setPv("err"); }
   };
 
   const area = (v: string, set: (s: string) => void, rows: number, ph: string) => (
@@ -517,6 +541,46 @@ function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOp
           agent&rsquo;s next run. <b>Reset to default</b> discards your edits and restores the original.
           The <b>Urgency rules</b> box is where your standing directives live — for example:
           &ldquo;Any email about a water main break is ALWAYS urgent.&rdquo;
+        </div>
+        {/* FOCUS — the standing "what to watch for" instruction. Unlike the
+            boxes below (which shape HOW the agent reads today's mail), this
+            searches the WHOLE archive by meaning, so "every red-light citation"
+            reaches back past the last run. */}
+        <div style={{ border: `1px solid ${C.line}`, borderRadius: 12, padding: 13, background: "rgba(var(--ink),.03)" }}>
+          {label("Focus", "what to watch for — searched across the whole record, not just new mail")}
+          {area(focus, setFocus, 3, "e.g. Every red-light citation. Summarize how many, where, and any repeat locations.")}
+          <div style={{ display: "flex", gap: 9, alignItems: "center", marginTop: 9, flexWrap: "wrap" }}>
+            <button disabled={pv === "running" || !focus.trim()} onClick={preview}
+              style={{ cursor: focus.trim() ? "pointer" : "default", background: "rgba(var(--ink),.06)", border: `1px solid ${C.line}`, borderRadius: 9, padding: "8px 13px", color: C.text2, fontSize: 12.5, fontWeight: 700, fontFamily: FONT.sans, opacity: focus.trim() ? 1 : 0.5 }}>
+              {pv === "running" ? "Searching…" : "Preview what this matches"}
+            </button>
+            {pvErr && <span style={{ fontSize: 12, color: C.red, fontWeight: 600 }}>{pvErr}</span>}
+            {hits && !pvErr && (
+              <span style={{ fontSize: 12, color: C.text3 }}>
+                {hits.length === 0
+                  ? "nothing in the record matched — try naming a specific thing"
+                  : `${hits.length} record${hits.length === 1 ? "" : "s"} matched`}
+              </span>
+            )}
+          </div>
+          {hits && hits.length > 0 && (
+            <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
+              {hits.map((h) => (
+                <div key={h.messageId} style={{ display: "flex", gap: 9, alignItems: "baseline", fontSize: 12.5, color: C.text2, borderTop: `1px solid ${C.line}`, paddingTop: 6 }}>
+                  <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim, flexShrink: 0 }}>{h.date.slice(0, 10)}</span>
+                  <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <b style={{ color: C.text }}>{h.subject}</b> · {h.from}
+                  </span>
+                  <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim, flexShrink: 0 }}>{h.score.toFixed(2)}</span>
+                </div>
+              ))}
+              <div style={{ fontSize: 11.5, color: C.text3, lineHeight: 1.5, marginTop: 3 }}>
+                These are the records the agent will reason over. If they look wrong, reword the
+                focus — the match is by meaning, not keywords. Abstract wording
+                (&ldquo;anything urgent&rdquo;) retrieves poorly; name a thing you could search for.
+              </div>
+            </div>
+          )}
         </div>
         <div>
           {label("Charter", "who this agent is and what its desk covers")}

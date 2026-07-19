@@ -52,7 +52,21 @@ export default function AnswerMd({ text, size = 15.5 }: { text: string; size?: n
   const lines = text.split(/\r?\n/);
   const blocks: ReactNode[] = [];
   let k = 0;
-  const body: CSSProperties = { fontFamily: FONT.serif, fontSize: size, lineHeight: 1.62, color: C.text };
+  // Body copy is SANS. The serif is the brand voice and stays on headings, but a
+  // dense multi-paragraph answer set in serif at 15–17px is tiring to read — and
+  // ~80% of use is on a phone, where the serif's thin strokes lose contrast
+  // against the warm paper background (RD 2026-07-18: "this font isn't easy to
+  // read"). Line-height is generous for the same reason.
+  const body: CSSProperties = {
+    fontFamily: FONT.sans,
+    fontSize: size - 1,
+    lineHeight: 1.68,
+    color: C.text,
+    letterSpacing: ".002em",
+    // Long unbroken tokens — invoice numbers (#PBYJGJ-00024), project ids,
+    // urls — must wrap instead of pushing the column wider than the phone.
+    overflowWrap: "anywhere",
+  };
 
   let i = 0;
   while (i < lines.length) {
@@ -70,6 +84,32 @@ export default function AnswerMd({ text, size = 15.5 }: { text: string; size?: n
         </div>,
       );
       i++; continue;
+    }
+
+    // "> " callout — what actually needs the Mayor. The synthesizer emits these
+    // first and only for real action items (deadline, threat, unanswered ask,
+    // a decision only he can make), so they get amber weight rather than
+    // reading like one more paragraph. Consecutive "> " lines group into one card.
+    if (/^>\s+/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^>\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^>\s+/, ""));
+        i++;
+      }
+      blocks.push(
+        <div key={key} style={{ margin: "4px 0 14px", borderLeft: `3px solid ${C.gold}`, background: "rgba(231,181,60,.10)", borderRadius: "0 12px 12px 0", padding: "11px 13px", display: "grid", gap: 7, overflowWrap: "anywhere" }}>
+          <div style={{ fontFamily: FONT.mono, fontSize: size - 6, letterSpacing: ".08em", textTransform: "uppercase", color: C.goldHi, fontWeight: 700 }}>
+            Needs you
+          </div>
+          {items.map((t, ii) => (
+            <div key={ii} style={{ ...body, fontSize: size - 0.5, display: "flex", gap: 9, alignItems: "flex-start" }}>
+              <span aria-hidden style={{ color: C.gold, fontWeight: 700, lineHeight: 1.62 }}>&#8226;</span>
+              <span>{inline(t, `${key}-${ii}`)}</span>
+            </div>
+          ))}
+        </div>,
+      );
+      continue;
     }
 
     if (/^-{3,}\s*$/.test(line)) {
@@ -130,7 +170,7 @@ export default function AnswerMd({ text, size = 15.5 }: { text: string; size?: n
       continue;
     }
 
-    blocks.push(<div key={key} style={{ ...body, color: C.text2, margin: "6px 0" }}>{inline(line, key)}</div>);
+    blocks.push(<div key={key} style={{ ...body, margin: "0 0 11px" }}>{inline(line, key)}</div>);
     i++;
   }
 

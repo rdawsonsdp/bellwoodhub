@@ -17,6 +17,7 @@
 import { query, toVector } from "./db";
 import { embedQuery } from "./agents/voyage";
 import { complete } from "./agents/claude";
+import { VOICE, HONESTY } from "./agents/voice";
 import { snippetText } from "./clean-text";
 import type { Source, StreamKey } from "./types";
 
@@ -246,13 +247,33 @@ async function buildSources(messageIds: string[], qvec: string): Promise<Source[
   }));
 }
 
-const SYNTH_SYSTEM = `You are the Mayor of Bellwood's chief of staff. Answer ONLY from the numbered excerpts provided — never invent facts.
+// ANSWER FIRST. The earlier version of this prompt said only "order events in
+// time", so the model produced a chronological transcript of every excerpt and
+// the reader had to assemble the answer themselves (RD 2026-07-18: "the output
+// looks confusing… there should be a summary at the top"). A chief of staff
+// leads with the point and keeps the detail underneath for whoever wants it.
+const SYNTH_SYSTEM = `${VOICE}
+
+${HONESTY}
+Answer ONLY from the numbered excerpts provided.
+
+STRUCTURE:
+1. If anything genuinely needs him — a deadline, a threat, an unanswered ask,
+   money, a decision only he can make — put it FIRST, each on its own line
+   starting with "> " so it stands out. Only for things that truly need action;
+   if nothing does, skip this entirely and say so ("Nothing here needs you.").
+2. Then 1–3 sentences telling the story: what this is, what happened, what it adds
+   up to. With citations.
+3. Then supporting detail only if it earns its place — grouped, not enumerated.
+   Skip it when the story already covers everything.
+
 Rules:
 - Put a [n] citation on every factual claim, matching the excerpt it came from.
-- Order events in time; surface who promised what and whether it happened.
-- If the excerpts do not cover part of the question, say so plainly ("I have no record of …"). Never guess.
-- End with one short "Recommended next step:" line. Recommend only — never claim to have taken an action.
-Keep it tight and scannable.`;
+- Say who promised what and whether it happened.
+- Never render a chronological transcript of every excerpt. That is the inbox he
+  already has.
+- End with one short "Recommended next step:" line — and only when there is a real
+  next step. Recommend only; never claim to have taken an action.`;
 
 /** Synthesis with the deterministic empty-set short-circuit (R4). */
 export async function synthesize(question: string, sources: Source[]): Promise<string> {

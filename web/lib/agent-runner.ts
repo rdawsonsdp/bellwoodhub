@@ -27,6 +27,7 @@ import {
 import { query } from "./db";
 import { fetchFocusSlice, type FocusHit } from "./agent-focus";
 import { effectiveFocusQuery, type AgentOverrides } from "./agent-instruction";
+import { allAgents, getCustomAgent, overridesOf } from "./agent-registry";
 import { complete } from "./agents/claude";
 import { VOICE } from "./agents/voice";
 import type { Task } from "./agents/constants";
@@ -344,11 +345,21 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
     // Read BEFORE the quiet-desk check: `focus` is a standing instruction over
     // the whole record, so an agent with focus has work to do even on an hour
     // when no new mail landed on its desk.
-    const ovRows = await query<{ overrides: AgentOverrides }>(
-      `SELECT overrides FROM app.agent_configs WHERE agent_key = $1`,
-      [agent.key],
-    ).catch(() => [] as { overrides: AgentOverrides }[]);
-    const ov: AgentOverrides = ovRows[0]?.overrides ?? {};
+    // A CREATED agent (app.agents, migration 014) keeps its instruction and
+    // cached query on its own row; a built-in reads operator edits from
+    // app.agent_configs. Same shape either way, so everything below is
+    // identical for both — a created desk is not a second code path.
+    const custom = await getCustomAgent(agent.key);
+    let ov: AgentOverrides;
+    if (custom) {
+      ov = overridesOf(custom);
+    } else {
+      const ovRows = await query<{ overrides: AgentOverrides }>(
+        `SELECT overrides FROM app.agent_configs WHERE agent_key = $1`,
+        [agent.key],
+      ).catch(() => [] as { overrides: AgentOverrides }[]);
+      ov = ovRows[0]?.overrides ?? {};
+    }
 
     // FOCUS (lib/agent-focus.ts): what the operator told this desk to watch
     // for, in plain English, matched semantically across the whole record —
@@ -400,8 +411,25 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
       hits: focusHits,
     });
     const task = (process.env.AGENT_RUN_TASK as Task) || "draft"; // Sonnet; flagship gated by eval evidence
-    const raw = await complete({ task, system, user, maxTokens: 2048 });
-    const parsed = parseRunOutput(raw) as { digest?: { sourceMessageIds?: unknown[] }[] };
+    // 4096, not 2048: a desk with a lot to report writes a long digest, and the
+    // whole run is one JSON object — truncation doesn't cost the last point, it
+    // costs the entire run with "Unterminated string in JSON". Found the moment
+    // an agent created in the app had real volume to summarize (2026-07-18);
+    // the built-in desks hid it by being quiet.
+    const raw = await complete({ task, system, user, maxTokens: 4096 });
+    let parsed: { digest?: { sourceMessageIds?: unknown[] }[] };
+    try {
+      parsed = parseRunOutput(raw) as { digest?: { sourceMessageIds?: unknown[] }[] };
+    } catch (parseErr) {
+      // Say WHICH failure this is. "Unterminated string in JSON at position N"
+      // reads like a model defect; it is almost always the token cap.
+      const truncated = /Unterminated|Unexpected end/i.test(String(parseErr));
+      throw new Error(
+        truncated
+          ? `model output truncated at ${raw.length} chars — the digest exceeded the token budget`
+          : `could not parse run output: ${parseErr instanceof Error ? parseErr.message : parseErr}`,
+      );
+    }
     // Sanitize BEFORE validation: drop uncited filler points ("no new
     // items") — an uncited claim must never surface, but it shouldn't kill
     // the whole run either. Unknown-id citations still hard-fail below:
@@ -439,7 +467,9 @@ export async function runAllAgents(): Promise<AgentRunResult[]> {
     ).catch(() => [])).map((r) => r.agent_key),
   );
   const results: AgentRunResult[] = [];
-  for (const agent of DOMAIN_AGENTS.filter((a) => a.active && !disabled.has(a.key))) {
+  // The merged roster: built-in desks + everything created in the app.
+  const roster = await allAgents();
+  for (const agent of roster.filter((a) => a.active && !disabled.has(a.key))) {
     results.push(await runAgentLive(agent)); // sequential: bounded DB + API pressure
   }
   return results;

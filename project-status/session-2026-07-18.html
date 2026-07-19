@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bellwood Hub — Session Status Report, 18 July 2026</title>
+<style>
+  @page { size: letter; margin: 14mm 13mm; }
+  :root{
+    --ink:#1a1a18; --ink2:#3d3d38; --ink3:#6b6b62; --line:#d8d4c8;
+    --paper:#fdfcf9; --panel:#f5f2ea;
+    --green:#276749; --amber:#b7791f; --red:#c53030; --blue:#2b6cb0;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  .wrap{max-width:900px;margin:0 auto;padding:28px 26px 40px}
+  h1{font:600 25px/1.2 Georgia,"Times New Roman",serif;margin:0 0 3px}
+  .sub{color:var(--ink3);font-size:12.5px;margin:0 0 20px}
+  h2{font:600 12px/1 -apple-system,sans-serif;letter-spacing:.10em;text-transform:uppercase;
+     color:var(--ink3);margin:26px 0 10px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+  p{margin:0 0 9px}
+  code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--panel);padding:1px 4px;border-radius:3px}
+
+  /* 4-boxer */
+  .grid4{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .box{border:1px solid var(--line);border-left-width:5px;border-radius:5px;padding:11px 13px;background:#fff}
+  .box.g{border-left-color:var(--green);background:#f2f8f4}
+  .box.a{border-left-color:var(--amber);background:#fdf8ee}
+  .box.r{border-left-color:var(--red);background:#fdf3f3}
+  .box.b{border-left-color:var(--blue);background:#f2f6fc}
+  .box h3{margin:0 0 2px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+  .box.g h3{color:var(--green)} .box.a h3{color:var(--amber)}
+  .box.r h3{color:var(--red)}   .box.b h3{color:var(--blue)}
+  .n{font:600 26px/1 Georgia,serif;margin:2px 0 7px}
+  .box ul{margin:0;padding-left:15px} .box li{margin:0 0 4px;font-size:12.5px;line-height:1.4}
+
+  /* now / next */
+  .strip{border:1px solid var(--line);border-radius:5px;padding:12px 14px;background:#fff}
+  .strip h4{margin:0 0 6px;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  .strip ol,.strip ul{margin:0 0 12px;padding-left:17px} .strip li{margin:0 0 5px;font-size:13px}
+  .strip li:last-child{margin-bottom:0}
+  .strip > *:last-child{margin-bottom:0}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);
+     border-bottom:1px solid var(--line);padding:5px 8px 5px 0;font-weight:600}
+  td{padding:6px 8px 6px 0;border-bottom:1px solid #ece8dd;vertical-align:top}
+  td.num{text-align:right;font-family:ui-monospace,Menlo,monospace;white-space:nowrap}
+  tr:last-child td{border-bottom:0}
+  .tot td{font-weight:700;border-top:2px solid var(--line)}
+
+  .pill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+        padding:1px 6px;border-radius:9px;white-space:nowrap}
+  .p-done{background:#e3f0e8;color:var(--green)}
+  .p-open{background:#f6ecd8;color:var(--amber)}
+  .p-fix{background:#fbe4e4;color:var(--red)}
+
+  .callout{border:1px solid #e6c9a8;background:#fdf6ec;border-left:5px solid var(--amber);
+           border-radius:5px;padding:11px 13px;margin:10px 0}
+  .callout b{color:#8a5a12}
+  .foot{margin-top:26px;padding-top:9px;border-top:1px solid var(--line);color:var(--ink3);font-size:11px}
+  .avoid{break-inside:avoid;page-break-inside:avoid}
+  @media print{ .wrap{padding:0} body{background:#fff} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Bellwood Hub — Session Status Report</h1>
+  <p class="sub">
+    Working session, Saturday 18 July 2026 · evening &nbsp;·&nbsp;
+    Branch <code>agent-focus-and-sync-fixes</code> — 9 commits, pushed, <b>not merged</b> &nbsp;·&nbsp;
+    Prepared for R. Dawson, Strategic Data Products
+  </p>
+
+  <div class="grid4 avoid">
+    <div class="box g">
+      <h3>🟢 Good to go</h3>
+      <div class="n">7</div>
+      <ul>
+        <li><b>FEAT-27</b> Focus — instruct an agent in plain English</li>
+        <li><b>FEAT-29</b> Google Security agent — first live run found real account-recovery attempts</li>
+        <li><b>BUG-2 / BUG-3</b> two silent-failure classes closed</li>
+        <li><b>ISS-6</b> fabricated metrics panel deleted</li>
+      </ul>
+    </div>
+    <div class="box a">
+      <h3>🟡 Caution</h3>
+      <div class="n">4</div>
+      <ul>
+        <li><b>Branch unmerged</b> — <code>main</code> deploys straight to the Mayor's site</li>
+        <li><b>TASK-15</b> three credentials transited chat — rotate</li>
+        <li><b>DEP-4</b> test Supabase bills $10/mo, holds a full Gmail mirror</li>
+        <li><b>Google OAuth</b> still in Testing — 7-day refresh tokens</li>
+      </ul>
+    </div>
+    <div class="box r">
+      <h3>🔴 Risks &amp; issues</h3>
+      <div class="n">3</div>
+      <ul>
+        <li><b>TASK-13</b> Ask may be returning 0 sources on the Mayor's app <i>right now</i></li>
+        <li><b>ISS-7</b> constituent agent: read 200 messages, reported none</li>
+        <li><b>ISS-8</b> abstract instructions retrieve noise</li>
+      </ul>
+    </div>
+    <div class="box b">
+      <h3>🔵 Not started</h3>
+      <div class="n">3</div>
+      <ul>
+        <li><b>TASK-14</b> remove the <code>poc</code> retrieval path</li>
+        <li>Python POC removal — scope undecided</li>
+        <li>Per-department agent fleet (built on FEAT-27)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Developer focus</h2>
+  <div class="strip avoid">
+    <h4>▶ Working on now</h4>
+    <ul>
+      <li><b>Nothing in flight.</b> Session closed at a clean stopping point — all work committed and pushed to a branch. Honest idle.</li>
+    </ul>
+    <h4>⏭ Up next, in order</h4>
+    <ol>
+      <li><b>TASK-13</b> — verify <code>RETRIEVAL_BACKEND=canonical</code> on <code>bellwood-mayor</code>. Done when Ask returns cited sources there. <i>Do this before anything else; it is independent of the merge.</i></li>
+      <li><b>Merge path</b> — branch preview → <code>live-pilot</code> → <code>main</code>. Done when <code>/chief</code> loads on the Mayor's site with the new Wall.</li>
+      <li><b>ISS-7</b> — determine whether the constituent agent's empty digest is honesty or over-aggressive stripping.</li>
+      <li><b>TASK-15 / DEP-4</b> — rotate credentials, delete the test project.</li>
+      <li><b>TASK-14</b> — write <code>getDashboard</code> + <code>listEmails</code> on canonical, then remove <code>poc</code>.</li>
+    </ol>
+  </div>
+
+  <h2>Headline</h2>
+  <p>
+    Agents became <b>instructable</b>. An agent used to be a code artifact — its scope was a hardcoded stream
+    enum and a time window over recent mail. It is now configured by <b>one plain-English instruction</b>,
+    matched semantically across the entire archive. The first agent built this way had no stream routing at
+    all and still produced four cited findings on its first live run against a real mailbox.
+  </p>
+
+  <h2>What shipped</h2>
+  <table class="avoid">
+    <thead><tr><th>ID</th><th>Item</th><th>Note</th><th style="text-align:right">Status</th></tr></thead>
+    <tbody>
+      <tr><td><b>FEAT-27</b></td><td>Focus + the one box</td>
+        <td>One instruction; a Haiku call derives the search query at save time. No migration needed.</td>
+        <td style="text-align:right"><span class="pill p-done">Done</span></td></tr>
+      <tr><td><b>FEAT-29</b></td><td>Google Security agent</td>
+        <td>First agent routed entirely by instruction. Live run: slice 0, digest 4.</td>
+        <td style="text-align:right"><span class="pill p-done">Done</span></td></tr>
+      <tr><td><b>FEAT-28</b></td><td>Sync progress</td>
+        <td>Rate/min, ETA, and mirrored-vs-searchable shown as two tracks rather than one number.</td>
+        <td style="text-align:right"><span class="pill p-done">Done</span></td></tr>
+      <tr><td><b>BUG-2</b></td><td>Ingest could stall permanently</td>
+        <td>A duplicate message unwound the whole round; the cursor never advanced. Reported <code>ok</code> while dropping mail.</td>
+        <td style="text-align:right"><span class="pill p-fix">Fixed</span></td></tr>
+      <tr><td><b>BUG-3</b></td><td>Audit ledger was anon-readable</td>
+        <td>Append-only ≠ private. Now encoded in <code>004_audit.sql</code> so it can't recur on a fresh project.</td>
+        <td style="text-align:right"><span class="pill p-fix">Fixed</span></td></tr>
+      <tr><td><b>ISS-6</b></td><td>Fabricated metrics deleted</td>
+        <td>A hardcoded "92%" and invented gap cards rendered beside live answers.</td>
+        <td style="text-align:right"><span class="pill p-fix">Fixed</span></td></tr>
+      <tr><td><b>DEC-15</b></td><td>Canonical retrieval cutover</td>
+        <td>Ask was querying an empty store. Also removed OpenAI from the retrieval path entirely.</td>
+        <td style="text-align:right"><span class="pill p-done">Done</span></td></tr>
+      <tr><td>—</td><td>Wall, voice, test plan</td>
+        <td>Attention ordering, per-agent "Reads" source line, shared agent voice, <code>docs/AGENT_TEST_PLAN.md</code>.</td>
+        <td style="text-align:right"><span class="pill p-done">Done</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>The blocker</h2>
+  <div class="callout avoid">
+    <p><b>TASK-13 — verify <code>RETRIEVAL_BACKEND=canonical</code> on the Mayor's project.</b></p>
+    <p style="margin-bottom:0">
+      It defaults to <code>poc</code>, a store using different embeddings that is empty on any stack built from
+      the canonical migrations. <b>The symptom is not an error.</b> Ask returns "0 sources recovered" on every
+      question, and the error text blames a missing OpenAI key — three layers from the cause. Found on the test
+      stack tonight; the Mayor's app may be failing this way now, <i>independent of whether this branch ever
+      merges</i>.
+    </p>
+  </div>
+
+  <h2>Evidence — the agent works</h2>
+  <p style="margin-bottom:7px">
+    The Google Security agent's first live run, against a real mailbox of 5,400+ messages. Zero messages
+    reached it through stream routing; every finding came through the instruction:
+  </p>
+  <div class="strip avoid" style="background:var(--panel)">
+    <p style="font:600 14px/1.4 Georgia,serif;margin-bottom:7px">
+      "RED: Account-recovery attempt fired twice today — plus a breach notice and five unconfirmed sign-ins still open"
+    </p>
+    <ul style="margin-bottom:0;font-size:12.5px">
+      <li>Two identical critical recovery alerts the same day — cited, with the action that closes them</li>
+      <li>A password-breach notice from 11 July, still unresolved</li>
+      <li>Five routine sign-in alerts <b>grouped into one point</b> rather than listed separately</li>
+      <li>Connected the repeat pattern to the recovery attempt — judgment, not summary</li>
+    </ul>
+  </div>
+
+  <h2>What we learned</h2>
+  <p>
+    <b>Concrete instructions retrieve well; abstract ones return noise.</b> Measured on a live mailbox:
+    "invoices and payment requests" and "meeting invitations" returned precisely the right mail.
+    "Anything urgent that needs a reply from me" returned marketing copy — it matched the emotional register
+    of hype, not urgency. This single finding shapes how every user must be taught to write instructions,
+    and it is now the central rule of the test plan: <i>name a thing you could search for</i>.
+  </p>
+  <p style="margin-bottom:0">
+    A score-based warning for bad instructions was built and then <b>deleted</b> the same evening — correct
+    invoice results and pure junk both scored 0.41, so any threshold that catches the junk mislabels the good
+    results. Shipping it would have been worse than shipping nothing.
+  </p>
+
+  <h2>Token &amp; cost ledger</h2>
+  <table class="avoid">
+    <thead><tr><th>Category</th><th class="num">Tokens</th><th class="num">Rate / MTok</th><th class="num">Cost</th></tr></thead>
+    <tbody>
+      <tr><td>Input (uncached)</td><td class="num">1,177</td><td class="num">$5.00</td><td class="num">$0.01</td></tr>
+      <tr><td>Output</td><td class="num">423,847</td><td class="num">$25.00</td><td class="num">$10.60</td></tr>
+      <tr><td>Cache write</td><td class="num">799,540</td><td class="num">$6.25</td><td class="num">$5.00</td></tr>
+      <tr><td>Cache read</td><td class="num">148,997,542</td><td class="num">$0.50</td><td class="num">$74.50</td></tr>
+      <tr class="tot"><td>Session total</td><td class="num">150,222,106</td><td class="num">—</td><td class="num">$90.10</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12px;color:var(--ink3);margin-top:8px;margin-bottom:0">
+    Measured from the session transcript, not estimated. Claude Opus 4.8 rates.
+    <b>99% of tokens were cache reads</b> — at full input price those same tokens would have cost $745, so
+    prompt caching saved roughly <b>$670</b> on this session alone. Excludes the app's own API spend
+    (Voyage embeddings, Haiku classification, Sonnet agent runs), which bills to the project's keys separately.
+  </p>
+
+  <h2>Housekeeping</h2>
+  <table class="avoid">
+    <thead><tr><th>Item</th><th>Detail</th><th style="text-align:right">Owner</th></tr></thead>
+    <tbody>
+      <tr><td><b>TASK-15</b> Rotate credentials</td>
+        <td>Anthropic key, OpenAI key, and the test DB password all transited chat tonight. Folds into the existing TASK-12 batch.</td>
+        <td style="text-align:right">RD</td></tr>
+      <tr><td><b>DEP-4</b> Delete test project</td>
+        <td>Supabase <code>bellwoodhub-agent-test</code> — $10/month, and holds a full mirror of a personal Gmail account. Deleting it disposes of both.</td>
+        <td style="text-align:right">RD</td></tr>
+      <tr><td>Google OAuth consent</td>
+        <td>Still in Testing mode — refresh tokens expire after 7 days. Publishing requires verification for restricted Gmail scopes; lead time should start well before go-live.</td>
+        <td style="text-align:right">RD</td></tr>
+    </tbody>
+  </table>
+
+  <div class="foot">
+    Source of truth: <code>PROJECT.md</code> at the repo root · Live dashboard: project-status-ten.vercel.app<br>
+    Generated 18 July 2026 from the session record. Nothing in this report is deployed to the Mayor's site.
+  </div>
+
+</div>
+</body>
+</html>

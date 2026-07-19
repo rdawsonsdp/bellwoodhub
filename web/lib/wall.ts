@@ -17,7 +17,7 @@
  * row + canonical.messages metadata (lib/live-inbox), on the real clock. Zero
  * runs → a calm, honestly empty Wall — never fixtures.
  */
-import { DOMAIN_AGENTS, domainAgentByKey, type Urgency } from "./domain-agents";
+import { DOMAIN_AGENTS, domainAgentByKey, type Urgency, type DomainAgent } from "./domain-agents";
 import { URGENCY_RANK, type AgentRun } from "./agent-run";
 import { DEMO, DEMO_NOW, demoEvents, demoMessageMeta, type MessageMeta } from "./demo";
 import { DEMO_AGENT_RUNS } from "./demo/data/domain-agents";
@@ -149,15 +149,18 @@ export interface WallOpts {
  *  ACTIVE_AGENTS (comma-separated registry keys) overrides the registry flags —
  *  the pilot runs a narrowed cabinet without touching the demo registry.
  *  Unset → the flags rule. Never read process.env in client components. */
-export function activeAgentKeys(): Set<string> {
+export function activeAgentKeys(roster: DomainAgent[] = DOMAIN_AGENTS): Set<string> {
   const env = (process.env.ACTIVE_AGENTS ?? "").trim();
-  if (!env) return new Set(DOMAIN_AGENTS.filter((a) => a.active).map((a) => a.key));
+  if (!env) return new Set(roster.filter((a) => a.active).map((a) => a.key));
   const wanted = new Set(env.split(",").map((k) => k.trim()).filter(Boolean));
-  return new Set(DOMAIN_AGENTS.filter((a) => wanted.has(a.key)).map((a) => a.key));
+  return new Set(roster.filter((a) => wanted.has(a.key)).map((a) => a.key));
 }
 
 export async function getWall(opts: WallOpts = {}): Promise<WallPayload> {
-  const active = activeAgentKeys();
+  // Created agents (app.agents) must be in the roster BEFORE the active-key
+  // gate, or their runs are filtered out and a working desk renders as absent.
+  const roster = DEMO ? DOMAIN_AGENTS : await (await import("./agent-registry")).allAgents();
+  const active = activeAgentKeys(roster);
   if (!DEMO) {
     // Live: latest run per active agent; cited source_refs resolve against
     // canonical.messages (missing ids fall back to id-as-label in assembly).
@@ -177,7 +180,7 @@ export async function getWall(opts: WallOpts = {}): Promise<WallPayload> {
     const wall = assembleWall(runs, new Date().toISOString(), opts, msgMeta, {
       gov: govSources,
       biz: bizSources,
-    });
+    }, roster);
     // the cage state rides the same payload as everything else (invariant 9)
     wall.sendLive = process.env.SEND_ENABLED === "1";
     // "Coming up" reads the live calendar mirror — fixture events never leak here
@@ -358,6 +361,10 @@ export function assembleWall(
   /** Per-lane source labels, resolved by the caller. Passed in rather than
    *  queried so this stays a pure function the eval harness can drive. */
   sources: { gov: string[]; biz: string[] } = { gov: [], biz: [] },
+  /** The full roster (built-in + created). Passed in rather than imported so
+   *  this stays a pure function the eval harness can drive without a database;
+   *  defaults to the built-in cabinet. */
+  roster: DomainAgent[] = DOMAIN_AGENTS,
 ): WallPayload {
   // one metadata pass over every cited message
   const allIds = new Set<string>();
@@ -450,7 +457,7 @@ export function assembleWall(
   };
   const cabinet: CabinetCard[] = [];
   const runsOut: Record<string, WallRun> = {};
-  for (const agent of DOMAIN_AGENTS) {
+  for (const agent of roster) {
     const run = runs.find((r) => r.agentKey === agent.key);
     if (!run) continue;
     cabinet.push({

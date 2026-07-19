@@ -39,6 +39,29 @@ function TypeTile({ typeKey, size = 30 }: { typeKey: string; size?: number }) {
 }
 
 export default function AddAgentSheet({ variant, onClose }: Props) {
+  const [name, setName] = useState("");
+  const [instruction, setInstruction] = useState("");
+  const [autonomy, setAutonomy] = useState<"observe" | "suggest" | "draft">("observe");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [made, setMade] = useState<{ name: string; focusQuery: string | null } | null>(null);
+
+  async function create() {
+    if (made) { setMade(null); setName(""); setInstruction(""); return; }
+    setBusy(true); setErr(null);
+    try {
+      const r = await fetch("/api/agents/create", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name, instruction, autonomy }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || d.ok === false) throw new Error(d.error || "could not create the agent");
+      setMade({ name: d.name, focusQuery: d.focusQuery ?? null });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "could not create the agent");
+    } finally { setBusy(false); }
+  }
+
   const mobile = variant === "mobile";
   const [sel, setSel] = useState<AgentTypeSeed | null>(null);
   const panel: CSSProperties = mobile
@@ -85,31 +108,77 @@ export default function AddAgentSheet({ variant, onClose }: Props) {
               <TypeTile typeKey={sel.key} size={38} />
               <span style={{ fontSize: 13, color: C.text3, lineHeight: 1.5 }}>{sel.blurb}</span>
             </div>
-            <div style={{ ...eyebrow(C.dim), margin: "16px 0 8px" }}>The interview starts with</div>
-            <div style={{ ...card, padding: "4px 14px" }}>
-              {sel.interview.map((q, i) => (
-                <div key={q} style={{ display: "flex", gap: 10, fontSize: 13.5, color: C.text2, lineHeight: 1.5, padding: "11px 0", borderTop: i ? `1px solid ${C.line2}` : undefined }}>
-                  <span style={{ color: C.gold, fontWeight: 700 }}>{i + 1}.</span>
-                  <span>{q}</span>
-                </div>
+            {/* THE REAL BUILDER. This was a mockup — a described interview no
+                code could complete, because agents only existed as literals in
+                lib/domain-agents.ts. FEAT-27 is what made it buildable: a desk's
+                scope can be a sentence resolved semantically instead of a
+                StreamKey enum plus a routing regex. */}
+            <div style={{ ...eyebrow(C.dim), margin: "18px 0 7px" }}>Name it</div>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={sel.key === "email-ingest" ? "e.g. Public Works Mailbox" : "e.g. Public Works Agent"}
+              style={{ width: "100%", boxSizing: "border-box", background: "rgba(var(--ink),.04)", border: `1px solid ${C.line}`, borderRadius: 10, padding: "11px 13px", color: C.text, fontSize: 15, fontFamily: FONT.sans }}
+            />
+
+            <div style={{ ...eyebrow(C.dim), margin: "16px 0 7px" }}>What should it do?</div>
+            <textarea
+              value={instruction}
+              onChange={(e) => setInstruction(e.target.value)}
+              rows={5}
+              placeholder={"Plain English \u2014 the way you'd brief a person.\n\ne.g. Watch for anything about water main breaks, street flooding, or sewer backups. Tell me where, how many, and whether the same address keeps coming up. Flag anything a resident is still waiting on."}
+              style={{ width: "100%", boxSizing: "border-box", background: "rgba(var(--ink),.04)", border: `1px solid ${C.line}`, borderRadius: 10, padding: "11px 13px", color: C.text, fontSize: 14, lineHeight: 1.55, fontFamily: FONT.sans, resize: "vertical" }}
+            />
+            <div style={{ fontSize: 11.5, color: C.text3, lineHeight: 1.5, marginTop: 6 }}>
+              Name a thing you could search for. Concrete subjects (&ldquo;water main breaks&rdquo;,
+              &ldquo;invoices&rdquo;) find the right mail; abstract ones (&ldquo;anything important&rdquo;)
+              return noise.
+            </div>
+
+            <div style={{ ...eyebrow(C.dim), margin: "16px 0 7px" }}>What may it do with what it finds?</div>
+            <div style={{ display: "grid", gap: 7 }}>
+              {([
+                ["observe", "Watch and report", "Summarizes and flags. Writes nothing."],
+                ["suggest", "Suggest next steps", "Adds a recommended action to its digest."],
+                ["draft", "Draft replies for you", "Writes replies that wait for your approval. Never sends."],
+              ] as const).map(([val, label, note]) => (
+                <button
+                  key={val}
+                  onClick={() => setAutonomy(val)}
+                  style={{ textAlign: "left", cursor: "pointer", padding: "10px 12px", borderRadius: 11, border: `1px solid ${autonomy === val ? C.gold : C.line}`, background: autonomy === val ? "rgba(231,181,60,.10)" : "transparent", color: C.text, fontFamily: FONT.sans }}
+                >
+                  <div style={{ fontSize: 13.5, fontWeight: 700 }}>{label}</div>
+                  <div style={{ fontSize: 11.5, color: C.text3, marginTop: 1 }}>{note}</div>
+                </button>
               ))}
             </div>
-            {sel.connections.length > 0 && (
-              <>
-                <div style={{ ...eyebrow(C.dim), margin: "16px 0 8px" }}>It will ask to connect</div>
-                {sel.connections.map((c) => (
-                  <div key={c} style={{ display: "flex", gap: 9, fontSize: 13, color: C.text2, padding: "4px 2px" }}>
-                    <span style={{ color: C.blue }}>⚿</span>
-                    <span>{c} — stored in the secret vault, never in the agent&apos;s config.</span>
-                  </div>
-                ))}
-              </>
+            <div style={{ fontSize: 11.5, color: C.text3, lineHeight: 1.5, marginTop: 7 }}>
+              No agent can send mail. That ceiling is in the code, not this form.
+            </div>
+
+            {err && (
+              <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 10, border: `1px solid ${C.red}55`, background: "rgba(255,107,94,.08)", color: C.redText, fontSize: 13, lineHeight: 1.5 }}>
+                {err}
+              </div>
             )}
-            <button disabled title="The Agent Builder arrives with the Agent Factory (RB-6)" style={{ display: "block", width: "100%", marginTop: 18, padding: "13px 14px", borderRadius: 13, border: 0, background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322", fontWeight: 800, fontSize: 14, fontFamily: FONT.sans, opacity: 0.45, cursor: "not-allowed" }}>
-              Start the interview
+            {made && (
+              <div style={{ marginTop: 12, padding: "11px 13px", borderRadius: 10, border: `1px solid ${C.green}55`, background: "rgba(52,201,139,.09)", fontSize: 13, lineHeight: 1.55, color: C.text2 }}>
+                <b style={{ color: C.text }}>{made.name} created.</b>{" "}
+                {made.focusQuery
+                  ? <>It will search the record for <i>&ldquo;{made.focusQuery}&rdquo;</i> and report on the next run.</>
+                  : <>It couldn&rsquo;t turn that instruction into a search &mdash; it will only see new mail until you reword it on its card.</>}
+              </div>
+            )}
+
+            <button
+              onClick={create}
+              disabled={busy || !name.trim() || instruction.trim().length < 10}
+              style={{ display: "block", width: "100%", marginTop: 16, padding: "13px 14px", borderRadius: 13, border: 0, background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322", fontWeight: 800, fontSize: 14, fontFamily: FONT.sans, opacity: busy || !name.trim() || instruction.trim().length < 10 ? 0.45 : 1, cursor: busy ? "wait" : "pointer" }}
+            >
+              {busy ? "Creating\u2026" : made ? "Create another" : "Create this agent"}
             </button>
             <div style={{ marginTop: 8, textAlign: "center", fontFamily: FONT.mono, fontSize: 10.5, color: C.dim }}>
-              the Agent Builder arrives with the Agent Factory (RB-6)
+              it runs on the next cycle \u00b7 every claim it makes will cite the email it came from
             </div>
           </div>
         )}

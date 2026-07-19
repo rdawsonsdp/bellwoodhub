@@ -8,7 +8,7 @@
 > This file is the durable copy that survives across sessions.
 
 **📡 Shareable status page (live):** https://project-status-ten.vercel.app — public, no login. Source: `project-status/index.html`. Redeploy: `vercel deploy --prod --yes --cwd project-status`.
-**Last updated:** 2026-07-12 — **DEC-14: Zero-Body architecture decided** (the hub keeps the catalog, never the mail — bodies stop being stored in the cloud; live hydration from Graph/Gmail; FEAT-25 redesign Z1–Z4; on-prem sources get a Connector Gateway later, FEAT-26; full design `docs/ZERO_BODY_ARCHITECTURE.md`). Prior close 2026-07-06 — **Tuesday is a runbook, not a plan**: MH-D1…D5 decided · MH-1 code done (sentitems delta + `bf:` parity, 17 evals green) · **FEAT-24 Sync page shipped** (progress bars w/ real denominators, Voyage ETA, keep-going loop, Connect + Reconnect buttons) · **MH-2 DONE, verified live** (Supabase `BellwoodHub-Mayor` 18 migrations/RLS 29-29 · **bellwood-mayor.vercel.app** · native Vercel crons proven firing) · Entra app registered + env live on BOTH lanes (Microsoft sign-in available; permissions trimmed to least-privilege 7) · allowlist = RD interim + `aharvey@vil.bellwood.il.us` · **one codebase, three sites** (`f269bf7`). **OPEN before Tuesday:** village-IT admin consent · publish Google consent screen (then a fresh Gmail reconnect — pre-publish tokens keep the 7-day fuse) · the Mayor's Gmail (Monday) · first live Graph pull (rehearsal declined; first run is Tuesday) · close-out lockout (allowlist swap + `AUTH_SECRET` rotation) · TASK-12 password rotations wk of 7/13. Night close 2026-07-05 — the marathon session: **ING-4 live** (Voyage embeddings + Ask over real mail — proven on RD's own questions; the scheduler runs ingest+embed every 15 min autonomously via GitHub Actions + protection bypass), **agents became configuration** (FEAT-19 slice 2: prompt/urgency rules editable on the card · FEAT-21 skills upload · FEAT-20 plain-English cards), **DEC-13 vocabulary** (Agent / Capability / Connector — Staff Agents in three tinted collapsible sections + nav sub-menu), **Activity console** (the audit ledger live in-app), send-cage pill, dashboard email-agent box, formatted Ask answers, mobile above-the-fold pass, **Ask-as-mic** + desktop topbar Ask box. **Tuesday = Mayor Harvey onboarding** (MH board; decisions MH-D1…D5 pending; hand-out ready: `docs/MAYOR_ONBOARDING_OVERVIEW.md`). URLs: demo=**bellwood-hub.vercel.app** (public), pilot=**bellwood-hub-pilot.vercel.app** (SSO, auto-deploys on push to `live-pilot`)
+**Last updated:** 2026-07-18 — **Night session: agents became instructable.** `FEAT-27` **Focus + the one box** shipped on branch `agent-focus-and-sync-fixes` (8 commits, pushed, **NOT merged**): an agent is now configured by ONE plain-English instruction; a Haiku call derives the retrieval query from it at save time; retrieval runs semantically over the WHOLE archive instead of the since-cursor time window. `FEAT-29` **Google Security agent** — the first agent routed entirely by instruction (no StreamKey) — first live run on RD's real mailbox: **slice 0, digest 4**, and it surfaced a genuine account-recovery attempt that fired twice that day plus an unresolved breach notice. `DEC-15` **canonical retrieval cutover** (`RETRIEVAL_BACKEND=canonical`) — Ask had been querying the empty `poc` store on this stack; **`TASK-13` must verify the same env var on bellwood-mayor before trusting Ask there.** Two silent-failure classes fixed: `BUG-2` a duplicate message could stall a backfill **permanently** (cursor never advances), `BUG-3` `app.audit_log` was anon-readable (now encoded in `004`, matching the fix MH-2 applied by hand). `ISS-6` **fabricated metrics deleted** — the Ask right rail showed a hardcoded "92%" and invented gap cards ("Public Works CSV at 78% coverage") beside live answers; replaced with real recent searches. Also: `FEAT-28` sync progress (rate/min, ETA, mirrored-vs-searchable as two tracks), Wall attention ordering + per-agent "Reads" sources, shared agent voice (`lib/agents/voice.ts`), `docs/AGENT_TEST_PLAN.md`. Test rig: throwaway Supabase `bellwoodhub-agent-test` + RD's own Gmail, **5,400+ messages mirrored and embedded** (`DEP-4`: delete it, $10/mo). Prior close 2026-07-12 — **DEC-14: Zero-Body architecture decided** (the hub keeps the catalog, never the mail — bodies stop being stored in the cloud; live hydration from Graph/Gmail; FEAT-25 redesign Z1–Z4; on-prem sources get a Connector Gateway later, FEAT-26; full design `docs/ZERO_BODY_ARCHITECTURE.md`). Prior close 2026-07-06 — **Tuesday is a runbook, not a plan**: MH-D1…D5 decided · MH-1 code done (sentitems delta + `bf:` parity, 17 evals green) · **FEAT-24 Sync page shipped** (progress bars w/ real denominators, Voyage ETA, keep-going loop, Connect + Reconnect buttons) · **MH-2 DONE, verified live** (Supabase `BellwoodHub-Mayor` 18 migrations/RLS 29-29 · **bellwood-mayor.vercel.app** · native Vercel crons proven firing) · Entra app registered + env live on BOTH lanes (Microsoft sign-in available; permissions trimmed to least-privilege 7) · allowlist = RD interim + `aharvey@vil.bellwood.il.us` · **one codebase, three sites** (`f269bf7`). **OPEN before Tuesday:** village-IT admin consent · publish Google consent screen (then a fresh Gmail reconnect — pre-publish tokens keep the 7-day fuse) · the Mayor's Gmail (Monday) · first live Graph pull (rehearsal declined; first run is Tuesday) · close-out lockout (allowlist swap + `AUTH_SECRET` rotation) · TASK-12 password rotations wk of 7/13. Night close 2026-07-05 — the marathon session: **ING-4 live** (Voyage embeddings + Ask over real mail — proven on RD's own questions; the scheduler runs ingest+embed every 15 min autonomously via GitHub Actions + protection bypass), **agents became configuration** (FEAT-19 slice 2: prompt/urgency rules editable on the card · FEAT-21 skills upload · FEAT-20 plain-English cards), **DEC-13 vocabulary** (Agent / Capability / Connector — Staff Agents in three tinted collapsible sections + nav sub-menu), **Activity console** (the audit ledger live in-app), send-cage pill, dashboard email-agent box, formatted Ask answers, mobile above-the-fold pass, **Ask-as-mic** + desktop topbar Ask box. **Tuesday = Mayor Harvey onboarding** (MH board; decisions MH-D1…D5 pending; hand-out ready: `docs/MAYOR_ONBOARDING_OVERVIEW.md`). URLs: demo=**bellwood-hub.vercel.app** (public), pilot=**bellwood-hub-pilot.vercel.app** (SSO, auto-deploys on push to `live-pilot`)
 **Project:** AI Chief of Staff platform, built on the Bellwood municipal email RAG POC
 **Authoritative spec:** `cto-architecture-brief.md` (R. Dawson, SDP Chicago, 2026-06-24) — three-plane
 design (Ingestion → Canonical → Capability), 6 architectural decision records (AD-1…AD-6), 5-phase plan.
@@ -56,6 +56,27 @@ no DB/API dependency for the screens. Open `http://localhost:3200` → redirects
 ## Task Board
 
 Legend: 🔵 in progress · ⚪ pending · ✅ done · 🚫 blocked
+
+**2026-07-18 night session — branch `agent-focus-and-sync-fixes` (pushed, NOT merged):**
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| F27 | Focus: instruct an agent in plain English | ✅ done | `lib/agent-focus.ts` + runner + preview endpoint; no migration (`agent_configs.overrides`) |
+| F27b | One box + Advanced disclosure (`DEC-16`) | ✅ done | Haiku derives the retrieval query at save time, cached, shown in preview |
+| F29 | Google Security agent (first focus-routed) | ✅ done | `domains: []`; first live run slice 0 → digest 4 |
+| F28 | Sync progress UI (rate · ETA · two tracks) | ✅ done | mirrored vs searchable shown separately, on purpose |
+| B2 | Ingest duplicate-key stall | ✅ fixed | idempotent RAW landing + per-message isolation |
+| B3 | `app.audit_log` RLS gap | ✅ fixed | encoded in `004_audit.sql`; applied to the test DB |
+| I6 | Delete fabricated retrieval/gaps panel | ✅ done | replaced with real recent searches |
+| D15 | Ask onto the canonical store | ✅ done (this stack) | **`TASK-13` verifies bellwood-mayor + pilot** |
+| — | Wall: attention order · dim quiet · "Reads" line | ✅ done | serves "look once, see what needs attention" |
+| — | Shared agent voice (`lib/agents/voice.ts`) | ✅ done | Ask + agent digests had drifted into two personas |
+| — | `docs/AGENT_TEST_PLAN.md` | ✅ done | preview-before-run; "name a thing you could search for" |
+| T13 | Verify `RETRIEVAL_BACKEND` on the other two sites | ⚪ **do first** | Ask may be returning 0 sources on the Mayor's app now |
+| T14 | Remove the `poc` path | ⚪ pending | needs `getDashboard` + `listEmails` on canonical first |
+| I7 | `constituent`: slice 200 → digest 0 | ⚪ pending | honest empty, or over-aggressive stripping? |
+| — | Merge branch → preview → `live-pilot` → `main` | ⚪ pending | `main` deploys straight to bellwood-mayor |
+| T15 | Rotate tonight's credentials | ⚪ pending | folds into `TASK-12` |
+| DEP4 | Delete `bellwoodhub-agent-test` Supabase | ⚪ pending | $10/mo; also disposes of the Gmail mirror |
 
 **Demo build (Monday) — all ✅:**
 | # | Task | Status | Notes |
@@ -176,7 +197,20 @@ Decisions (RD walkthrough 2026-07-06): **MH-D1** ✅ RD-owned with audit + a doc
 
 **Action items (PM sweep, Jun 26):** `TASK-2` trim search index · `TASK-3` deploy app to Vercel · `TASK-4` verify live DB path · `TASK-5` wire Commitments · `TASK-6` clean Brief cards · `TASK-7` rotate keys.
 
+**Bugs found & fixed 2026-07-18 (night session)**
+- `BUG-2` (**high**, fixed) — **Ingest could stall a backfill permanently.** Landing a message did SELECT-then-INSERT against `uq_raw_version`; a provider batch can contain the same message twice (observed on the Gmail backfill walk, overlapping pages), so the second copy threw and unwound the whole 400-message round. The cursor only advances after a batch completes, so the next run re-pulled the same page — self-healing only because the duplicate was a race. A *deterministic* duplicate would loop forever, silently. Fixed: idempotent RAW landing (`ON CONFLICT DO NOTHING` + re-read; differing bytes still throw — RAW never overwrites) **plus** per-message isolation so one bad message can't unwind a round. Failures are now counted and reported (`failed`/`error`), never swallowed.
+- `BUG-3` (**high**, fixed) — **`app.audit_log` was readable by the anon key.** `004_audit.sql` stopped at `REVOKE UPDATE, DELETE` (append-only ≠ private) and the table is absent from `003_rls.sql`'s array, whose schema-wide revoke also ran *before* 004 created it. The audit ledger records who read which record plus IP/device/geo. MH-2 hit the same gap and fixed it by hand on the Mayor's DB; now encoded in the migration so it stops recurring on fresh projects. Extends `ISS-4`.
+
+**Issues found 2026-07-18**
+- `ISS-6` (**high**, fixed) — **The Ask right rail fabricated metrics.** `RetrievalPlan` rendered a hardcoded `"92%"` (bar width literally `recovered ? "92%" : "0%"`) and `GapsPanel` rendered hardcoded demo copy — "2 gaps in this answer", "Public Works CSV at 78% coverage", "1 thread blocked on alias" — beside live answers about a real mailbox. In a product whose promise is that it cites sources and states what's missing, a panel that *invents* missing things is the worst available bug. Deleted; replaced with the user's own recent searches. The honest no-records note was kept — it was the one real part.
+- `ISS-7` (med, open) — **`constituent` agent: slice 200 → digest 0.** On the 2026-07-18 live run it read 200 messages and reported nothing citable. Either correct (a personal mailbox genuinely has no constituent business) or the uncited-point stripping in `agent-runner.ts` is too aggressive. Needs a look before the behaviour is trusted on the Mayor's mail.
+- `ISS-8` (low, open) — **Abstract instructions retrieve noise.** Measured on a real mailbox: "invoices and payment requests" and "meeting invitations" retrieved precisely; "anything urgent that needs a reply from me" returned marketing copy — it matched the emotional register of hype, not urgency. A top-score "weak match" warning was built and **removed**: invoices (correct, 0.41) and the junk query (0.41) are indistinguishable by score. Mitigated by `MIN_SCORE`, the preview, and guidance in `docs/AGENT_TEST_PLAN.md`; the real fix is teaching users to name a searchable thing.
+
 **Action items (added later):**
+- `TASK-13` (**do first**, 2026-07-18) — **Verify `RETRIEVAL_BACKEND=canonical` on bellwood-mayor and the pilot.** It defaults to `poc`, which queries the OpenAI-embedded `poc.*` store — empty on any stack built from canonical. Symptom is not an error: Ask returns "0 sources recovered" on every question. Found on the test stack; **the Mayor's app may be failing this way right now, independent of the branch merge.** *Owner: RD.*
+- `TASK-14` (2026-07-18) — **Remove the `poc` retrieval path.** Not a deletion: four routes (`entity`, `dashboard`, `list`, `email`) import `lib/retrieval` directly, bypassing the backend switch, and `retrieval-canonical` is missing `getDashboard` + `listEmails`. Work = write those two on canonical, repoint the routes, collapse `backend.ts`, delete `retrieval.ts` (~26KB) and `/api/cron/refresh` (writes `poc.*`), fix `search_path` in `db.ts`, drop `001_init_poc.sql` (pgvector is also created by `canonical/0001`, so safe) and the schema. **Open question:** does "everywhere" include the Python POC (`query.py`, `load_embed.py`, `extract_entities.py`, corpus generators)? `pipeline/medallion.py` still uses `ingest/synthetic_email.py`. *Owner: RD + Claude.*
+- `TASK-15` (2026-07-18) — **Rotate credentials that transited chat tonight**: Anthropic API key, OpenAI API key, and the `bellwoodhub-agent-test` DB password. Folds into the `TASK-12` rotation batch. *Owner: RD.*
+- `DEP-4` (2026-07-18) — **Delete the throwaway Supabase project `bellwoodhub-agent-test`** (`qssyiqxrejaceyckvloe`, us-east-2) when testing ends — **$10/month**. Holds a full mirror of RD's personal Gmail (5,400+ messages); deleting it is also the cleanest disposal of that data. *Owner: RD.*
 - `TASK-12` (RD directive 2026-07-06; do week of **2026-07-13**, after Mayor onboarding settles) — **Rotate the database passwords**: BellwoodHub-Mayor (value transited chat 2026-07-06 during the DATABASE_URL debug) + the pilot DB as hygiene. Same pass: rotate the local/pilot `CRON_SECRET` (echoed into a local error page 2026-07-06). After rotating, update every consumer: bellwood-mayor Vercel `DATABASE_URL` · pilot `web/.env.local` + Vercel Preview env · GitHub `PILOT_CRON_SECRET` if touched. Extends `TASK-7`/`RSK-1`. *Owner: RD + Claude.*
 
 **Risks** (likelihood × impact)
@@ -195,6 +229,35 @@ Decisions (RD walkthrough 2026-07-06): **MH-D1** ✅ RD-owned with audit + a doc
 ---
 
 ## Decisions log
+
+- **`DEC-15` Ask runs on the canonical store; `poc` is dead (2026-07-18)** — `RETRIEVAL_BACKEND`
+  defaulted to `poc`, whose `poc.email_chunks` uses OpenAI 1536-dim vectors and is empty on any stack
+  built from the canonical migrations. Real mail lives in `canonical.chunks` at Voyage 1024. The
+  default was never flipped after canonical became the real store, so a fresh instance silently
+  answers "0 sources" and the error text blames a missing `OPENAI_API_KEY` — a symptom three layers
+  from the cause. Flipped to `canonical` here (`TASK-13` verifies the other two sites); `poc` removal
+  tracked as `TASK-14`. Side effect: Ask no longer needs OpenAI at all — `lib/planner.ts` uses Voyage
+  for retrieval and Anthropic for synthesis. OpenAI now serves **only** Whisper voice
+  (`/api/transcribe`), which is a narrower processor entry for `docs/COMPLIANCE_MAP.md`: query audio,
+  never record content. *Decided by RD + Claude.*
+- **`DEC-16` One instruction box, not four fields (2026-07-18)** — configuring an agent meant charter +
+  goals + urgency rules + focus, i.e. learning a taxonomy before you could say what you wanted. RD:
+  *"you should be able to prompt the agent like you would prompt Claude normally."* Now one box;
+  the old fields survive behind **Advanced**, unchanged. The instruction does two jobs that pull
+  apart — instructing wants detail, retrieving wants a short concrete phrase — so the retrieval query
+  is **derived** from it by one Haiku call **at save time**, cached beside the text, and shown in the
+  preview. Never derived in the runner: reading config must not cost a model call. A stale cache
+  (instruction edited without re-deriving) resolves to null rather than searching for the previous
+  instruction. Fails soft — a model outage must not block saving, though the agent then quietly falls
+  back to its time window (a visible save-time warning is still owed). *Decided by RD.*
+- **`DEC-17` Routing by meaning, not by enum (2026-07-18)** — `StreamKey` is a closed 7-value union and
+  `deriveDomains` maps it to agents through a hardcoded table, so a new department needs an enum value
+  + a regex + a deploy. Worse, the topics it switches on are **never written on the live path**
+  (`ingest-email/route.ts` stops at step 2 of 5), so live routing runs on sender-domain matching alone.
+  Focus makes an agent's scope a sentence resolved semantically instead. `google-security` is the
+  proof: `domains: []`, and its first live run produced 4 cited digest points from 0 stream-routed
+  messages. This is the mechanism the per-department agent fleet should be built on — one sentence per
+  desk, not one enum value + regex + deploy each. *Decided by RD + Claude.*
 
 - **`DEC-14` Zero-Body architecture: custody stays at the source; the hub holds the catalog (2026-07-12)** —
   RD framed the risk ("the biggest security risk we have is all 85,000 of Mayor Harvey's emails out on
@@ -299,6 +362,35 @@ Decisions (RD walkthrough 2026-07-06): **MH-D1** ✅ RD-owned with audit + a doc
 ---
 
 ## Changelog
+
+- **2026-07-18 (night — agents became instructable · the first focus-routed agent · two silent
+  failures closed)** — Started as "explore this repo", became the session where an agent stopped being
+  a code artifact. **`FEAT-27` Focus + the one box**: an agent's slice was a *time window* (new mail
+  since its last run), which cannot answer "find every red-light citation" — evidence spread across
+  the archive, mostly older than the cursor. Focus adds a second retrieval mode: plain-English
+  instruction → derived query → Voyage embedding → semantic match over the whole record, mailbox-walled
+  exactly as `fetchRelatedContext` is. No migration — `app.agent_configs.overrides` already carried
+  operator prompt edits. **`FEAT-29` Google Security agent**, the first desk with no `StreamKey` at all:
+  first live run **slice 0, digest 4**, every finding via the instruction, and it did the judgment part —
+  grouped five routine sign-in alerts into one point, connected them to a recovery attempt that fired
+  twice the same day, and named the action that closes each. (It also found something real in RD's own
+  mail; flagged to him directly.) **`MIN_SCORE`** added after testing showed cosine top-N always returns
+  *something*: "red light camera citations" against a mailbox containing none now returns nothing
+  instead of six unrelated emails. A "weak match" heuristic was built and deleted the same hour —
+  correct invoices and pure junk both scored 0.41, so any cutoff catching one mislabels the other.
+  **`BUG-2`/`BUG-3`** closed (see Tracked items) — both were failure modes that *look like success*:
+  a stalled backfill that reports `ok`, an audit ledger that is append-only but public. **`ISS-6`**:
+  deleted a right rail that showed a hardcoded "92%" and invented gap cards beside live answers.
+  **`DEC-15`** flipped Ask onto canonical after "0 sources recovered" turned out to be an empty store,
+  not a missing key. UX pass: Ask output rewritten to lead with what needs the Mayor (amber "Needs you"
+  callout) in a **shared voice** (`lib/agents/voice.ts` — Ask and agent digests had drifted into two
+  personas), body copy serif→sans for phone legibility, header Ask box promoted, query box clears on
+  submit (it was showing two questions at once), "the cabinet" → **Agents**, Wall cards tiered by
+  attention with quiet desks dimmed and a per-agent **"Reads"** source line, `FEAT-28` sync progress
+  with real rate/ETA and mirrored-vs-searchable as two tracks, and an Ask waiting state that names the
+  corpus size. Rig: throwaway Supabase + RD's own Gmail via a fresh Google OAuth client — 29 tables,
+  pgvector 0.8.2, **5,400+ messages mirrored and fully embedded**. Shipped as 8 commits on
+  `agent-focus-and-sync-fixes`, **pushed, not merged** — `main` deploys straight to bellwood-mayor.
 
 - **2026-07-12 (DEC-14 — the Zero-Body decision · blast-radius planning session)** — RD opened the
   biggest standing security question: 85k of the Mayor's emails landing on non-hardened infrastructure,

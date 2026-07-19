@@ -57,6 +57,68 @@ export interface RelatedLine {
   why: "same thread" | "same sender" | "similar topic";
 }
 
+/**
+ * Strip anything that LOOKS like a message-id out of body text before the model
+ * sees it.
+ *
+ * Forwarded and quoted mail carries the original headers in its body, so a
+ * snippet routinely contains real message-ids that are NOT the id of the record
+ * being shown. Models pick them up and cite them — observed on a live mailbox
+ * 2026-07-19, where every digest point of two agents cited ids scraped from a
+ * forwarded header block. The citation guard correctly rejected them, and the
+ * whole run died.
+ *
+ * Prompting alone doesn't fix this reliably: the strings are right there and
+ * look exactly like what a citation should be. Removing them does. The only
+ * citable ids then live in [brackets] on the lines we control.
+ */
+export function stripMessageIds(text: string): string {
+  return text
+    // <foo@bar.com> — the classic RFC form
+    .replace(/<[^<>\s@]+@[^<>\s]+>/g, "[id]")
+    // Message-ID: / In-Reply-To: / References: header lines in quoted text
+    .replace(/^(message-id|in-reply-to|references)\s*:.*$/gim, "")
+    // Long opaque provider ids (SES and friends): 16+ hex/base36 runs, often
+    // hyphenated. Short hex in prose (a colour, an order no.) stays.
+    .replace(/\b[0-9a-f]{16,}(?:-[0-9a-z-]{6,})*\b/gi, "[id]")
+    .trim();
+}
+
+/**
+ * Canonicalize a message-id for comparison.
+ *
+ * A source_ref is an RFC message-id like `<0100019e4a…-000000@email.amazonses.com>`.
+ * Models routinely cite the same message in a shortened form — angle brackets
+ * dropped, sometimes the @domain too. Those are CORRECT citations written
+ * differently, and exact string matching rejected them as hallucinations:
+ * observed 2026-07-19, where two agents lost every digest point and reported as
+ * broken while having done the work correctly.
+ *
+ * Comparing on the normalized form fixes the false positive without weakening
+ * the guard — an id that matches nothing real still fails, which is the case
+ * the guard exists for.
+ */
+function idKey(raw: string): string {
+  return raw.trim().replace(/^[<\s]+|[>\s]+$/g, "").toLowerCase();
+}
+
+/** The local part, before @ — the form a model most often shortens to. */
+function idLocal(raw: string): string {
+  const k = idKey(raw);
+  const at = k.indexOf("@");
+  return at > 0 ? k.slice(0, at) : k;
+}
+
+/** Resolve a cited id to the canonical source_ref it refers to, or null. */
+export function resolveCitation(cited: string, known: Iterable<string>): string | null {
+  const ck = idKey(cited);
+  const cl = idLocal(cited);
+  for (const k of known) {
+    if (idKey(k) === ck || idLocal(k) === cl) return k;
+  }
+  return null;
+}
+
 export function buildAgentPrompt(
   agent: DomainAgent,
   memory: AgentMemoryItem[],
@@ -110,7 +172,8 @@ export function buildAgentPrompt(
       ` "actItems": ${actShape},\n` +
       ` "memoryOps": [{"op":"upsert"|"close","kind":"open_issue"|"commitment"|"pattern"|"entity_note","title":string,"body"?:string,"entityId"?:string,"sourceMessageIds":string[]}]}`,
     `Hard rules: cite only messageIds present in the input (memory evidence included) — a messageId is the ` +
-      `value in [square brackets]; thread ids in parentheses are NOT citable. Never invent facts. If you have ` +
+      `value in [square brackets] on the lines below; thread ids in parentheses are NOT citable, and any ` +
+      `id-looking string inside a message body or quoted header is NOT citable either. Never invent facts. If you have ` +
       `nothing citable to report, return "digest": [] — NEVER write filler points like "no new items". ` +
       `A commitment may only be closed with message evidence; when your memory shows a repeat, say so ` +
       `("3rd complaint at this address this quarter") and cite the prior sourceMessageIds alongside the new one.`,
@@ -129,7 +192,7 @@ export function buildAgentPrompt(
     ? messages
         .map(
           (m) =>
-            `- ${m.date.slice(0, 10)} · ${m.fromName ?? m.fromEmail ?? "?"} · "${m.subject ?? "(no subject)"}" [${m.messageId}]${m.threadId ? ` (thread ${m.threadId})` : ""}\n  ${m.snippet}`,
+            `- ${m.date.slice(0, 10)} · ${m.fromName ?? m.fromEmail ?? "?"} · "${m.subject ?? "(no subject)"}" [${m.messageId}]${m.threadId ? ` (thread ${m.threadId})` : ""}\n  ${stripMessageIds(m.snippet)}`,
         )
         .join("\n")
     : "(no new messages this run — report standing memory status honestly)";
@@ -145,7 +208,7 @@ export function buildAgentPrompt(
     ? focus.hits
         .map(
           (h) =>
-            `- ${h.date.slice(0, 10)} · ${h.fromName ?? h.fromEmail ?? "?"} · "${h.subject ?? "(no subject)"}" [${h.messageId}]\n  ${h.snippet}`,
+            `- ${h.date.slice(0, 10)} · ${h.fromName ?? h.fromEmail ?? "?"} · "${h.subject ?? "(no subject)"}" [${h.messageId}]\n  ${stripMessageIds(h.snippet)}`,
         )
         .join("\n")
     : "(no records in the archive matched the standing instruction)";
@@ -456,8 +519,46 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
       ...related.map((r) => r.messageId),
       ...focusHits.map((m) => m.messageId), // focus matches are citable evidence
     ]);
-    const invented = output.digest.flatMap((d) => d.sourceMessageIds).filter((id) => !known.has(id));
-    if (invented.length) throw new Error(`cited unknown messageIds: ${invented.slice(0, 3).join(", ")}`);
+    // UNKNOWN CITATIONS ARE PRUNED, NOT FATAL.
+    //
+    // The rule that matters is "no claim without evidence" — and dropping the
+    // bad citation enforces it exactly as well as killing the run, without
+    // throwing away every good point alongside it. Observed on a real mailbox
+    // (2026-07-19): models sometimes lift a message-id out of the BODY TEXT of
+    // an email (headers and footers are full of them) instead of using the
+    // bracketed id they were handed. One such slip cost an entire run, and the
+    // operator saw an agent that simply didn't work — same disproportionate
+    // failure as the token-cap truncation.
+    //
+    // So: strip unknown ids, then drop any point left with no evidence at all.
+    // A run that loses EVERY point still fails loudly — that is a model not
+    // engaging with its input, which is worth surfacing.
+    // Resolve each citation against the known ids, tolerating the shortened
+    // forms models write (no angle brackets, sometimes no @domain), then
+    // REWRITE it to the canonical source_ref so everything downstream — the
+    // Wall's citation chips, message lookup — resolves.
+    const canon = (ids: string[]): string[] =>
+      ids.map((id) => resolveCitation(id, known)).filter((x): x is string => x !== null);
+
+    const invented = output.digest
+      .flatMap((d) => d.sourceMessageIds)
+      .filter((id) => resolveCitation(id, known) === null);
+    output.digest = output.digest.map((d) => ({ ...d, sourceMessageIds: canon(d.sourceMessageIds) }));
+    output.actItems = output.actItems.map((a) => ({ ...a, citations: canon(a.citations) }));
+    if (invented.length) {
+      const before = output.digest.length;
+      output.digest = output.digest.filter((d) => d.sourceMessageIds.length > 0);
+      output.actItems = output.actItems.filter((a) => a.citations.length > 0);
+      console.warn(
+        `[agent ${agent.key}] dropped ${invented.length} unknown citation(s); ` +
+        `${output.digest.length}/${before} digest points survived`,
+      );
+      if (before > 0 && output.digest.length === 0) {
+        throw new Error(
+          `every digest point cited unknown messageIds (e.g. ${invented.slice(0, 2).join(", ")})`,
+        );
+      }
+    }
     await persistRun(agent.key, output);
     return { agentKey: agent.key, ok: true, slice: slice.length, digest: output.digest.length, actItems: output.actItems.length };
   } catch (err) {

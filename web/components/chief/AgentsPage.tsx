@@ -429,6 +429,8 @@ function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOp
   const [charter, setCharter] = useState("");
   const [goals, setGoals] = useState("");
   const [urgency, setUrgency] = useState("");
+  const [instruction, setInstruction] = useState("");
+  const [advanced, setAdvanced] = useState(false);
   const [focus, setFocus] = useState("");
   const [edited, setEdited] = useState(false); // an override row exists
   const [state, setState] = useState<"loading" | "idle" | "saving" | "saved" | "err">("loading");
@@ -444,13 +446,14 @@ function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOp
     if (!d) return;
     fetch("/api/agents/config")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((cfg: { overrides?: Record<string, { charter?: string; goals?: string[]; urgencyRules?: string; focus?: string }> }) => {
+      .then((cfg: { overrides?: Record<string, { instruction?: string; charter?: string; goals?: string[]; urgencyRules?: string; focus?: string }> }) => {
         const ov = cfg.overrides?.[agentKey] ?? {};
         setCharter(ov.charter ?? d.charter);
         setGoals((ov.goals ?? d.goals).join("\n"));
         setUrgency(ov.urgencyRules ?? d.urgencyRules);
+        setInstruction(ov.instruction ?? "");
         setFocus(ov.focus ?? "");
-        setEdited(!!(ov.charter || ov.goals || ov.urgencyRules || ov.focus));
+        setEdited(!!(ov.instruction || ov.charter || ov.goals || ov.urgencyRules || ov.focus));
         setState("idle");
       })
       .catch(() => { setCharter(d.charter); setGoals(d.goals.join("\n")); setUrgency(d.urgencyRules); setState("idle"); });
@@ -489,11 +492,13 @@ function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOp
   const save = async (reset: boolean) => {
     setState("saving"); setErr(null);
     try {
-      const overrides = reset ? null : { charter, goals: goals.split("\n").map((g) => g.trim()).filter(Boolean), urgencyRules: urgency, focus };
+      const overrides = reset
+        ? null
+        : { instruction, ...(advanced ? { charter, goals: goals.split("\n").map((g) => g.trim()).filter(Boolean), urgencyRules: urgency, focus } : {}) };
       const r = await fetch("/api/agents/config", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ agentKey, overrides }) });
       const dta = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(dta.error || "save failed");
-      if (reset) { setCharter(d.charter); setGoals(d.goals.join("\n")); setUrgency(d.urgencyRules); setFocus(""); setHits(null); }
+      if (reset) { setInstruction(""); setCharter(d.charter); setGoals(d.goals.join("\n")); setUrgency(d.urgencyRules); setFocus(""); setHits(null); }
       setEdited(!reset);
       setState("saved");
       window.setTimeout(() => setState("idle"), 1800);
@@ -507,7 +512,7 @@ function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOp
     try {
       const r = await fetch("/api/agents/focus-preview", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ agentKey, focus }),
+        body: JSON.stringify({ agentKey, focus: instruction }),
       });
       const dta = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(dta.error || "preview failed");
@@ -542,24 +547,25 @@ function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOp
           The <b>Urgency rules</b> box is where your standing directives live — for example:
           &ldquo;Any email about a water main break is ALWAYS urgent.&rdquo;
         </div>
-        {/* FOCUS — the standing "what to watch for" instruction. Unlike the
-            boxes below (which shape HOW the agent reads today's mail), this
-            searches the WHOLE archive by meaning, so "every red-light citation"
-            reaches back past the last run. */}
-        <div style={{ border: `1px solid ${C.line}`, borderRadius: 12, padding: 13, background: "rgba(var(--ink),.03)" }}>
-          {label("Focus", "what to watch for — searched across the whole record, not just new mail")}
-          {area(focus, setFocus, 3, "e.g. Every red-light citation. Summarize how many, where, and any repeat locations.")}
+        {/* ONE BOX. Four fields (charter / goals / urgency / focus) meant learning
+            a taxonomy before you could configure anything, and nobody prompting
+            Claude learns one (RD 2026-07-18: "you should be able to prompt the
+            agent like you would prompt Claude normally"). Everything else moves
+            behind Advanced. */}
+        <div>
+          {label("What should this agent do?", "plain English — the way you'd brief a person")}
+          {area(instruction, setInstruction, 5, "e.g. Watch for anything security-related from Google — sign-in alerts, breached passwords, suspicious activity. Tell me which ones are a real risk and what to do about each. Ignore marketing and billing.")}
           <div style={{ display: "flex", gap: 9, alignItems: "center", marginTop: 9, flexWrap: "wrap" }}>
-            <button disabled={pv === "running" || !focus.trim()} onClick={preview}
-              style={{ cursor: focus.trim() ? "pointer" : "default", background: "rgba(var(--ink),.06)", border: `1px solid ${C.line}`, borderRadius: 9, padding: "8px 13px", color: C.text2, fontSize: 12.5, fontWeight: 700, fontFamily: FONT.sans, opacity: focus.trim() ? 1 : 0.5 }}>
-              {pv === "running" ? "Searching…" : "Preview what this matches"}
+            <button disabled={pv === "running" || !instruction.trim()} onClick={preview}
+              style={{ cursor: instruction.trim() ? "pointer" : "default", background: "rgba(var(--ink),.06)", border: `1px solid ${C.line}`, borderRadius: 9, padding: "8px 13px", color: C.text2, fontSize: 12.5, fontWeight: 700, fontFamily: FONT.sans, opacity: instruction.trim() ? 1 : 0.5 }}>
+              {pv === "running" ? "Searching…" : "Preview what this finds"}
             </button>
             {pvErr && <span style={{ fontSize: 12, color: C.red, fontWeight: 600 }}>{pvErr}</span>}
             {hits && !pvErr && (
               <span style={{ fontSize: 12, color: C.text3 }}>
-                {hits.length === 0
-                  ? "nothing in the record matched — try naming a specific thing"
-                  : `${hits.length} record${hits.length === 1 ? "" : "s"} matched`}
+                {hits.length
+                  ? `${hits.length} record${hits.length === 1 ? "" : "s"} matched`
+                  : "nothing in the record matched — try naming a specific thing"}
               </span>
             )}
           </div>
@@ -576,24 +582,34 @@ function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOp
               ))}
               <div style={{ fontSize: 11.5, color: C.text3, lineHeight: 1.5, marginTop: 3 }}>
                 These are the records the agent will reason over. If they look wrong, reword the
-                focus — the match is by meaning, not keywords. Abstract wording
-                (&ldquo;anything urgent&rdquo;) retrieves poorly; name a thing you could search for.
+                instruction — matching is by meaning, not keywords. Abstract wording
+                (&ldquo;anything important&rdquo;) retrieves poorly; name a thing you could search for.
               </div>
             </div>
           )}
         </div>
-        <div>
+
+        {/* Advanced: the original fields, for anyone who wants them. */}
+        <button
+          onClick={() => setAdvanced((a) => !a)}
+          style={{ cursor: "pointer", background: "none", border: 0, padding: 0, textAlign: "left", color: C.text3, fontSize: 12.5, fontWeight: 700, fontFamily: FONT.sans, display: "flex", alignItems: "center", gap: 7 }}
+        >
+          <span style={{ display: "inline-block", transform: advanced ? "rotate(90deg)" : "none", transition: "transform .15s ease" }}>&rsaquo;</span>
+          Advanced — charter, goals, urgency rules
+        </button>
+
+        {advanced && <div>
           {label("Charter", "who this agent is and what its desk covers")}
           {area(charter, setCharter, 3, "The agent's role, in prose…")}
-        </div>
-        <div>
+        </div>}
+        {advanced && <div>
           {label("Goals", "one per line")}
           {area(goals, setGoals, 4, "- Track every open constituent issue…")}
-        </div>
-        <div>
+        </div>}
+        {advanced && <div>
           {label("Urgency rules", "what is ALWAYS red or yellow on this desk — e.g. “Any email about a water main break is always urgent”")}
           {area(urgency, setUrgency, 4, "Red: … Yellow: …")}
-        </div>
+        </div>}
         <div style={{ display: "flex", gap: 9, alignItems: "center" }}>
           <button disabled={state === "saving" || state === "loading"} onClick={() => save(false)}
             style={{ cursor: "pointer", border: 0, borderRadius: 10, padding: "10px 18px", fontWeight: 800, fontSize: 13, fontFamily: FONT.sans, background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322" }}>

@@ -152,6 +152,28 @@ export const DOMAIN_AGENTS: DomainAgent[] = [
     autonomy: "draft",
   },
   {
+    key: "google-security",
+    name: "Google Security Agent",
+    icon: "shield_lock",
+    color: "#4f9d6b", // security green — distinct from the urgency ambers
+    active: true,
+    charter:
+      "You watch every security-related message from Google and its services — sign-in alerts, password and credential breach notices, suspicious-activity warnings, account-recovery attempts, 2FA changes, app access grants, and Workspace admin security notices. You tell the Mayor which ones represent a real risk to the account and which are routine confirmations of something he did himself. You never treat marketing, product announcements, or billing as security. When an alert repeats, say so — a warning that fires twice is one that has not been acted on.",
+    // Routing is by FOCUS, not stream: no StreamKey means "Google security" and
+    // the live pipeline writes no topics, so this desk is fed by its standing
+    // instruction (lib/agent-focus.ts) rather than deriveDomains.
+    domains: [],
+    goals: [
+      "Surface any alert that means the account or its credentials are actually at risk",
+      "Separate a real warning from a routine confirmation of something he did himself",
+      "Say when the same alert has fired before and is still unresolved",
+      "Name the exact action that closes it — change a password, revoke an app, review a device",
+    ],
+    urgencyRules:
+      "RED: credentials confirmed exposed (breach notice, password found online), a sign-in he does not recognize, 2FA or recovery settings changed without him, or an unfamiliar app granted account access. YELLOW: a new-device or new-location sign-in that is probably his but unconfirmed, a repeated alert that has not been acted on, or a security setting he should review. CLEAR: routine confirmations of his own actions, and anything that is really marketing or billing wearing security language.",
+    autonomy: "observe", // read-only: it flags risk, a human decides what to do
+  },
+  {
     key: "harbor-wellness",
     name: "Harbor Wellness Agent",
     icon: "storefront",

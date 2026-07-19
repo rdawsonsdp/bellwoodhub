@@ -19,6 +19,7 @@ import { logUsage } from "@/lib/usage";
 import SyncButton from "./SyncButton";
 import ReleaseTag from "./ReleaseTag";
 import AnswerMd from "./AnswerMd";
+import Searching from "./Searching";
 import ActivityScreen from "./ActivityScreen";
 import SyncScreen from "./SyncScreen";
 import { SyncProgressCard } from "./SyncProgress";
@@ -1043,6 +1044,7 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
         )}
         {err && <div style={{ marginTop: 12, padding: "11px 14px", borderRadius: 11, background: "rgba(255,107,94,.1)", border: "1px solid rgba(255,107,94,.35)", color: C.red, fontSize: 13, fontWeight: 600 }}>{err}</div>}
 
+        {loading && <div style={{ padding: "0 16px", marginTop: 18 }}><Searching size={15} /></div>}
         {!res && !loading && (
           <div style={{ marginTop: 22 }}>
             <div style={{ fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".1em", color: C.dim, textTransform: "uppercase", marginBottom: 10 }}>Try one of these</div>

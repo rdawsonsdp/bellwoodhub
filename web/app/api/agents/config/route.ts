@@ -116,7 +116,10 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as {
       agentKey?: string;
       enabled?: boolean;
-      overrides?: { charter?: string; goals?: string[]; urgencyRules?: string; focus?: string } | null;
+      overrides?: {
+        instruction?: string;
+        charter?: string; goals?: string[]; urgencyRules?: string; focus?: string;
+      } | null;
     };
     const agentKey = body.agentKey;
     if (!agentKey) {
@@ -139,10 +142,27 @@ export async function POST(req: NextRequest) {
           if (goals.length) clean.goals = goals;
         }
         if (typeof ov.urgencyRules === "string" && ov.urgencyRules.trim()) clean.urgencyRules = ov.urgencyRules.slice(0, 4000);
-        // FOCUS: the standing "what to watch for" instruction. Embedded as a
-        // query vector at run time (lib/agent-focus.ts), so it is kept short —
-        // a paragraph retrieves well, an essay embeds to mush.
+        // FOCUS: an explicit retrieval override (Advanced). When set we never derive.
         if (typeof ov.focus === "string" && ov.focus.trim()) clean.focus = ov.focus.slice(0, 1000);
+
+        // THE ONE BOX. Plain English, the way you'd brief a person. It does two
+        // jobs that pull apart — instructing wants detail, retrieving wants a
+        // short concrete phrase — so we derive the search query from it here
+        // (one cheap Haiku call) and cache it beside the text. Derivation
+        // happens on SAVE, never in the runner: reading config must not cost a
+        // model call. Fails soft — a model outage must not block saving.
+        if (typeof ov.instruction === "string" && ov.instruction.trim()) {
+          const instruction = ov.instruction.slice(0, 4000);
+          clean.instruction = instruction;
+          if (!clean.focus) {
+            const { deriveFocusQuery } = await import("@/lib/agent-instruction");
+            const q = await deriveFocusQuery(instruction);
+            if (q) {
+              clean.focusQuery = q;
+              clean.focusQueryFor = instruction; // stale-cache detection
+            }
+          }
+        }
       } else {
         clean = {};
       }

@@ -29,6 +29,7 @@ import SyncButton from "./SyncButton";
 import ReleaseTag from "./ReleaseTag";
 import SendLivePill from "./SendLivePill";
 import AnswerMd from "./AnswerMd";
+import Searching from "./Searching";
 import ActivityScreen from "./ActivityScreen";
 import SyncScreen from "./SyncScreen";
 import { SyncProgressCard } from "./SyncProgress";
@@ -642,15 +643,16 @@ function Ask({ asked, loading, res, err, q, setQ, runAsk, resetAsk, go }:
 
       <div style={{ display: "flex", gap: 28, alignItems: "flex-start" }}>
         <div style={{ flex: 1.9, minWidth: 0 }}>
-          {loading && <div style={{ fontFamily: FONT.serif, fontSize: 22, color: C.text3 }}>Searching the archive<span style={{ animation: "pulseDot 1.1s infinite" }}>…</span></div>}
+          {loading && <Searching size={17} />}
           {err && <div style={{ ...card, borderColor: "rgba(255,107,94,.3)", padding: 18, color: C.redText, fontSize: 14 }}>Could not reach the planner: {err}. (Set <code>DATABASE_URL</code> + keys and run the pipeline.)</div>}
           {res && <AnswerBody res={res} />}
         </div>
-        {/* Live builds: no prototype metrics (92% / gap counts) beside real answers — hide the rail. */}
-        {!IS_LIVE_BUILD && (
+        {/* The rail now carries only real data (honest-gap note + your own recent
+            searches), so it no longer has to be hidden on live builds. */}
+        {(
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 0 }}>
-            <RetrievalPlan res={res} loading={loading} />
-            <GapsPanel res={res} go={go} />
+            <NoRecordsNote res={res} />
+            <RecentSearchesPanel onAsk={runAsk} />
           </div>
         )}
       </div>
@@ -803,53 +805,42 @@ function renderCitations(text: string): ReactNode[] {
   });
 }
 
-function RetrievalPlan({ res, loading }: { res: AskResponse | null; loading: boolean }) {
-  const recovered = res?.sources?.length ?? 0;
+/* The honest-gap note. This is the ONLY part of the old right rail that was
+   real: when retrieval genuinely returns nothing, saying so is the product's
+   whole promise. What sat here before — "92% recovered", "2 gaps in this
+   answer", "Public Works CSV at 78% coverage" — was hardcoded demo copy
+   rendering over live answers, i.e. the system inventing gaps it had not
+   found. Deleted rather than fixed: there is no real data behind it yet. */
+function NoRecordsNote({ res }: { res: AskResponse | null }) {
+  const hasSources = (res?.sources?.length ?? 0) > 0 || (res?.openItems?.length ?? 0) > 0;
+  if (!res || hasSources) return null;
   return (
-    <div style={{ background: "linear-gradient(180deg,rgba(157,139,255,.1),rgba(157,139,255,.02))", border: "1px solid rgba(157,139,255,.26)", borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ ...eyebrow(C.purpleText), fontSize: 10, letterSpacing: ".12em", fontWeight: 600 }}>Retrieval plan · 3 passes fused</span>
-        <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.greenText }}>{loading ? "…" : recovered ? "92%" : "—"}</span>
-      </div>
-      <div style={{ display: "flex", gap: 7 }}>
-        {["Structured", "Graph", "Semantic"].map((p) => (
-          <span key={p} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, padding: "8px 4px", borderRadius: 9, background: "rgba(52,201,139,.12)", border: "1px solid rgba(52,201,139,.22)", fontFamily: FONT.mono, fontSize: 10, color: C.greenText }}>✓ {p}</span>
-        ))}
-      </div>
-      <div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-          <span style={{ fontSize: 12, color: C.text2 }}>{recovered} sources recovered</span>
-          <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.muted }}>RRF fused</span>
-        </div>
-        <div style={{ height: 6, borderRadius: 999, background: "rgba(var(--ink),.08)", overflow: "hidden" }}>
-          <div style={{ height: "100%", width: recovered ? "92%" : "0%", borderRadius: 999, background: "linear-gradient(90deg,#9D8BFF,#34C98B)", transformOrigin: "left", animation: "barGrow .9s cubic-bezier(.22,.61,.36,1) both" }} />
-        </div>
-      </div>
+    <div style={{ background: "rgba(240,163,60,.07)", border: "1px solid rgba(240,163,60,.28)", borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Ico d={ICON.warn} w={15} sw={2} stroke={C.orange} /><span style={{ ...eyebrow(C.orange), fontSize: 10, letterSpacing: ".12em", fontWeight: 600 }}>No records found</span></div>
+      <div style={{ fontSize: 13, color: C.text2, lineHeight: 1.5 }}>The archive has nothing on this. Rather than guess, the system says so &mdash; that&apos;s the honest-gap behavior.</div>
     </div>
   );
 }
 
-function GapsPanel({ res, go }: { res: AskResponse | null; go: (s: Screen) => () => void }) {
-  const hasSources = (res?.sources?.length ?? 0) > 0 || (res?.openItems?.length ?? 0) > 0;
-  if (res && !hasSources) {
-    return (
-      <div style={{ background: "rgba(240,163,60,.07)", border: "1px solid rgba(240,163,60,.28)", borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Ico d={ICON.warn} w={15} sw={2} stroke={C.orange} /><span style={{ ...eyebrow(C.orange), fontSize: 10, letterSpacing: ".12em", fontWeight: 600 }}>No records found</span></div>
-        <div style={{ fontSize: 13, color: C.text2, lineHeight: 1.5 }}>The archive has nothing on this. Rather than guess, the system says so — that&apos;s the honest-gap behavior.</div>
-      </div>
-    );
-  }
+/* What the rail is actually for: getting back to a question you already asked.
+   Real data (localStorage), no invented metrics. */
+function RecentSearchesPanel({ onAsk }: { onAsk: (q?: string) => void }) {
+  const [items, setItems] = useState<string[]>([]);
+  useEffect(() => { setItems(getRecentSearches()); }, []);
+  if (!items.length) return null;
   return (
-    <div style={{ background: "rgba(240,163,60,.07)", border: "1px solid rgba(240,163,60,.28)", borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Ico d={ICON.warn} w={15} sw={2} stroke={C.orange} /><span style={{ ...eyebrow(C.orange), fontSize: 10, letterSpacing: ".12em", fontWeight: 600 }}>2 gaps in this answer</span></div>
-      <button onClick={go("sources")} style={{ cursor: "pointer", textAlign: "left", background: "none", border: 0, borderTop: "1px solid rgba(240,163,60,.18)", padding: "11px 0 0", display: "flex", alignItems: "center", gap: 9 }}>
-        <div style={{ flex: 1 }}><div style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>Public Works CSV at 78% coverage</div><div style={{ fontSize: 11, color: C.text3, marginTop: 1 }}>2 columns unmapped</div></div>
-        <span style={{ color: C.orange, fontSize: 12, fontWeight: 600, flexShrink: 0 }}>Sources →</span>
-      </button>
-      <button onClick={go("sources")} style={{ cursor: "pointer", textAlign: "left", background: "none", border: 0, borderTop: "1px solid rgba(240,163,60,.18)", padding: "11px 0 0", display: "flex", alignItems: "center", gap: 9 }}>
-        <div style={{ flex: 1 }}><div style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>1 thread blocked on alias</div><div style={{ fontSize: 11, color: C.text3, marginTop: 1 }}>awaiting human review · reversible</div></div>
-        <span style={{ color: C.orange, fontSize: 12, fontWeight: 600, flexShrink: 0 }}>Review →</span>
-      </button>
+    <div style={{ background: "rgba(var(--ink),.03)", border: `1px solid ${C.line}`, borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 4 }}>
+      <span style={{ ...eyebrow(C.text3), fontSize: 10, letterSpacing: ".12em", fontWeight: 600, marginBottom: 4 }}>Recent searches</span>
+      {items.slice(0, 8).map((q, i) => (
+        <button
+          key={q}
+          onClick={() => onAsk(q)}
+          style={{ cursor: "pointer", textAlign: "left", background: "none", border: 0, borderTop: i ? `1px solid ${C.line2}` : 0, padding: i ? "9px 0 0" : "0 0 0", display: "flex", alignItems: "center", gap: 9, marginTop: i ? 5 : 0 }}
+        >
+          <span style={{ flex: 1, fontSize: 13, color: C.text2, lineHeight: 1.45, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{q}</span>
+          <Ico d={ICON.arrow} w={14} sw={2} stroke={C.dim} />
+        </button>
+      ))}
     </div>
   );
 }

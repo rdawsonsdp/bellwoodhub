@@ -25,7 +25,8 @@ import {
   validateRunOutput, type AgentMemoryItem, type AgentRunOutput, type AgentSliceMessage, type MemoryKind,
 } from "./agent-run";
 import { query } from "./db";
-import { fetchFocusSlice, focusOf, type FocusHit } from "./agent-focus";
+import { fetchFocusSlice, type FocusHit } from "./agent-focus";
+import { effectiveFocusQuery, type AgentOverrides } from "./agent-instruction";
 import { complete } from "./agents/claude";
 import { VOICE } from "./agents/voice";
 import type { Task } from "./agents/constants";
@@ -61,10 +62,11 @@ export function buildAgentPrompt(
   messages: AgentSliceMessage[],
   skills: AgentSkill[] = [],
   related: RelatedLine[] = [],
-  /** The operator's standing instruction + what it matched across the whole
-   *  record (lib/agent-focus.ts). Absent focus = the desk runs on its time
-   *  window alone, exactly as before. */
-  focus: { focus: string | null; hits: FocusHit[] } = { focus: null, hits: [] },
+  /** The operator's instruction (the one box), the search query derived from
+   *  it, and what that query matched across the whole record. Absent = the desk
+   *  runs on its time window alone, exactly as before. */
+  focus: { instruction: string | null; query: string | null; hits: FocusHit[] } =
+    { instruction: null, query: null, hits: [] },
 ): { system: string; user: string } {
   const actShape =
     agent.autonomy === "draft"
@@ -79,13 +81,17 @@ export function buildAgentPrompt(
     `Urgency rules for YOUR desk (what is red/yellow HERE):\n${agent.urgencyRules}`,
     // FOCUS: the operator's standing instruction for this desk. It directs
     // attention — it never grants autonomy or relaxes the citation rules below.
-    ...(focus.focus
+    ...(focus.instruction
       ? [
-          `The Mayor's standing instruction for your desk — treat this as your first priority ` +
-            `this run:\n${focus.focus}\n\nMatching records from the whole archive are supplied below ` +
-            `under FOCUS MATCHES. They are NOT new mail — they may be months old. Summarize what they ` +
-            `show as a body of evidence (counts, patterns, recurring locations or senders), cite them ` +
-            `like any other message, and say plainly if they are too thin to support a conclusion.`,
+          `THE MAYOR'S INSTRUCTION for your desk — this is what he actually asked you to do, ` +
+            `and it outranks the goals above when they differ:\n${focus.instruction}` +
+            (focus.hits.length
+              ? `\n\nRecords matching it from the whole archive are supplied below under FOCUS ` +
+                `MATCHES. They are NOT new mail — they may be months old. Treat them as a body of ` +
+                `evidence: counts, patterns, repeats, who keeps appearing. Cite them like any other ` +
+                `message, and say plainly if they are too thin to support a conclusion.`
+              : `\n\nNothing in the archive matched it this run. Say so plainly rather than ` +
+                `reporting something else in its place.`),
         ]
       : []),
     // FEAT-21: operator-uploaded skills refine voice and judgment — they can
@@ -143,7 +149,7 @@ export function buildAgentPrompt(
         .join("\n")
     : "(no records in the archive matched the standing instruction)";
   const user =
-    (focus.focus ? `FOCUS MATCHES (whole archive, any date — your standing instruction):\n${focusLines}\n\n` : "") +
+    (focus.instruction ? `FOCUS MATCHES (whole archive, any date — searched for "${focus.query ?? ""}"):\n${focusLines}\n\n` : "") +
     `YOUR OPEN MEMORY:\n${memLines}\n\nNEW MESSAGES ON YOUR DESK:\n${msgLines}\n\n` +
     `RELATED BACKGROUND (prior record around the new mail — weigh it when judging urgency and cite its ids when you use it):\n${relLines}\n\n` +
     `Produce the run output JSON now.`;
@@ -338,19 +344,22 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
     // Read BEFORE the quiet-desk check: `focus` is a standing instruction over
     // the whole record, so an agent with focus has work to do even on an hour
     // when no new mail landed on its desk.
-    type Overrides = { charter?: unknown; goals?: unknown; urgencyRules?: unknown; focus?: unknown };
-    const ovRows = await query<{ overrides: Overrides }>(
+    const ovRows = await query<{ overrides: AgentOverrides }>(
       `SELECT overrides FROM app.agent_configs WHERE agent_key = $1`,
       [agent.key],
-    ).catch(() => [] as { overrides: Overrides }[]);
-    const ov = ovRows[0]?.overrides ?? {};
+    ).catch(() => [] as { overrides: AgentOverrides }[]);
+    const ov: AgentOverrides = ovRows[0]?.overrides ?? {};
 
     // FOCUS (lib/agent-focus.ts): what the operator told this desk to watch
     // for, in plain English, matched semantically across the whole record —
     // not just since the cursor. Fails soft: a Voyage outage or an unembedded
     // corpus degrades the run to its time window rather than killing it.
-    const focus = focusOf(ov);
-    const focusHits = focus ? await fetchFocusSlice(agent, focus).catch(() => []) : [];
+    // The retrieval query is DERIVED from the instruction at save time and
+    // cached (lib/agent-instruction.ts) — reading config must never cost a
+    // model call. A stale cache resolves to null rather than searching for the
+    // previous instruction.
+    const focusQuery = effectiveFocusQuery(ov);
+    const focusHits = focusQuery ? await fetchFocusSlice(agent, focusQuery).catch(() => []) : [];
 
     // Quiet desk: nothing to read, nothing remembered — skip the model
     // entirely; an honest "nothing new" beats prompted-into-filler output.
@@ -371,6 +380,7 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
       [skillKeys],
     ).catch(() => [] as AgentSkill[]);
 
+    const instruction = typeof ov.instruction === "string" && ov.instruction.trim() ? ov.instruction.trim() : null;
     const effective: DomainAgent = {
       ...agent,
       charter: typeof ov.charter === "string" && ov.charter.trim() ? ov.charter : agent.charter,
@@ -385,7 +395,8 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
     const related = slice.length ? await fetchRelatedContext(slice.slice(0, 8).map((m) => m.messageId)) : [];
 
     const { system, user } = buildAgentPrompt(effective, memory, slice, skills, related, {
-      focus,
+      instruction,
+      query: focusQuery,
       hits: focusHits,
     });
     const task = (process.env.AGENT_RUN_TASK as Task) || "draft"; // Sonnet; flagship gated by eval evidence

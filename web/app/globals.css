@@ -228,3 +228,16 @@ a {
   background: rgba(6, 3, 8, 0.18);
   border-radius: 8px;
 }
+
+/* Ask waiting state — an indeterminate sweep. Never a percentage: nothing
+   about synthesis time is measured, and a timer-driven bar is a lie. */
+@keyframes askSweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(360%); }
+}
+
+/* the trailing "…" on a waiting label */
+@keyframes pulseDot {
+  0%, 100% { opacity: .35; }
+  50%      { opacity: 1; }
+}

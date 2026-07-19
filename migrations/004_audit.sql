@@ -51,3 +51,29 @@ BEGIN
         END IF;
     END LOOP;
 END $$;
+
+-- ────────────────────────────────────────────────────────────────────────
+-- Deny-all RLS — the same posture 003_rls.sql applies to every other table.
+--
+-- This migration originally stopped at REVOKE UPDATE, DELETE, which left the
+-- ledger SELECTable by the anon key: append-only is not the same as private,
+-- and the audit trail is the most sensitive table in the schema (it records who
+-- read which record, plus IP/device/geo). Two gaps compounded it: this table is
+-- absent from the array in 003_rls.sql, and 003's schema-wide REVOKE ALL FROM
+-- anon, authenticated ran BEFORE this migration created the table.
+--
+-- No policies: the app connects as the BYPASSRLS service role, so deny-all with
+-- zero policies is exactly the intended posture (003_rls.sql:8-15).
+-- Found on a fresh-project apply, 2026-07-18.
+-- ────────────────────────────────────────────────────────────────────────
+ALTER TABLE app.audit_log ENABLE ROW LEVEL SECURITY;
+
+DO $$
+DECLARE r text;
+BEGIN
+    FOREACH r IN ARRAY ARRAY['anon', 'authenticated'] LOOP
+        IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r) THEN
+            EXECUTE format('REVOKE ALL ON app.audit_log FROM %I', r);
+        END IF;
+    END LOOP;
+END $$;

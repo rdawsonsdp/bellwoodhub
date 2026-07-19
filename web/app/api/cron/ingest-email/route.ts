@@ -65,12 +65,38 @@ async function landMessage(m: PulledMessage, mailboxId: string): Promise<"landed
   );
   if (existing[0] && existing[0].checksum === chk) return "skipped";
   const version = existing[0] ? existing[0].version + 1 : 1;
+  // The SELECT above and this INSERT are not atomic, and a provider batch can
+  // legitimately contain the same message twice (observed on the Gmail backfill
+  // walk, 2026-07-18: overlapping pages). Both copies then compute the same
+  // version and the second violates uq_raw_version (ingest_key, version).
+  //
+  // Landing the same immutable RAW twice is a no-op by definition, so the
+  // conflict is not an error — treat the row that already exists as ours.
+  // Without this the whole round threw and the cursor never advanced, so a
+  // deterministic duplicate would re-pull the same page forever: a silent,
+  // permanent backfill stall.
   const raw = await query<{ raw_id: string }>(
     `INSERT INTO pipeline.raw_objects (tenant_id, ingest_key, source, source_ref, version, checksum, payload)
-     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING raw_id`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT ON CONSTRAINT uq_raw_version DO NOTHING
+     RETURNING raw_id`,
     [TENANT, ik, SOURCE, m.sourceRef, version, chk, payload],
   );
-  const rawId = raw[0].raw_id;
+  let rawId = raw[0]?.raw_id;
+  if (!rawId) {
+    const landedElsewhere = await query<{ raw_id: string; checksum: string }>(
+      `SELECT raw_id, checksum FROM pipeline.raw_objects
+        WHERE ingest_key = $1 AND version = $2`,
+      [ik, version],
+    );
+    // Same bytes already landed this round → nothing left to do.
+    if (landedElsewhere[0]?.checksum === chk) return "skipped";
+    // Different bytes under the same version means two genuinely different
+    // payloads raced for one version number. Surface it rather than guessing:
+    // silently overwriting would break RAW's never-overwrite contract.
+    if (!landedElsewhere[0]) throw new Error(`raw landing conflict with no row: ${ik} v${version}`);
+    rawId = landedElsewhere[0].raw_id;
+  }
   await query(
     `INSERT INTO pipeline.ingest_log (ingest_key, tenant_id, source, source_ref, state, raw_ref)
      VALUES ($1, $2, $3, $4, 'landed', $5)
@@ -175,13 +201,29 @@ async function handle(req: NextRequest) {
         let pulled = 0;
         let landed = 0;
         let skipped = 0;
+        // Failures are counted and reported, never swallowed: a round that
+        // quietly drops mail must not read as a clean sync.
+        let failed = 0;
+        let firstError: string | null = null;
         // batch loop: cursor persists after every batch, so a timeout or crash
         // mid-account loses nothing — the next run resumes from the last batch
         do {
           const batch = await connector.pullSince(accessToken, cursor, CAP);
           for (const m of batch.messages) {
-            if ((await landMessage(m, a.mailbox_id)) === "landed") landed++;
-            else skipped++;
+            // Per-message isolation. One malformed or conflicting message must
+            // not unwind the round: the cursor only advances after a batch
+            // completes, so a throw here re-pulls the same page next time and a
+            // deterministic bad message stalls the walk permanently. Same
+            // posture the agent runner takes per-agent — record the failure,
+            // keep the round moving.
+            try {
+              if ((await landMessage(m, a.mailbox_id)) === "landed") landed++;
+              else skipped++;
+            } catch (err) {
+              failed++;
+              if (!firstError) firstError = err instanceof Error ? err.message : String(err);
+              console.error("[ingest] message failed", m.sourceRef, firstError);
+            }
           }
           pulled += batch.messages.length;
           cursor = batch.nextCursor ?? cursor;
@@ -192,7 +234,13 @@ async function handle(req: NextRequest) {
           );
           if (batch.messages.length === 0) break; // caught up (or empty walk page)
         } while (cursor?.startsWith("bf:") && Date.now() - started < RUN_BUDGET_MS);
-        results.push({ ok: true, provider: a.provider, account: a.address, pulled, landed, skipped, backfillRemaining: !!cursor?.startsWith("bf:") });
+        results.push({
+          ok: failed === 0,
+          provider: a.provider, account: a.address,
+          pulled, landed, skipped,
+          ...(failed ? { failed, error: firstError } : {}),
+          backfillRemaining: !!cursor?.startsWith("bf:"),
+        });
       } catch (err) {
         // flag the account, keep the fleet moving — never throw the whole route
         const message = err instanceof Error ? err.message : String(err);

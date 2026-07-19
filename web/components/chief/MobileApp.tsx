@@ -21,6 +21,7 @@ import ReleaseTag from "./ReleaseTag";
 import AnswerMd from "./AnswerMd";
 import ActivityScreen from "./ActivityScreen";
 import SyncScreen from "./SyncScreen";
+import { SyncProgressCard } from "./SyncProgress";
 import DraftCard from "./DraftCard";
 import FeedbackButton from "./FeedbackButton";
 import UploadSource from "./UploadSource";
@@ -557,6 +558,7 @@ function EmailsScreen({ onAsk }: { onAsk: () => void }) {
       </div>
 
       {/* mailbox (source system) switcher — hidden when there's nothing to switch */}
+      <SyncProgressCard compact />
       <MailboxSwitcher boxes={mailboxes} current={mailbox?.id ?? mailboxId} onChange={(id) => { setMailboxId(id); setTab(getEnabledTabs()[0] ?? "all"); }} />
       {mailboxes.length === 0 && (
         <div style={{ margin: "12px 16px 2px", padding: "10px 13px", borderRadius: 12, border: "1px dashed var(--c-cardbd)", color: C.dim, fontSize: 12.5, textAlign: "center" }}>No mailboxes connected yet — sign in to connect one.</div>
@@ -998,6 +1000,17 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
         {/* the floating pill (design ref 2026-07-02) */}
         <form onSubmit={(e) => { e.preventDefault(); run(); }} style={{ display: "flex", gap: 9, alignItems: "center", background: "var(--c-sidebar, rgba(var(--ink),.05))", border: "1px solid var(--c-cardbd)", borderRadius: 999, padding: "6px 6px 6px 18px", boxShadow: "0 6px 22px rgba(20,20,10,.08)" }}>
           <input autoFocus={!!textFocus} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask anything" style={{ flex: 1, minWidth: 0, background: "transparent", border: 0, outline: "none", fontSize: 16, color: C.text, fontFamily: FONT.sans }} />
+          {q && !loading && (
+            <button
+              type="button"
+              onClick={() => setQ("")}
+              aria-label="Clear the question"
+              /* 32px hit target — thumb-sized, per the mobile-first posture */
+              style={{ width: 32, height: 32, borderRadius: 999, border: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(var(--ink),.10)", color: C.text3, padding: 0 }}
+            >
+              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+            </button>
+          )}
           <button type="submit" disabled={loading || rec !== "idle"} style={{ padding: "10px 18px", borderRadius: 999, border: 0, background: loading ? "rgba(231,181,60,.85)" : C.gold, color: "#081627", fontWeight: 700, fontSize: 14, minWidth: loading ? 96 : undefined, animation: loading ? "bwPulse 1.2s ease-in-out infinite" : undefined }}>{loading ? "Searching…" : "Ask"}</button>
         </form>
 

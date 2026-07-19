@@ -59,7 +59,7 @@ export default function AddAgentSheet({ variant, onClose }: Props) {
         {!sel ? (
           <>
             <div style={{ fontSize: 13, color: C.text3, lineHeight: 1.55, margin: "8px 0 18px" }}>
-              Pick a type of agent to add to the cabinet. Onboarding is an interview — a few
+              Pick a type of agent to add. Onboarding is an interview — a few
               questions configure the seat; sign-ins are requested only if the agent needs them.
               Every new agent starts observe-only until it earns more.
             </div>

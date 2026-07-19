@@ -28,7 +28,7 @@ export const AGENT_TYPES: AgentTypeSeed[] = [
   {
     key: "domain-desk",
     name: "Domain desk",
-    blurb: "A cabinet seat for one domain of village life (like Police, Fire, Council, Constituent).",
+    blurb: "An agent for one domain of village life (like Police, Fire, Council, Constituent).",
     interview: [
       "What domain is this desk responsible for?",
       "Who sends into it — which departments, senders, or topics?",

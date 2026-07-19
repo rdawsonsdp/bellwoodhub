@@ -31,6 +31,7 @@ import SendLivePill from "./SendLivePill";
 import AnswerMd from "./AnswerMd";
 import ActivityScreen from "./ActivityScreen";
 import SyncScreen from "./SyncScreen";
+import { SyncProgressCard } from "./SyncProgress";
 
 /** Open the actual source document from anywhere a message is referenced —
  *  in-app (Phase 4), never the old standalone page. */
@@ -357,7 +358,9 @@ function Topbar({ onAsk }: { onAsk?: (q: string) => void }) {
           fd.append("audio", blob, type.includes("mp4") ? "ask.m4a" : "ask.webm");
           const r = await fetch("/api/transcribe", { method: "POST", body: fd });
           const d = await r.json().catch(() => ({}));
-          if (d.text) { setV(d.text); onAsk?.(d.text); }
+          // voice submits immediately — leaving the transcript in the box would
+          // put a second, stale question on screen beside the answer
+          if (d.text) { onAsk?.(d.text); setV(""); }
         } finally { setRec("idle"); }
       };
       mr.start();
@@ -366,16 +369,36 @@ function Topbar({ onAsk }: { onAsk?: (q: string) => void }) {
     } catch { setRec("idle"); }
   }
   return (
-    <div style={{ flexShrink: 0, height: 58, display: "flex", alignItems: "center", gap: 10, padding: "0 22px", borderBottom: `1px solid ${C.line2}`, background: "rgba(var(--ink),.035)", backdropFilter: "blur(14px)" }}>
-      <div style={{ flex: 1, maxWidth: 560, margin: "0 auto", display: "flex", alignItems: "center", gap: 9, background: "rgba(var(--ink),.05)", border: `1px solid ${C.line}`, borderRadius: 99, padding: "7px 8px 7px 16px" }}>
+    <div style={{ flexShrink: 0, height: 76, display: "flex", alignItems: "center", gap: 10, padding: "0 22px", borderBottom: `1px solid ${C.line2}`, background: "rgba(var(--ink),.035)", backdropFilter: "blur(14px)" }}>
+      <div /* The primary way into the record, on every screen (RD 2026-07-18) — the
+           Ask screen's box, promoted into the header rather than a cramped pill. */
+        style={{ flex: 1, maxWidth: 720, margin: "0 auto", display: "flex", alignItems: "center", gap: 9, background: "var(--c-sidebar, rgba(var(--ink),.04))", border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 6px 6px 18px", boxShadow: "0 6px 22px rgba(20,20,10,.07)" }}>
         <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth={2} strokeLinecap="round"><path d="M11 11m-7 0a7 7 0 1 0 14 0a7 7 0 1 0-14 0M21 21l-4.3-4.3" /></svg>
         <input
           value={v}
           onChange={(e) => setV(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && v.trim()) { onAsk?.(v.trim()); } }}
+          onKeyDown={(e) => { if (e.key === "Enter" && v.trim()) { onAsk?.(v.trim()); setV(""); } }}
           placeholder="Ask anything about the record…"
-          style={{ flex: 1, minWidth: 0, background: "transparent", border: 0, outline: "none", fontSize: 13.5, color: C.text, fontFamily: FONT.sans }}
+          style={{ flex: 1, minWidth: 0, background: "transparent", border: 0, outline: "none", fontSize: 15.5, color: C.text, fontFamily: FONT.sans }}
         />
+        {v && (
+          <button
+            onClick={() => { setV(""); }}
+            aria-label="Clear the question"
+            title="Clear"
+            style={{ width: 22, height: 22, borderRadius: 99, border: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(var(--ink),.10)", color: C.text3, padding: 0 }}
+          >
+            <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        )}
+        <button
+          onClick={() => { if (v.trim()) { onAsk?.(v.trim()); setV(""); } }}
+          disabled={!v.trim()}
+          aria-label="Ask"
+          style={{ order: 2, padding: "9px 18px", borderRadius: 999, border: 0, cursor: v.trim() ? "pointer" : "default", flexShrink: 0, fontWeight: 700, fontSize: 13.5, fontFamily: FONT.sans, background: v.trim() ? C.gold : "rgba(var(--ink),.08)", color: v.trim() ? "#081627" : C.dim }}
+        >
+          Ask
+        </button>
         <button onClick={mic} aria-label={rec === "rec" ? "Stop and search" : "Ask by voice"} title={rec === "rec" ? "Listening — click to search" : "Ask by voice"}
           style={{ width: 30, height: 30, borderRadius: 99, border: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: rec === "rec" ? "#fff" : "#0a1322", background: rec === "rec" ? "linear-gradient(135deg,#e8574a,#c23a2e)" : "linear-gradient(135deg,#F4CB63,#D7991C)", animation: rec === "rec" ? "cosPulse 1.1s infinite" : undefined }}>
           {rec === "busy"
@@ -468,6 +491,7 @@ function Brief({ go, onAsk }: { go: (s: Screen) => () => void; onAsk: () => void
           <Ico d={ICON.search} w={16} sw={2} stroke={C.muted} /> Search every email…
         </button>
       </div>
+      <SyncProgressCard />
       <DMailboxSwitcher boxes={mailboxes} current={mailbox?.id ?? mailboxId} onChange={(id) => { setMailboxId(id); setTab(mailboxes.find((m) => m.id === id)?.isPrivate ? "all" : "focus"); }} />
       {mailboxes.length === 0 && (
         <div style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 13, border: "1px dashed rgba(var(--ink),.14)", color: C.dim, fontSize: 13, textAlign: "center" }}>No mailboxes connected yet — sign in to connect one.</div>

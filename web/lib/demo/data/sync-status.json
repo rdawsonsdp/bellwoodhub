@@ -31,7 +31,10 @@
     "ratePerMin": 208,
     "etaMinutes": 8
   },
-  "calendar": { "events": 214, "lastRunAt": "2026-07-06T14:05:00Z" },
+  "calendar": {
+    "events": 214,
+    "lastRunAt": "2026-07-06T14:05:00Z"
+  },
   "scheduler": {
     "lastIngestAt": "2026-07-06T14:52:00Z",
     "lastEmbedAt": "2026-07-06T14:53:30Z",
@@ -39,12 +42,169 @@
     "stale": false
   },
   "recent": [
-    { "at": "2026-07-06T14:53:30Z", "action": "embed.run", "summary": "indexed 96 msgs · 233 chunks · 1,685 to go" },
-    { "at": "2026-07-06T14:52:00Z", "action": "ingest.run", "summary": "pulled 200 · landed 197 · backfill continues" },
-    { "at": "2026-07-06T14:37:10Z", "action": "embed.run", "summary": "indexed 102 msgs · 251 chunks · 1,781 to go" },
-    { "at": "2026-07-06T14:36:40Z", "action": "ingest.run", "summary": "pulled 200 · landed 200 · backfill continues" },
-    { "at": "2026-07-06T14:21:15Z", "action": "ingest.run", "summary": "pulled 200 · landed 198 · backfill continues" },
-    { "at": "2026-07-06T14:05:00Z", "action": "ingest.calendar", "summary": "2 account(s) mirrored" },
-    { "at": "2026-07-06T14:04:30Z", "action": "sync.manual", "summary": "manual pass — more to do" }
-  ]
+    {
+      "at": "2026-07-06T14:53:30Z",
+      "action": "embed.run",
+      "summary": "indexed 96 msgs \u00b7 233 chunks \u00b7 1,685 to go"
+    },
+    {
+      "at": "2026-07-06T14:52:00Z",
+      "action": "ingest.run",
+      "summary": "pulled 200 \u00b7 landed 197 \u00b7 backfill continues"
+    },
+    {
+      "at": "2026-07-06T14:37:10Z",
+      "action": "embed.run",
+      "summary": "indexed 102 msgs \u00b7 251 chunks \u00b7 1,781 to go"
+    },
+    {
+      "at": "2026-07-06T14:36:40Z",
+      "action": "ingest.run",
+      "summary": "pulled 200 \u00b7 landed 200 \u00b7 backfill continues"
+    },
+    {
+      "at": "2026-07-06T14:21:15Z",
+      "action": "ingest.run",
+      "summary": "pulled 200 \u00b7 landed 198 \u00b7 backfill continues"
+    },
+    {
+      "at": "2026-07-06T14:05:00Z",
+      "action": "ingest.calendar",
+      "summary": "2 account(s) mirrored"
+    },
+    {
+      "at": "2026-07-06T14:04:30Z",
+      "action": "sync.manual",
+      "summary": "manual pass \u2014 more to do"
+    }
+  ],
+  "mail": {
+    "mirrored": 11532,
+    "total": 22754,
+    "remaining": 11222,
+    "ratePerMin": 56,
+    "etaMinutes": 103,
+    "history": [
+      {
+        "minute": "2026-07-06T09:01:00+00:00",
+        "n": 0
+      },
+      {
+        "minute": "2026-07-06T09:02:00+00:00",
+        "n": 0
+      },
+      {
+        "minute": "2026-07-06T09:03:00+00:00",
+        "n": 88
+      },
+      {
+        "minute": "2026-07-06T09:04:00+00:00",
+        "n": 96
+      },
+      {
+        "minute": "2026-07-06T09:05:00+00:00",
+        "n": 91
+      },
+      {
+        "minute": "2026-07-06T09:06:00+00:00",
+        "n": 0
+      },
+      {
+        "minute": "2026-07-06T09:07:00+00:00",
+        "n": 0
+      },
+      {
+        "minute": "2026-07-06T09:08:00+00:00",
+        "n": 94
+      },
+      {
+        "minute": "2026-07-06T09:09:00+00:00",
+        "n": 102
+      },
+      {
+        "minute": "2026-07-06T09:10:00+00:00",
+        "n": 89
+      },
+      {
+        "minute": "2026-07-06T09:11:00+00:00",
+        "n": 0
+      },
+      {
+        "minute": "2026-07-06T09:12:00+00:00",
+        "n": 0
+      },
+      {
+        "minute": "2026-07-06T09:13:00+00:00",
+        "n": 97
+      },
+      {
+        "minute": "2026-07-06T09:14:00+00:00",
+        "n": 93
+      },
+      {
+        "minute": "2026-07-06T09:15:00+00:00",
+        "n": 86
+      },
+      {
+        "minute": "2026-07-06T09:16:00+00:00",
+        "n": 0
+      },
+      {
+        "minute": "2026-07-06T09:17:00+00:00",
+        "n": 0
+      },
+      {
+        "minute": "2026-07-06T09:18:00+00:00",
+        "n": 99
+      },
+      {
+        "minute": "2026-07-06T09:19:00+00:00",
+        "n": 104
+      },
+      {
+        "minute": "2026-07-06T09:20:00+00:00",
+        "n": 92
+      },
+      {
+        "minute": "2026-07-06T09:21:00+00:00",
+        "n": 0
+      },
+      {
+        "minute": "2026-07-06T09:22:00+00:00",
+        "n": 0
+      },
+      {
+        "minute": "2026-07-06T09:23:00+00:00",
+        "n": 88
+      },
+      {
+        "minute": "2026-07-06T09:24:00+00:00",
+        "n": 95
+      },
+      {
+        "minute": "2026-07-06T09:25:00+00:00",
+        "n": 101
+      },
+      {
+        "minute": "2026-07-06T09:26:00+00:00",
+        "n": 0
+      },
+      {
+        "minute": "2026-07-06T09:27:00+00:00",
+        "n": 0
+      },
+      {
+        "minute": "2026-07-06T09:28:00+00:00",
+        "n": 90
+      },
+      {
+        "minute": "2026-07-06T09:29:00+00:00",
+        "n": 97
+      },
+      {
+        "minute": "2026-07-06T09:30:00+00:00",
+        "n": 84
+      }
+    ]
+  }
 }

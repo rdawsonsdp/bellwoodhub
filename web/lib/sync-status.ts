@@ -34,6 +34,20 @@ export interface SyncStatus {
     ratePerMin: number | null; // from recent embed.run ledger rows
     etaMinutes: number | null;
   };
+  /** Mail arriving, measured directly off pipeline.ingest_log timestamps
+   *  rather than the audit ledger — the ledger only records whole runs, so a
+   *  4-minute backfill round reads as one lump. The per-minute series is what
+   *  makes "it's working, here's the pace" legible during a long first sync. */
+  mail: {
+    mirrored: number;
+    total: number | null; // summed live mailbox sizes; null if any ask failed
+    remaining: number | null;
+    ratePerMin: number | null; // trailing 10-minute average
+    etaMinutes: number | null;
+    /** Newest-last, one entry per minute for the last 30 minutes, zero-filled
+     *  so a stall reads as a gap in the chart instead of a missing bar. */
+    history: { minute: string; n: number }[];
+  };
   calendar: { events: number; lastRunAt: string | null };
   scheduler: {
     lastIngestAt: string | null;
@@ -157,6 +171,40 @@ export async function getSyncStatus(withTotals: boolean): Promise<SyncStatus> {
   }
   const etaMinutes = ratePerMin && remaining > 0 ? Math.max(1, Math.round(remaining / ratePerMin)) : null;
 
+  // ── mail throughput, straight off the landing timestamps ──
+  // 30 one-minute buckets. generate_series zero-fills the quiet minutes so the
+  // chart shows a stall honestly instead of compressing it away.
+  const mailHist = await query<{ minute: string; n: number }>(
+    `WITH mins AS (
+       SELECT generate_series(
+                date_trunc('minute', now()) - interval '29 minutes',
+                date_trunc('minute', now()),
+                interval '1 minute') AS m
+     )
+     SELECT mins.m::text AS minute, COALESCE(count(l.ingest_key), 0)::int AS n
+       FROM mins
+       LEFT JOIN pipeline.ingest_log l
+         ON date_trunc('minute', l.landed_at) = mins.m
+      GROUP BY mins.m ORDER BY mins.m`,
+  ).catch(() => [] as { minute: string; n: number }[]);
+
+  // Rate = trailing 10 minutes. Short enough to react when a backfill finishes,
+  // long enough that the gap between 4-minute rounds doesn't read as "stopped".
+  const last10 = mailHist.slice(-10);
+  const landed10 = last10.reduce((s, r) => s + r.n, 0);
+  const mailRatePerMin = last10.length ? Math.round(landed10 / last10.length) : null;
+
+  const mailMirrored = accounts.reduce((s, a) => s + a.mirrored, 0);
+  // Only a denominator every account answered for is honest — one failed
+  // provider ask would otherwise understate the total and overstate progress.
+  const allTotalsKnown = accounts.length > 0 && accounts.every((a) => a.mailboxTotal !== null);
+  const mailTotal = allTotalsKnown ? accounts.reduce((s, a) => s + (a.mailboxTotal ?? 0), 0) : null;
+  const mailRemaining = mailTotal !== null ? Math.max(0, mailTotal - mailMirrored) : null;
+  const mailEta =
+    mailRatePerMin && mailRatePerMin > 0 && mailRemaining && mailRemaining > 0
+      ? Math.max(1, Math.round(mailRemaining / mailRatePerMin))
+      : null;
+
   const cal = await query<{ events: number }>(
     `SELECT count(*)::int AS events FROM app.calendar_events`,
   ).catch(() => [{ events: 0 }]);
@@ -181,6 +229,14 @@ export async function getSyncStatus(withTotals: boolean): Promise<SyncStatus> {
     live: true,
     accounts,
     index: { ...counts, remaining, ratePerMin, etaMinutes },
+    mail: {
+      mirrored: mailMirrored,
+      total: mailTotal,
+      remaining: mailRemaining,
+      ratePerMin: mailRatePerMin,
+      etaMinutes: mailEta,
+      history: mailHist,
+    },
     calendar: { events: cal[0]?.events ?? 0, lastRunAt: lastBy.get("ingest.calendar") ?? null },
     scheduler: {
       lastIngestAt,

@@ -33,6 +33,7 @@ import AnswerMd from "./AnswerMd";
 import Searching from "./Searching";
 import ActivityScreen from "./ActivityScreen";
 import SyncScreen from "./SyncScreen";
+import NeedsYouScreen from "./NeedsYouScreen";
 import { SyncProgressCard } from "./SyncProgress";
 
 /** Open the actual source document from anywhere a message is referenced —
@@ -73,7 +74,7 @@ async function postJson<T>(url: string, body: unknown): Promise<T | null> {
   } catch { return null; }
 }
 
-type Screen = "today" | "queue" | "brief" | "ask" | "track" | "memory" | "sources" | "sync" | "settings" | "admin" | "agents" | "activity";
+type Screen = "today" | "needsyou" | "queue" | "brief" | "ask" | "track" | "memory" | "sources" | "sync" | "settings" | "admin" | "agents" | "activity";
 type Filter = "all" | "open" | "late" | "broken" | "kept";
 
 /* ── tiny SVG helpers (stroke icons, 24×24) ── */
@@ -114,7 +115,7 @@ const ICON = {
 
 /** Screens reachable in Mayor mode: the three destinations, plus History
  *  detail (reached via citations/Ask only — never from the rail). */
-const MAYOR_SCREENS: Screen[] = ["today", "queue", "ask", "memory"];
+const MAYOR_SCREENS: Screen[] = ["today", "needsyou", "queue", "ask", "memory"];
 
 export default function ChiefApp() {
   const [screen, setScreen] = useState<Screen>("today");
@@ -183,6 +184,7 @@ export default function ChiefApp() {
         <Topbar onAsk={(question) => { setScreen("ask"); runAsk(question); }} />
         <div className="scrl" style={{ flex: 1, overflowY: "auto" }}>
           {screen === "today" && <WallScreen variant="desktop" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} onOpenAgent={(k) => { setAgentFocus(k); setScreen("agents"); }} />}
+          {screen === "needsyou" && <NeedsYouScreen variant="desktop" />}
           {screen === "queue" && <QueueScreen variant="desktop" onOpenEmail={setEmailMid} />}
           {screen === "brief" && <Brief go={go} onAsk={() => runAsk("Every flooding conversation, in order — who promised what and whether it happened.")} />}
           {screen === "ask" && <Ask asked={asked} loading={loading} res={res} err={err} q={q} setQ={setQ} runAsk={runAsk} resetAsk={resetAsk} go={go} />}
@@ -251,6 +253,7 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
             every count the Mayor sees traces to getWall() (invariant 9). */}
         <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".16em", padding: "4px 10px 8px" }}>Workspace</div>
         {item("today", "Hub", <Ico d={ICON.today} />, <Star w={13} c={C.gold} />)}
+        {item("needsyou", "Needs You", <Ico d={ICON.warn} />)}
         {item("queue", "Queue", <Ico d={ICON.approvals} />)}
         {item("ask", "Ask", <Star w={19} c="currentColor" />)}
         {operator && (

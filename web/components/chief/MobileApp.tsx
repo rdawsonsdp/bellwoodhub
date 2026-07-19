@@ -12,6 +12,7 @@ import AdminPanel from "./AdminPanel";
 import AgentsPage from "./AgentsPage";
 import WallScreen from "./WallScreen";
 import QueueScreen from "./QueueScreen";
+import NeedsYouScreen from "./NeedsYouScreen";
 import ThreadView from "./ThreadView";
 import { ASK_SEEDS } from "@/lib/ask-seeds";
 import { loadOperatorMode, saveOperatorMode } from "@/lib/operator-mode";
@@ -65,6 +66,7 @@ async function postJson<T>(url: string, body: unknown): Promise<T | null> {
 
 /* ── icons ── */
 const I = {
+  warn: "M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01",
   today: "M12 4V2M12 22v-2M4 12H2M22 12h-2M5.6 5.6 4.2 4.2M19.8 19.8l-1.4-1.4M18.4 5.6l1.4-1.4M5.6 18.4l-1.4 1.4M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z",
   emails: "M3 7l9 6 9-6M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z",
   events: "M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z",
@@ -86,7 +88,7 @@ function Svg({ d, w = 22, sw = 1.9, fill = "none" }: { d: string; w?: number; sw
   return <svg width={w} height={w} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d.split("M").filter(Boolean).map((p, i) => <path key={i} d={"M" + p} />)}</svg>;
 }
 
-type Screen = "today" | "queue" | "ask" | "emails" | "events" | "history" | "agents" | "sources" | "sync" | "activity" | "admin";
+type Screen = "today" | "needsyou" | "queue" | "ask" | "emails" | "events" | "history" | "agents" | "sources" | "sync" | "activity" | "admin";
 /** Mayor mode = exactly these three destinations (Phase 4 nav collapse). */
 const MAYOR_SCREENS: Screen[] = ["today", "queue", "ask"];
 const THEME_CYCLE = ["auto", "midnight", "dim", "daylight", "contrast"];
@@ -155,6 +157,7 @@ export default function MobileApp() {
         <PullToRefresh onRefresh={doRefresh}>
           <div key={refreshKey} style={{ padding: "8px 0 20px" }}>
             {screen === "today" && <WallScreen variant="mobile" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} onOpenAgent={(k) => { setAgentFocus(k); setScreen("agents"); }} />}
+            {screen === "needsyou" && <NeedsYouScreen variant="mobile" />}
             {screen === "queue" && <QueueScreen variant="mobile" onOpenEmail={setEmailMid} />}
             {screen === "ask" && <AskScreen key={`${askMode ?? "plain"}:${askSeq}`} autoVoice={askMode === "voice"} textFocus={askMode === "text"} />}
             {screen === "emails" && <EmailsScreen onAsk={() => setScreen("ask")} />}
@@ -215,6 +218,7 @@ export default function MobileApp() {
 /* Mayor-mode bottom tabs — Hub · Queue · Ask, thumb zone. */
 const TABS: [Screen, string, string][] = [
   ["today", I.today, "Hub"],
+  ["needsyou", I.warn, "Needs You"],
   ["queue", I.approvals, "Queue"],
   ["ask", I.mic, "Ask"],
 ];
@@ -268,6 +272,7 @@ const NAV_STAR = "M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z";
 // Operator-mode menu — everything that existed before, relocated (never deleted).
 const NAV_ITEMS: [Screen, string, string][] = [
   ["today", I.today, "Hub"],
+  ["needsyou", I.warn, "Needs You"],
   ["queue", I.approvals, "Queue"],
   ["ask", I.search, "Ask"],
   ["emails", I.emails, "Emails"],

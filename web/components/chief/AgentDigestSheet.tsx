@@ -64,7 +64,12 @@ export default function AgentDigestSheet({ run, card: c, schedule, variant, onCl
         {/* header: the agent's mark + name; urgency stays on the status dot */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <AgentAvatar agentKey={c.agentKey} size={32} />
-          <span style={{ fontSize: 15.5, fontWeight: 800, flex: 1, minWidth: 0 }}>{c.name}</span>
+          <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 1 }}>
+            <span style={{ fontSize: 15.5, fontWeight: 800 }}>{c.name}</span>
+            {c.subtitle && (
+              <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.subtitle}</span>
+            )}
+          </span>
           <span style={{ width: 9, height: 9, borderRadius: 99, background: URGENCY_C[run.urgency], flexShrink: 0 }} />
           {c.walled && <span style={privatePill}>Private</span>}
           <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{c.lastRunLabel}</span>

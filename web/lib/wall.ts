@@ -38,6 +38,11 @@ export interface WallItem {
 export interface CabinetCard {
   agentKey: string;
   name: string;
+  /** What this agent is attached to — for an email agent, the mailbox it
+   *  manages. "Gmail Email Agent" alone doesn't say WHICH account, and with two
+   *  mailboxes (gov + walled business) that is the first thing you need to
+   *  know. Absent for desks that aren't bound to one source. */
+  subtitle?: string;
   icon: string;
   color: string; // identity hue — recognition channel (urgency stays the action channel)
   statusDot: Urgency;
@@ -209,6 +214,7 @@ async function addConnectorCards(wall: WallPayload): Promise<void> {
     const agentKey = a.provider === "gmail" ? "email-gmail" : "email-outlook";
     if (off.has(agentKey)) continue;
     const name = a.provider === "gmail" ? "Gmail Email Agent" : "Outlook Email Agent";
+    const subtitle = a.address;
     const midWalk = !!a.cursor?.startsWith("bf:");
     const statusDot: Urgency = a.status === "error" ? "red" : a.status === "active" ? "clear" : "yellow";
     const headline =
@@ -218,7 +224,7 @@ async function addConnectorCards(wall: WallPayload): Promise<void> {
       : `${Number(t.messages).toLocaleString()} messages mirrored · watching for new mail.`;
     const freshAt = a.last_synced_at ?? wall.generatedAt;
     seats.push({
-      agentKey, name, icon: "mail", color: a.provider === "gmail" ? "#5b8def" : "#67adff",
+      agentKey, name, subtitle, icon: "mail", color: a.provider === "gmail" ? "#5b8def" : "#67adff",
       statusDot, walled: a.mailbox_id === "biz", origin: "default",
       headline, counts: { newItems: Number(t.today), needsYou: 0 },
       lastRunLabel: a.last_synced_at ? relLabel(a.last_synced_at, wall.generatedAt) : "never synced",

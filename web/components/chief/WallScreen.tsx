@@ -228,7 +228,15 @@ function CabinetCardView({ c, mobile, unseen, onOpen }: { c: CabinetCard; mobile
     <button onClick={onOpen} style={{ ...cardShell(mobile), ...(unseen ? unseenRing : {}) }}>
       <div style={{ display: "flex", alignItems: "center", gap: mobile ? 7 : 9, minWidth: 0 }}>
         <AgentAvatar agentKey={c.agentKey} size={mobile ? 22 : 26} />
-        <span style={{ fontSize: mobile ? 13 : 14, fontWeight: 800, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{shortName(c.name)}</span>
+        {/* Name over the source it manages. "Gmail Email Agent" alone doesn't say
+            WHICH mailbox, and with a public-record lane and a walled private one
+            that is the first thing you need to know. */}
+        <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 1 }}>
+          <span style={{ fontSize: mobile ? 13 : 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{shortName(c.name)}</span>
+          {c.subtitle && (
+            <span style={{ fontFamily: FONT.mono, fontSize: mobile ? 9.5 : 10.5, color: C.dim, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.subtitle}</span>
+          )}
+        </span>
         {unseen && <span style={newPill}>new</span>}
         {c.origin === "custom" ? <span style={originPill}>Custom</span> : c.origin === "default" && !mobile ? <span style={originPill}>Default</span> : null}
         {c.walled && <span style={privatePill}>Private</span>}

@@ -9,13 +9,16 @@
  * Agent Factory (RB-6, docs/rebuild/AGENT_FACTORY.md) — stated honestly on the
  * detail view; never a dead button.
  */
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { C, FONT, card, eyebrow } from "@/lib/cos-design";
 import { AGENT_TYPES, type AgentTypeSeed } from "@/lib/agent-types";
 
 interface Props {
   variant: "mobile" | "desktop";
   onClose: () => void;
+  /** Fired after a successful create so the Hub refetches and the new desk
+   *  appears immediately rather than on the next natural load. */
+  onCreated?: () => void;
 }
 
 /** Type tiles: stroke icon on a solid hue (same identity language as agents). */
@@ -38,7 +41,7 @@ function TypeTile({ typeKey, size = 30 }: { typeKey: string; size?: number }) {
   );
 }
 
-export default function AddAgentSheet({ variant, onClose }: Props) {
+export default function AddAgentSheet({ variant, onClose, onCreated }: Props) {
   const [name, setName] = useState("");
   const [instruction, setInstruction] = useState("");
   const [autonomy, setAutonomy] = useState<"observe" | "suggest" | "draft">("observe");
@@ -51,6 +54,20 @@ export default function AddAgentSheet({ variant, onClose }: Props) {
   type Hit = { messageId: string; date: string; from: string; subject: string; score: number };
   const [pv, setPv] = useState<{ query: string | null; hits: Hit[]; note?: string } | null>(null);
   const [pvBusy, setPvBusy] = useState(false);
+  // Connected data sources. The picker appears only when there is more than
+  // one — with a single mailbox the question has one answer and asking it is
+  // just a step between the operator and a working agent.
+  type Source = { id: string; label: string; mailbox: string };
+  const [sources, setSources] = useState<Source[]>([]);
+  const [picked, setPicked] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/agents/create")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (alive && j?.sources) setSources(j.sources as Source[]); })
+      .catch(() => {/* one source or none — the picker stays hidden */});
+    return () => { alive = false; };
+  }, []);
 
   async function preview() {
     setPvBusy(true); setErr(null);
@@ -73,11 +90,14 @@ export default function AddAgentSheet({ variant, onClose }: Props) {
     try {
       const r = await fetch("/api/agents/create", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, instruction, autonomy }),
+        body: JSON.stringify({ name, instruction, autonomy, sources: picked }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || d.ok === false) throw new Error(d.error || "could not create the agent");
       setMade({ name: d.name, focusQuery: d.focusQuery ?? null });
+      // Tell the Hub to refetch — the new desk should appear behind this sheet,
+      // not on some later load.
+      onCreated?.();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "could not create the agent");
     } finally { setBusy(false); }
@@ -195,6 +215,32 @@ export default function AddAgentSheet({ variant, onClose }: Props) {
                   </>
                 )}
               </div>
+            )}
+
+            {sources.length > 1 && (
+              <>
+                <div style={{ ...eyebrow(C.dim), margin: "16px 0 7px" }}>Which sources should it read?</div>
+                <div style={{ display: "grid", gap: 7 }}>
+                  {sources.map((src) => {
+                    const on = picked.includes(src.id);
+                    return (
+                      <button
+                        key={src.id}
+                        onClick={() => setPicked((p) => (on ? p.filter((x) => x !== src.id) : [...p, src.id]))}
+                        style={{ textAlign: "left", cursor: "pointer", padding: "10px 12px", borderRadius: 11, border: `1px solid ${on ? C.gold : C.line}`, background: on ? "rgba(231,181,60,.10)" : "transparent", color: C.text, fontFamily: FONT.sans, display: "flex", alignItems: "center", gap: 10 }}
+                      >
+                        <span style={{ width: 16, height: 16, flexShrink: 0, borderRadius: 5, border: `1.5px solid ${on ? C.gold : C.line}`, background: on ? C.gold : "transparent", color: "#081627", fontSize: 11, lineHeight: "13px", textAlign: "center", fontWeight: 900 }}>{on ? "\u2713" : ""}</span>
+                        <span style={{ fontFamily: FONT.mono, fontSize: 12.5 }}>{src.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div style={{ fontSize: 11.5, color: C.text3, lineHeight: 1.5, marginTop: 6 }}>
+                  {picked.length === 0
+                    ? "None selected \u2014 it will read every source available to it."
+                    : `It will read only ${picked.length === 1 ? "this source" : `these ${picked.length} sources`}.`}
+                </div>
+              </>
             )}
 
             <div style={{ ...eyebrow(C.dim), margin: "16px 0 7px" }}>What may it do with what it finds?</div>

@@ -33,8 +33,20 @@ export async function GET() {
   try {
     if (DEMO) return NextResponse.json({ agents: [] });
     const { loadCustomAgents } = await import("@/lib/agent-registry");
+    const { query } = await import("@/lib/db");
     const rows = await loadCustomAgents();
+    // The connected data sources, so the create form can offer a picker when
+    // there is more than one — and stay out of the way when there is one.
+    const accounts = await query<{ provider: string; address: string; mailbox_id: string }>(
+      `SELECT provider, address, mailbox_id FROM pipeline.connector_accounts
+        WHERE status = 'active' ORDER BY created_at`,
+    ).catch(() => [] as { provider: string; address: string; mailbox_id: string }[]);
     return NextResponse.json({
+      sources: accounts.map((a) => ({
+        id: a.address,
+        label: `${a.provider === "gmail" ? "Gmail" : a.provider === "gdrive" ? "Google Drive" : "Outlook"} · ${a.address}`,
+        mailbox: a.mailbox_id,
+      })),
       agents: rows.map((r) => ({
         key: r.agent_key, name: r.name, icon: r.icon, color: r.color,
         instruction: r.instruction, focusQuery: r.focus_query,
@@ -65,6 +77,7 @@ export async function POST(req: NextRequest) {
       instruction?: string;
       autonomy?: string;
       mailbox?: string;
+      sources?: string[];
     };
     const name = (body.name ?? "").trim();
     const instruction = (body.instruction ?? "").trim();
@@ -83,6 +96,10 @@ export async function POST(req: NextRequest) {
       ? (body.autonomy as "observe" | "suggest" | "draft")
       : "observe";
     const mailbox = body.mailbox === "biz" ? "biz" : "gov";
+    // Empty = every source in the lane (the behaviour before sources existed).
+    const sources = Array.isArray(body.sources)
+      ? body.sources.filter((x) => typeof x === "string" && x.trim()).slice(0, 20)
+      : [];
 
     const { slugify, getCustomAgent } = await import("@/lib/agent-registry");
     const key = slugify(name);
@@ -112,15 +129,15 @@ export async function POST(req: NextRequest) {
     await query(
       `INSERT INTO app.agents
          (agent_key, name, icon, color, instruction, focus_query, focus_query_for,
-          autonomy, mailbox, created_by)
-       VALUES ($1, $2, 'smart_toy', $3, $4, $5, $6, $7, $8, $9)`,
+          autonomy, mailbox, sources, created_by)
+       VALUES ($1, $2, 'smart_toy', $3, $4, $5, $6, $7, $8, $9, $10)`,
       [key, name.slice(0, 80), color, instruction.slice(0, 4000),
-       focusQuery, focusQuery ? instruction.slice(0, 4000) : null, autonomy, mailbox, actor],
+       focusQuery, focusQuery ? instruction.slice(0, 4000) : null, autonomy, mailbox, sources, actor],
     );
 
     await logAudit({
       actor, action: "agent.create", objectRef: key,
-      meta: { key, name, autonomy, mailbox, derivedQuery: focusQuery },
+      meta: { key, name, autonomy, mailbox, sources, derivedQuery: focusQuery },
       req,
     });
 

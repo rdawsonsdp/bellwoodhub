@@ -370,7 +370,12 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
     // model call. A stale cache resolves to null rather than searching for the
     // previous instruction.
     const focusQuery = effectiveFocusQuery(ov);
-    const focusHits = focusQuery ? await fetchFocusSlice(agent, focusQuery).catch(() => []) : [];
+    // A created desk may be scoped to specific connector accounts; a built-in
+    // reads everything in its lane.
+    const agentSources = custom?.sources ?? [];
+    const focusHits = focusQuery
+      ? await fetchFocusSlice(agent, focusQuery, undefined, agentSources).catch(() => [])
+      : [];
 
     // Quiet desk: nothing to read, nothing remembered — skip the model
     // entirely; an honest "nothing new" beats prompted-into-filler output.

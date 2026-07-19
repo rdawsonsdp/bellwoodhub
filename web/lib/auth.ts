@@ -41,7 +41,7 @@ if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
       // lib/send-cage (SEND_ENABLED + SAFE_SEND_ALLOWLIST, fail-closed).
       authorization: {
         params: {
-          scope: "openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/gmail.send",
+          scope: "openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/drive.readonly",
           access_type: "offline",
           prompt: "consent",
         },

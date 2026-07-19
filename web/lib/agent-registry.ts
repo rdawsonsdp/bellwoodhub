@@ -31,6 +31,7 @@ export interface CustomAgentRow {
   focus_query_for: string | null;
   autonomy: DomainAutonomy;
   mailbox: "gov" | "biz";
+  sources: string[];
   active: boolean;
 }
 
@@ -73,7 +74,7 @@ export function overridesOf(r: CustomAgentRow): AgentOverrides {
 }
 
 const SELECT_COLS = `agent_key, name, icon, color, instruction, focus_query,
-                     focus_query_for, autonomy, mailbox, active`;
+                     focus_query_for, autonomy, mailbox, sources, active`;
 
 /** Created agents, newest last. Fails soft: a project whose 014 migration
  *  hasn't been applied yet still runs its built-in agents. */

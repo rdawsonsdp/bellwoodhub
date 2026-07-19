@@ -92,6 +92,10 @@ export async function fetchFocusSlice(
   agent: Pick<DomainAgent, "key" | "walled">,
   focus: string,
   limit = FOCUS_LIMIT,
+  /** Connector accounts this desk reads (provenance._account). Empty/omitted =
+   *  every source in its lane. NARROWS within the mailbox wall, never across
+   *  it — the lane filter below runs regardless, and this is an extra AND. */
+  sources: string[] = [],
 ): Promise<FocusHit[]> {
   const vec = await embedQuery(focus);
   type Row = {
@@ -116,12 +120,14 @@ export async function fetchFocusSlice(
       WHERE m.tenant_id = $2
         AND c.embedding IS NOT NULL
         AND COALESCE(m.provenance->>'_mailbox', 'gov') = $3
+        AND ($6::text[] IS NULL OR cardinality($6::text[]) = 0
+             OR m.provenance->>'_account' = ANY($6::text[]))
       GROUP BY m.source_ref, m.thread_id, m.sent_at, m.from_name, m.from_email,
                m.subject, m.message_id, m.clean_body
      HAVING MAX(1 - (c.embedding <=> $1::vector)) >= $5
       ORDER BY score DESC
       LIMIT $4`,
-    [JSON.stringify(vec), TENANT, mailboxOf(agent), limit, MIN_SCORE],
+    [JSON.stringify(vec), TENANT, mailboxOf(agent), limit, MIN_SCORE, sources],
   );
   return rows.map((r) => ({
     messageId: r.source_ref,

@@ -176,7 +176,15 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
         </button>
       )}
 
-      {addOpen && <AddAgentSheet variant={variant} onClose={() => setAddOpen(false)} />}
+      {addOpen && (
+        <AddAgentSheet
+          variant={variant}
+          onClose={() => setAddOpen(false)}
+          /* Creating an agent changes the Hub — refetch so the new desk appears
+             immediately instead of on the next natural load. */
+          onCreated={() => { setAddOpen(false); loadWall().then(setWall).catch(() => {}); }}
+        />
+      )}
 
       {openAgent && wall && wall.runs[openAgent] && (
         <AgentDigestSheet

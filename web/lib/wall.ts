@@ -459,7 +459,28 @@ export function assembleWall(
   const runsOut: Record<string, WallRun> = {};
   for (const agent of roster) {
     const run = runs.find((r) => r.agentKey === agent.key);
-    if (!run) continue;
+    // NEVER-RUN AGENT. A desk created in the app has no run until the next
+    // cycle, and skipping it meant the operator created an agent and watched
+    // nothing happen for up to an hour — indistinguishable from a failure.
+    // Show it waiting, so the Hub reflects what exists rather than only what
+    // has already produced.
+    if (!run) {
+      if (!agent.active) continue;
+      cabinet.push({
+        agentKey: agent.key,
+        name: agent.name,
+        icon: agent.icon,
+        color: agent.color,
+        statusDot: "clear",
+        walled: !!agent.walled,
+        sources: agent.walled ? sources.biz : sources.gov,
+        headline: "Ready — waiting for its first run.",
+        counts: { newItems: 0, needsYou: 0 },
+        lastRunLabel: "not run yet",
+        freshAt: now,
+      });
+      continue;
+    }
     cabinet.push({
       agentKey: agent.key,
       name: agent.name,

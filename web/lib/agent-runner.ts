@@ -25,7 +25,7 @@ import {
   validateRunOutput, type AgentMemoryItem, type AgentRunOutput, type AgentSliceMessage, type MemoryKind,
 } from "./agent-run";
 import { query } from "./db";
-import { fetchFocusSlice, type FocusHit } from "./agent-focus";
+import { fetchFocusSlice, fetchFocusSlicePlanned, type FocusHit } from "./agent-focus";
 import { effectiveFocusQuery, type AgentOverrides } from "./agent-instruction";
 import { allAgents, getCustomAgent, overridesOf } from "./agent-registry";
 import { complete } from "./agents/claude";
@@ -439,8 +439,16 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
     // A created desk may be scoped to specific connector accounts; a built-in
     // reads everything in its lane.
     const agentSources = custom?.sources ?? [];
+    // Route focus retrieval through the 3-pass fused planner (same quality Ask
+    // gets) rather than semantic-only. The planner does NOT enforce the mailbox
+    // wall or account scope — fetchFocusSlicePlanned re-applies both as a guard.
+    // AGENT_FOCUS_SEMANTIC=1 is a kill-switch back to the old path if needed.
+    const useSemantic = process.env.AGENT_FOCUS_SEMANTIC === "1";
     const focusHits = focusQuery
-      ? await fetchFocusSlice(agent, focusQuery, undefined, agentSources).catch(() => [])
+      ? await (useSemantic
+          ? fetchFocusSlice(agent, focusQuery, undefined, agentSources)
+          : fetchFocusSlicePlanned(agent, focusQuery, undefined, agentSources)
+        ).catch(() => [])
       : [];
 
     // Quiet desk: nothing to read, nothing remembered — skip the model

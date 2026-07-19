@@ -74,8 +74,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { fetchFocusSlice } = await import("@/lib/agent-focus");
-    const hits = await fetchFocusSlice(target, derived, 12);
+    // Preview must show what the AGENT actually retrieves — so it uses the same
+    // planner-backed path (with the same wall/account/score guards).
+    const { fetchFocusSlice, fetchFocusSlicePlanned } = await import("@/lib/agent-focus");
+    const fetchSlice = process.env.AGENT_FOCUS_SEMANTIC === "1" ? fetchFocusSlice : fetchFocusSlicePlanned;
+    const hits = await fetchSlice(target, derived, 12);
     return NextResponse.json({
       ok: true,
       agentKey: body.agentKey ?? null,

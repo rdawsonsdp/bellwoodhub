@@ -27,6 +27,7 @@
  */
 import { query } from "./db";
 import { embedQuery } from "./agents/voyage";
+import { plan } from "./planner";
 import type { DomainAgent } from "./domain-agents";
 import type { AgentSliceMessage } from "./agent-run";
 
@@ -140,4 +141,71 @@ export async function fetchFocusSlice(
     snippet: r.snippet ?? "",
     score: Number(r.score),
   }));
+}
+
+/**
+ * fetchFocusSlicePlanned — the SAME agent focus retrieval, but backed by the
+ * 3-pass fused planner (lib/planner.ts) instead of semantic-only cosine.
+ *
+ * WHY. The Ask path uses plan() — structured filters + a graph walk over
+ * resolved entities + semantic kNN, fused with RRF — and in live testing it
+ * handled date reasoning and enumeration that semantic-only missed. Agents were
+ * stuck on the weaker fetchFocusSlice. This routes them through the same
+ * retrieval so a desk sees what Ask sees.
+ *
+ * TWO GUARDS THIS ADDS THAT plan() DOES NOT ENFORCE ITSELF:
+ *   1. THE MAILBOX WALL. plan() filters only by tenant_id — it will happily
+ *      return walled business mail. Routing a government agent through it
+ *      unguarded would leak biz→gov (DEC-6 / FOIA). So every candidate is
+ *      re-checked against the agent's lane here; a source that isn't in the
+ *      agent's lane is dropped, full stop. This guard is the safety net
+ *      regardless of what the planner returns.
+ *   2. SOURCE (account) SCOPE. A created agent scoped to specific connector
+ *      accounts (app.agents.sources) only sees those; plan() knows nothing of
+ *      it, so it's applied here too.
+ *
+ * MIN_SCORE is kept: plan()'s Source.score is cosine (1 − distance), so the same
+ * floor still protects the empty-match case (a query with no real hits returns
+ * nothing rather than the planner's nearest-but-irrelevant rows).
+ */
+export async function fetchFocusSlicePlanned(
+  agent: Pick<DomainAgent, "key" | "walled">,
+  focus: string,
+  limit = FOCUS_LIMIT,
+  sources: string[] = [],
+): Promise<FocusHit[]> {
+  // Ask the fused planner for a generous candidate set — we'll trim after the
+  // wall/account/score guard, so over-fetch to survive the filtering.
+  const result = await plan(focus, { k: Math.max(limit * 2, 20) });
+  const candidates = result.sources;
+  if (!candidates.length) return [];
+
+  // Guard: which candidate source_refs are actually in this agent's lane and
+  // (if scoped) its accounts. THIS is the wall — plan() didn't apply it.
+  const refs = candidates.map((s) => s.messageId);
+  const allowed = await query<{ source_ref: string }>(
+    `SELECT source_ref FROM canonical.messages
+      WHERE tenant_id = $1
+        AND source_ref = ANY($2::text[])
+        AND COALESCE(provenance->>'_mailbox','gov') = $3
+        AND ($4::text[] IS NULL OR cardinality($4::text[]) = 0
+             OR provenance->>'_account' = ANY($4::text[]))`,
+    [TENANT, refs, mailboxOf(agent), sources],
+  ).catch(() => [] as { source_ref: string }[]);
+  const ok = new Set(allowed.map((r) => r.source_ref));
+
+  return candidates
+    .filter((s) => ok.has(s.messageId) && s.score >= MIN_SCORE)
+    .slice(0, limit)
+    .map((s) => ({
+      messageId: s.messageId,
+      threadId: s.threadId,
+      date: s.date,
+      fromName: s.fromName,
+      fromEmail: s.fromEmail,
+      subject: s.subject,
+      topic: s.topic,
+      snippet: s.snippet,
+      score: s.score,
+    }));
 }

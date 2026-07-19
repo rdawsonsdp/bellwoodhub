@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // /chief was the app's route until 2026-07-19. Anyone who bookmarked it —
+  // including the Mayor — should land on the app, not a 404.
+  async redirects() {
+    return [{ source: "/chief", destination: "/hub", permanent: false }];
+  },
+
   reactStrictMode: true,
   // Release stamp (RD 2026-07-05): expose the deploying commit to the client
   // so the UI shows exactly which release Vercel is serving.

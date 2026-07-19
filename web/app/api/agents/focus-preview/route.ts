@@ -27,27 +27,62 @@ export async function POST(req: NextRequest) {
     if (process.env.AUTH_ENABLED === "1" && !session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const body = (await req.json()) as { agentKey?: string; focus?: string };
-    const focus = (body.focus ?? "").trim();
+    const body = (await req.json()) as {
+      agentKey?: string;
+      /** Raw prose from the one box. `focus` is kept as an alias so an older
+       *  client keeps working. */
+      instruction?: string;
+      focus?: string;
+      /** Lane to search when no agent exists yet (the create form). */
+      mailbox?: "gov" | "biz";
+    };
+    const instruction = (body.instruction ?? body.focus ?? "").trim();
+    if (!instruction) return NextResponse.json({ error: "instruction (string) required" }, { status: 400 });
+
+    // The agent may not exist yet — that is the create-form case. Fall back to
+    // a lane-only stand-in so retrieval still respects the mailbox wall.
     const agent = body.agentKey ? domainAgentByKey(body.agentKey) : undefined;
-    if (!agent) return NextResponse.json({ error: "unknown agentKey" }, { status: 400 });
-    if (!focus) return NextResponse.json({ error: "focus (string) required" }, { status: 400 });
+    const walled = agent ? !!agent.walled : body.mailbox === "biz";
+    const target = agent ?? { key: body.agentKey ?? "preview", walled };
 
     if (DEMO) {
       return NextResponse.json({
         ok: true,
         mode: "demo",
+        query: null,
         hits: [],
         note: "Demo mode — no archive to search. Preview runs against the live record.",
       });
     }
 
+    // DERIVE FIRST. The runner searches with the query derived from the
+    // instruction, not the instruction itself — so a preview that embedded the
+    // raw prose could show results the agent would never see. That is the one
+    // thing a preview must never do. Same call the save path makes.
+    const { deriveFocusQuery } = await import("@/lib/agent-instruction");
+    const derived = await deriveFocusQuery(instruction);
+    if (!derived) {
+      // Nothing searchable in the instruction. This is the single most common
+      // way a new agent ends up useless, and it costs ten seconds to fix here
+      // instead of a day of empty digests.
+      return NextResponse.json({
+        ok: true,
+        query: null,
+        hits: [],
+        reason: "no-searchable-subject",
+        note: "This doesn't name anything specific enough to search for. Name a thing you could look up — \u201cwater main breaks\u201d, \u201cinvoices\u201d, \u201cbuilding permits\u201d — rather than a quality like \u201canything important\u201d.",
+      });
+    }
+
     const { fetchFocusSlice } = await import("@/lib/agent-focus");
-    const hits = await fetchFocusSlice(agent, focus.slice(0, 1000), 12);
+    const hits = await fetchFocusSlice(target, derived, 12);
     return NextResponse.json({
       ok: true,
-      agentKey: agent.key,
-      mailbox: agent.walled ? "biz" : "gov",
+      agentKey: body.agentKey ?? null,
+      // What is ACTUALLY being searched for — shown to the operator so the
+      // derivation isn't a black box they can only judge by its results.
+      query: derived,
+      mailbox: walled ? "biz" : "gov",
       hits: hits.map((h) => ({
         messageId: h.messageId,
         date: h.date,

@@ -249,7 +249,7 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
         {/* Mayor mode: exactly three destinations. No hardcoded nav badges —
             every count the Mayor sees traces to getWall() (invariant 9). */}
         <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".16em", padding: "4px 10px 8px" }}>Workspace</div>
-        {item("today", "Wall", <Ico d={ICON.today} />, <Star w={13} c={C.gold} />)}
+        {item("today", "Hub", <Ico d={ICON.today} />, <Star w={13} c={C.gold} />)}
         {item("queue", "Queue", <Ico d={ICON.approvals} />)}
         {item("ask", "Ask", <Star w={19} c="currentColor" />)}
         {operator && (
@@ -289,7 +289,7 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
               <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Operator mode</span>
             </button>
             <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5, marginTop: 7 }}>
-              Reveals Emails, Calendar, History, Sources, Staff Agents, Approvals, and Admin. The Mayor&apos;s view is Wall · Queue · Ask.
+              Reveals Emails, Calendar, History, Sources, Staff Agents, Approvals, and Admin. The Mayor&apos;s view is Hub · Queue · Ask.
             </div>
             {process.env.NEXT_PUBLIC_AUTH_ENABLED === "1" && (
               <button onClick={() => { window.location.href = "/api/auth/signout"; }} style={{ display: "block", width: "100%", marginTop: 11, padding: "9px 12px", borderRadius: 10, cursor: "pointer", background: "rgba(var(--ink),.05)", border: `1px solid ${C.line}`, color: C.text2, fontWeight: 700, fontSize: 12.5, fontFamily: FONT.sans }}>Sign out</button>

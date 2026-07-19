@@ -5,7 +5,7 @@ export const metadata = {
   description: "A single record from the village's institutional memory.",
 };
 
-// Same pre-paint theme + fonts as the /chief shell so the deep-link page is
+// Same pre-paint theme + fonts as the /hub shell so the deep-link page is
 // visually the same app (Phase 4 thread view).
 export default function EmailLayout({ children }: { children: ReactNode }) {
   return (

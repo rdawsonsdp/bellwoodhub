@@ -23,7 +23,7 @@ async function handle(req: NextRequest) {
   }
   try {
     // Phase 4: the notification payload is the Wall's top line + queue size —
-    // "1 urgent: {headline} · {n} drafts ready · ≈{eta} min" → deep-link /chief.
+    // "1 urgent: {headline} · {n} drafts ready · ≈{eta} min" → deep-link /hub.
     if (DEMO) {
       const wall = await getWall({ hour: new Date().getHours() });
       return NextResponse.json({
@@ -31,7 +31,7 @@ async function handle(req: NextRequest) {
         urgent: wall.needsYouNow.filter((i) => i.urgency === "red").length,
         waiting: wall.footer.waiting,
         etaMinutes: wall.footer.etaMinutes,
-        deepLink: "/chief",
+        deepLink: "/hub",
         generatedAt: wall.generatedAt,
       });
     }

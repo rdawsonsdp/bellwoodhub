@@ -8,7 +8,7 @@ export const metadata = {
 
 // Fonts ported from the Claude Design prototype (Public Sans / Newsreader /
 // JetBrains Mono). App Router hoists these <link>s into <head>.
-export default function ChiefLayout({ children }: { children: ReactNode }) {
+export default function HubLayout({ children }: { children: ReactNode }) {
   return (
     <>
       {/* Apply the saved theme before paint (no flash). Default: daylight (bright).

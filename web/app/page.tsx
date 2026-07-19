@@ -4,5 +4,5 @@ import { redirect } from "next/navigation";
 // ported into components/chief/ChiefApp.tsx). The older marketing "Village
 // Knowledge Hub" landing is still available at components/landing.tsx if needed.
 export default function Page() {
-  redirect("/chief");
+  redirect("/hub");
 }

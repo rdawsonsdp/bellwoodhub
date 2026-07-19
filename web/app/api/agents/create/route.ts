@@ -140,6 +140,75 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function PATCH(req: NextRequest) {
+  try {
+    const session = process.env.AUTH_ENABLED === "1" ? await auth() : null;
+    if (process.env.AUTH_ENABLED === "1" && !session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (DEMO) return NextResponse.json({ ok: true, mode: "demo" });
+
+    const body = (await req.json()) as {
+      key?: string; instruction?: string; autonomy?: string; active?: boolean;
+    };
+    const key = (body.key ?? "").trim();
+    if (!key) return NextResponse.json({ error: "key required" }, { status: 400 });
+    if (DOMAIN_AGENTS.some((a) => a.key === key)) {
+      return NextResponse.json(
+        { error: "Built-in agents are edited on their own card, not here." },
+        { status: 400 },
+      );
+    }
+    const { getCustomAgent } = await import("@/lib/agent-registry");
+    const existing = await getCustomAgent(key);
+    if (!existing) return NextResponse.json({ error: "No such agent." }, { status: 404 });
+
+    const { query } = await import("@/lib/db");
+    const sets: string[] = [];
+    const vals: unknown[] = [];
+    let focusQuery: string | null = existing.focus_query;
+
+    if (typeof body.instruction === "string" && body.instruction.trim().length >= 10) {
+      const instruction = body.instruction.trim().slice(0, 4000);
+      // Re-derive ONLY when the text actually changed. The cached query is
+      // keyed to the instruction it came from, so an unchanged save shouldn't
+      // spend a model call — and a changed one must not keep the old query
+      // (effectiveFocusQuery treats a stale pair as no query at all).
+      if (instruction !== existing.instruction) {
+        const { deriveFocusQuery } = await import("@/lib/agent-instruction");
+        focusQuery = await deriveFocusQuery(instruction);
+        sets.push(`focus_query = $${sets.length + 2}`); vals.push(focusQuery);
+        sets.push(`focus_query_for = $${sets.length + 2}`); vals.push(focusQuery ? instruction : null);
+      }
+      sets.push(`instruction = $${sets.length + 2}`); vals.push(instruction);
+    }
+    if (["observe", "suggest", "draft"].includes(body.autonomy ?? "")) {
+      sets.push(`autonomy = $${sets.length + 2}`); vals.push(body.autonomy);
+    }
+    if (typeof body.active === "boolean") {
+      sets.push(`active = $${sets.length + 2}`); vals.push(body.active);
+    }
+    if (!sets.length) return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
+
+    await query(
+      `UPDATE app.agents SET ${sets.join(", ")}, updated_at = now() WHERE agent_key = $1`,
+      [key, ...vals],
+    );
+    await logAudit({
+      actor: session?.user?.email ?? null, action: "agent.config.instructions",
+      objectRef: key, meta: { key, fields: sets.map((x) => x.split(" ")[0]), derivedQuery: focusQuery }, req,
+    });
+    return NextResponse.json({
+      ok: true, key, focusQuery,
+      note: focusQuery ? null : "No search query could be derived — this agent will only see new mail until the wording changes.",
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Internal error";
+    console.error("[/api/agents/create PATCH]", message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const session = process.env.AUTH_ENABLED === "1" ? await auth() : null;

@@ -82,7 +82,7 @@ function ConnectButtons({ providers, haveOutlook, haveGmail }: { providers: Reco
       {missing.map(([id, , label]) => (
         <button
           key={id}
-          onClick={() => void signIn(id, { callbackUrl: "/chief" })}
+          onClick={() => void signIn(id, { callbackUrl: "/hub" })}
           style={{
             cursor: "pointer", border: `1px solid ${C.blue}`, background: "rgba(111,168,220,.12)",
             color: C.blue, borderRadius: 99, padding: "9px 16px",
@@ -235,7 +235,7 @@ export default function SyncScreen() {
                     // a dead token (invalid_grant) is fixed by consenting again —
                     // the re-consent rotates the vault secret and re-activates the row
                     <button
-                      onClick={() => void signIn(a.provider === "outlook" ? "microsoft-entra-id" : "google", { callbackUrl: "/chief" })}
+                      onClick={() => void signIn(a.provider === "outlook" ? "microsoft-entra-id" : "google", { callbackUrl: "/hub" })}
                       style={{
                         marginTop: 8, cursor: "pointer", border: `1px solid ${C.red}`, background: "rgba(224,108,95,.10)",
                         color: C.redText, borderRadius: 99, padding: "7px 14px", fontFamily: FONT.sans, fontWeight: 700, fontSize: 12.5,

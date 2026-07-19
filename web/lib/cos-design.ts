@@ -32,7 +32,7 @@ export const C = {
   cardBd: "var(--c-cardbd)",
 } as const;
 
-/** Fonts (loaded via the /chief layout <link>). */
+/** Fonts (loaded via the /hub layout <link>). */
 export const FONT = {
   sans: "'Public Sans',system-ui,sans-serif",
   serif: "'Newsreader',serif",

@@ -143,6 +143,41 @@ function RunAgentsButton({ running, onRunning }: { running: boolean; onRunning: 
   );
 }
 
+/** Agents CREATED in the app (app.agents) — they exist only in the database, so
+ *  the client has to fetch them. Cached at module scope: the gear on a created
+ *  agent's card deep-links straight into its detail, and that initial useState
+ *  runs before any effect could have loaded them. Populated on first mount and
+ *  refreshed whenever the page mounts. */
+export interface CreatedAgent {
+  key: string; name: string; icon: string; color: string;
+  instruction: string; focusQuery: string | null;
+  autonomy: "observe" | "suggest" | "draft"; mailbox: "gov" | "biz"; active: boolean;
+}
+let CREATED: CreatedAgent[] = [];
+export const createdByKey = (k: string): CreatedAgent | undefined => CREATED.find((a) => a.key === k);
+
+/** A created agent viewed as a console card, so the gear lands on a real
+ *  detail page exactly as it does for a built-in desk. */
+function createdAsCos(key: string): CosAgent | null {
+  const a = createdByKey(key);
+  if (!a) return null;
+  const autonomy = a.autonomy === "draft" ? "R3" : a.autonomy === "suggest" ? "R2" : "R1";
+  return {
+    key: a.key, name: a.name, autonomy, status: a.active ? "active" : "planned",
+    powers: [], role: a.instruction.split(". ")[0], job: a.instruction,
+    produces: a.autonomy === "draft" ? "Cited digests + draft replies for your approval." : "Cited digests.",
+    plain: {
+      reads: a.focusQuery
+        ? `Records matching \u201c${a.focusQuery}\u201d across the whole archive${a.mailbox === "biz" ? ", in the walled private lane" : ""}.`
+        : "New mail only \u2014 no search query could be derived from its instruction yet.",
+      produces: "A cited digest on its agent card.",
+      never: "It never sends anything itself and never cites evidence it wasn't given.",
+      decides: "You.",
+    },
+    recent: [],
+  };
+}
+
 /** A cabinet desk (domain registry) viewed as a console card — so the gear on
  *  any box lands on a real detail page even before the rosters unify. */
 function domainAsCos(key: string): CosAgent | null {
@@ -166,11 +201,29 @@ function domainAsCos(key: string): CosAgent | null {
 export default function AgentsPage({ initialAgentKey, initialSection }: { initialAgentKey?: string; initialSection?: string } = {}) {
   // Deep link from a cabinet box's gear (RD 2026-07-05): land directly on
   // that agent's detail. Cabinet desks resolve via the domain registry.
-  const [sel, setSel] = useState<CosAgent | null>(() => (initialAgentKey ? agentByKey(initialAgentKey) ?? domainAsCos(initialAgentKey) : null));
+  const [sel, setSel] = useState<CosAgent | null>(() => (initialAgentKey ? agentByKey(initialAgentKey) ?? domainAsCos(initialAgentKey) ?? createdAsCos(initialAgentKey) : null));
   void initialSection; // consumed in the openSections initializer below
   // Running state lifted here so every card can flip its badge to "Running…"
   // while a manual pass is in flight (RD 2026-07-03).
   const [running, setRunning] = useState(false);
+  // Load agents created in the app. If the gear deep-linked to one before the
+  // fetch landed, `sel` is null — resolve it once the list arrives rather than
+  // dumping the operator on the roster with no explanation.
+  const [createdTick, setCreatedTick] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/agents/create")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!alive || !j?.agents) return;
+        CREATED = j.agents as CreatedAgent[];
+        setCreatedTick((n) => n + 1);
+        if (initialAgentKey) setSel((cur) => cur ?? createdAsCos(initialAgentKey));
+      })
+      .catch(() => {/* built-in desks still render */});
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Section collapse (RD 2026-07-05: "collapsible … for quick reading") —
   // Agents open by default; the nav sub-menu targets one section directly.
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
@@ -206,7 +259,7 @@ export default function AgentsPage({ initialAgentKey, initialSection }: { initia
       body: JSON.stringify({ agentKey: key, enabled: next }),
     }).catch(() => setConfigs((c) => ({ ...c, [key]: !next }))); // roll back on failure
   };
-  if (sel) return <AgentDetail a={effective(sel)} activity={live.activity[sel.key]} onBack={() => setSel(null)} onOpenAgent={(k) => setSel(agentByKey(k) ?? domainAsCos(k))} />;
+  if (sel) return <AgentDetail a={effective(sel)} activity={live.activity[sel.key]} onBack={() => setSel(null)} onOpenAgent={(k) => setSel(agentByKey(k) ?? domainAsCos(k) ?? createdAsCos(k))} />;
 
   const active = COS_AGENTS.filter((a) => a.status !== "planned").length + DOMAIN_AGENTS.filter((d) => d.active).length;
   const roster = COS_AGENTS.length + DOMAIN_AGENTS.length;
@@ -426,6 +479,10 @@ function AgentDetail({ a, activity, onBack, onOpenAgent }: { a: CosAgent; activi
  *  run time, and are audited. Autonomy is deliberately not editable here. */
 function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOpenAgent?: (key: string) => void }) {
   const d = domainAgentByKey(agentKey);
+  // A CREATED agent stores its instruction on its own row (app.agents), not in
+  // app.agent_configs.overrides. Same box, different endpoint — the operator
+  // should not be able to tell which kind of agent they are editing.
+  const created = createdByKey(agentKey);
   const [charter, setCharter] = useState("");
   const [goals, setGoals] = useState("");
   const [urgency, setUrgency] = useState("");
@@ -443,6 +500,12 @@ function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOp
   const [pvErr, setPvErr] = useState<string | null>(null);
 
   useEffect(() => {
+    if (created) {
+      setInstruction(created.instruction);
+      setEdited(true);
+      setState("idle");
+      return;
+    }
     if (!d) return;
     fetch("/api/agents/config")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -463,7 +526,7 @@ function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOp
   // Connector agents (Gmail/Outlook) don't run a prompt — they mirror mail.
   // Say so honestly and point to the desks that DO read this mail and can be
   // instructed (RD 2026-07-05: "I don't see where to update the prompt").
-  if (!d) {
+  if (!d && !created) {
     const desks = DOMAIN_AGENTS.filter((x) => x.active);
     return (
       <div style={panelStyle(HUE.instructions)}>
@@ -492,13 +555,31 @@ function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOp
   const save = async (reset: boolean) => {
     setState("saving"); setErr(null);
     try {
+      if (created) {
+        // Reset means "clear my edits back to the registry default" — a created
+        // agent HAS no registry default, so there is nothing to reset to.
+        if (reset) { setState("idle"); return; }
+        const r = await fetch("/api/agents/create", {
+          method: "PATCH", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ key: agentKey, instruction }),
+        });
+        const dta = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(dta.error || "save failed");
+        created.instruction = instruction;
+        created.focusQuery = dta.focusQuery ?? null;
+        setState("saved");
+        window.setTimeout(() => setState("idle"), 1800);
+        return;
+      }
       const overrides = reset
         ? null
         : { instruction, ...(advanced ? { charter, goals: goals.split("\n").map((g) => g.trim()).filter(Boolean), urgencyRules: urgency, focus } : {}) };
       const r = await fetch("/api/agents/config", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ agentKey, overrides }) });
       const dta = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(dta.error || "save failed");
-      if (reset) { setInstruction(""); setCharter(d.charter); setGoals(d.goals.join("\n")); setUrgency(d.urgencyRules); setFocus(""); setHits(null); }
+      // `d` is defined on this path: the created-agent branch returned above,
+      // and the !d && !created guard rendered instead.
+      if (reset && d) { setInstruction(""); setCharter(d.charter); setGoals(d.goals.join("\n")); setUrgency(d.urgencyRules); setFocus(""); setHits(null); }
       setEdited(!reset);
       setState("saved");
       window.setTimeout(() => setState("idle"), 1800);

@@ -12,11 +12,11 @@ export default function EmailStandalone({ mid }: { mid: string }) {
   return (
     <div style={{ minHeight: "100dvh", background: "var(--c-appbg)", color: C.text, fontFamily: FONT.sans }}>
       <div style={{ maxWidth: 780, margin: "0 auto", padding: "16px 18px 60px" }}>
-        <Link href="/chief" style={{ display: "inline-flex", alignItems: "center", gap: 7, color: C.gold, textDecoration: "none", fontWeight: 800, fontSize: 13.5, padding: "6px 0 14px" }}>
+        <Link href="/hub" style={{ display: "inline-flex", alignItems: "center", gap: 7, color: C.gold, textDecoration: "none", fontWeight: 800, fontSize: 13.5, padding: "6px 0 14px" }}>
           ← Back to Bellwood Hub
         </Link>
         {mid ? (
-          <ThreadView mid={mid} onGoQueue={() => { window.location.href = "/chief"; }} />
+          <ThreadView mid={mid} onGoQueue={() => { window.location.href = "/hub"; }} />
         ) : (
           <div style={{ padding: 30, textAlign: "center", color: C.dim, fontSize: 14 }}>No document specified.</div>
         )}

@@ -111,7 +111,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
         <div style={{ position: "relative", maxWidth: mobile ? "78%" : "72%" }}>
           <div style={{ ...eyebrow("#8a6a1f"), fontWeight: 700 }}>Your Chief of Staff · {wall?.dateLabel ?? "—"}</div>
           <div style={{ fontFamily: FONT.serif, fontSize: mobile ? "clamp(16px, 4.4vw, 21px)" : "clamp(21px, 5vw, 30px)", fontWeight: 600, color: "#14335c", lineHeight: 1.12, marginTop: 9, letterSpacing: "-.01em" }}>
-            {wall?.greeting ?? (failed ? "The Wall is unavailable." : "Reading your agents…")}
+            {wall?.greeting ?? (failed ? "The Hub is unavailable." : "Reading your agents…")}
           </div>
           {wall?.sendLive && <div style={{ marginTop: 10 }}><SendLivePill /></div>}
         </div>

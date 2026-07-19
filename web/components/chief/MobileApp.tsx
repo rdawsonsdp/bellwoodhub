@@ -129,7 +129,7 @@ export default function MobileApp() {
   const [refreshKey, setRefreshKey] = useState(0);
   useEffect(() => watchAutoTheme(), []); // keep "auto" theme shifting through the day
   useEffect(() => { setOperator(loadOperatorMode()); }, []);
-  // adoption metric #1: cold open → first tap (is the Wall legible in 5s?)
+  // adoption metric #1: cold open → first tap (is the Hub legible in 5s?)
   useEffect(() => {
     logUsage("app_open");
     const t0 = Date.now();
@@ -212,9 +212,9 @@ export default function MobileApp() {
   );
 }
 
-/* Mayor-mode bottom tabs — Wall · Queue · Ask, thumb zone. */
+/* Mayor-mode bottom tabs — Hub · Queue · Ask, thumb zone. */
 const TABS: [Screen, string, string][] = [
-  ["today", I.today, "Wall"],
+  ["today", I.today, "Hub"],
   ["queue", I.approvals, "Queue"],
   ["ask", I.mic, "Ask"],
 ];
@@ -267,7 +267,7 @@ function ProfileSheet({ operator, onToggle, onClose }: { operator: boolean; onTo
 const NAV_STAR = "M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z";
 // Operator-mode menu — everything that existed before, relocated (never deleted).
 const NAV_ITEMS: [Screen, string, string][] = [
-  ["today", I.today, "Wall"],
+  ["today", I.today, "Hub"],
   ["queue", I.approvals, "Queue"],
   ["ask", I.search, "Ask"],
   ["emails", I.emails, "Emails"],

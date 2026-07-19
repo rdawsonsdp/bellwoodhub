@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Bellwood Hub — Mayor's AI Chief of Staff",
     short_name: "Bellwood Hub",
     description: "The Mayor's AI Chief of Staff — institutional memory for the Village of Bellwood.",
-    start_url: "/chief",
+    start_url: "/hub",
     display: "standalone",
     background_color: "#0a1322",
     theme_color: "#0a1322",

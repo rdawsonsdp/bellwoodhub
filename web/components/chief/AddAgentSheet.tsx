@@ -45,6 +45,27 @@ export default function AddAgentSheet({ variant, onClose }: Props) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [made, setMade] = useState<{ name: string; focusQuery: string | null } | null>(null);
+  // Preview BEFORE create. Typing "anything important" and getting noise a day
+  // later is the main way a new agent ends up distrusted; catching it here
+  // costs one cheap call and ten seconds.
+  type Hit = { messageId: string; date: string; from: string; subject: string; score: number };
+  const [pv, setPv] = useState<{ query: string | null; hits: Hit[]; note?: string } | null>(null);
+  const [pvBusy, setPvBusy] = useState(false);
+
+  async function preview() {
+    setPvBusy(true); setErr(null);
+    try {
+      const r = await fetch("/api/agents/focus-preview", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ instruction }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "preview failed");
+      setPv({ query: d.query ?? null, hits: d.hits ?? [], note: d.note });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "preview failed");
+    } finally { setPvBusy(false); }
+  }
 
   async function create() {
     if (made) { setMade(null); setName(""); setInstruction(""); return; }
@@ -124,7 +145,7 @@ export default function AddAgentSheet({ variant, onClose }: Props) {
             <div style={{ ...eyebrow(C.dim), margin: "16px 0 7px" }}>What should it do?</div>
             <textarea
               value={instruction}
-              onChange={(e) => setInstruction(e.target.value)}
+              onChange={(e) => { setInstruction(e.target.value); setPv(null); }}
               rows={5}
               placeholder={"Plain English \u2014 the way you'd brief a person.\n\ne.g. Watch for anything about water main breaks, street flooding, or sewer backups. Tell me where, how many, and whether the same address keeps coming up. Flag anything a resident is still waiting on."}
               style={{ width: "100%", boxSizing: "border-box", background: "rgba(var(--ink),.04)", border: `1px solid ${C.line}`, borderRadius: 10, padding: "11px 13px", color: C.text, fontSize: 14, lineHeight: 1.55, fontFamily: FONT.sans, resize: "vertical" }}
@@ -134,6 +155,47 @@ export default function AddAgentSheet({ variant, onClose }: Props) {
               &ldquo;invoices&rdquo;) find the right mail; abstract ones (&ldquo;anything important&rdquo;)
               return noise.
             </div>
+
+            <button
+              onClick={preview}
+              disabled={pvBusy || instruction.trim().length < 10}
+              style={{ marginTop: 9, cursor: instruction.trim().length < 10 ? "default" : "pointer", background: "rgba(var(--ink),.06)", border: `1px solid ${C.line}`, borderRadius: 9, padding: "8px 13px", color: C.text2, fontSize: 12.5, fontWeight: 700, fontFamily: FONT.sans, opacity: instruction.trim().length < 10 ? 0.5 : 1 }}
+            >
+              {pvBusy ? "Searching\u2026" : "Preview what it will find"}
+            </button>
+
+            {pv && (
+              <div style={{ marginTop: 10, padding: "11px 13px", borderRadius: 11, border: `1px solid ${pv.query && pv.hits.length ? C.line : "#e6c9a8"}`, background: pv.query && pv.hits.length ? "rgba(var(--ink),.03)" : "rgba(240,163,60,.08)" }}>
+                {!pv.query ? (
+                  <div style={{ fontSize: 12.5, color: C.text2, lineHeight: 1.55 }}>
+                    <b style={{ color: C.text }}>Nothing searchable in that yet.</b>{" "}
+                    {pv.note}
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 11.5, color: C.text3, marginBottom: pv.hits.length ? 8 : 0, lineHeight: 1.5 }}>
+                      It will search the record for{" "}
+                      <span style={{ fontFamily: FONT.mono, color: C.text2 }}>&ldquo;{pv.query}&rdquo;</span>
+                      {pv.hits.length ? ` \u2014 ${pv.hits.length} record${pv.hits.length === 1 ? "" : "s"} match today.` : " \u2014 but nothing in the record matches it yet."}
+                    </div>
+                    {pv.hits.slice(0, 6).map((h) => (
+                      <div key={h.messageId} style={{ display: "flex", gap: 9, alignItems: "baseline", fontSize: 12.5, color: C.text2, borderTop: `1px solid ${C.line}`, paddingTop: 6, marginTop: 6 }}>
+                        <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim, flexShrink: 0 }}>{h.date.slice(0, 10)}</span>
+                        <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <b style={{ color: C.text }}>{h.subject}</b> \u00b7 {h.from}
+                        </span>
+                      </div>
+                    ))}
+                    {!pv.hits.length && (
+                      <div style={{ fontSize: 11.5, color: C.text3, lineHeight: 1.5, marginTop: 4 }}>
+                        That can be fine if the mail hasn&rsquo;t arrived yet \u2014 but if you expected
+                        matches, reword it using the words the mail itself would use.
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
 
             <div style={{ ...eyebrow(C.dim), margin: "16px 0 7px" }}>What may it do with what it finds?</div>
             <div style={{ display: "grid", gap: 7 }}>

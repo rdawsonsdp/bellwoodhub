@@ -72,18 +72,19 @@
   <h1>Bellwood Hub — Session Status Report</h1>
   <p class="sub">
     Working session, Saturday 18 July 2026 · evening &nbsp;·&nbsp;
-    Branch <code>agent-focus-and-sync-fixes</code> — 9 commits, pushed, <b>not merged</b> &nbsp;·&nbsp;
+    Branch <code>agent-focus-and-sync-fixes</code> — 10 commits, pushed, <b>not merged</b> &nbsp;·&nbsp;
     Prepared for R. Dawson, Strategic Data Products
   </p>
 
   <div class="grid4 avoid">
     <div class="box g">
       <h3>🟢 Good to go</h3>
-      <div class="n">7</div>
+      <div class="n">8</div>
       <ul>
+        <li><b>FEAT-30</b> Agent Factory — agents can now be created in the app, not deployed</li>
         <li><b>FEAT-27</b> Focus — instruct an agent in plain English</li>
         <li><b>FEAT-29</b> Google Security agent — first live run found real account-recovery attempts</li>
-        <li><b>BUG-2 / BUG-3</b> two silent-failure classes closed</li>
+        <li><b>BUG-2 / BUG-3 / BUG-4</b> three silent-failure classes closed</li>
         <li><b>ISS-6</b> fabricated metrics panel deleted</li>
       </ul>
     </div>
@@ -145,6 +146,12 @@
   <table class="avoid">
     <thead><tr><th>ID</th><th>Item</th><th>Note</th><th style="text-align:right">Status</th></tr></thead>
     <tbody>
+      <tr><td><b>FEAT-30</b></td><td>Agent Factory</td>
+        <td>"Add an agent" was a disabled mockup. Agents are now rows, not deploys — verified: 8 agents ran, the created one returned 6 cited points.</td>
+        <td style="text-align:right"><span class="pill p-done">Done</span></td></tr>
+      <tr><td><b>BUG-4</b></td><td>Run output truncated at 2048 tokens</td>
+        <td>One JSON object, so truncation killed the entire run. Quiet built-in desks hid it; the first productive agent hit it immediately.</td>
+        <td style="text-align:right"><span class="pill p-fix">Fixed</span></td></tr>
       <tr><td><b>FEAT-27</b></td><td>Focus + the one box</td>
         <td>One instruction; a Haiku call derives the search query at save time. No migration needed.</td>
         <td style="text-align:right"><span class="pill p-done">Done</span></td></tr>
@@ -219,17 +226,17 @@
   <table class="avoid">
     <thead><tr><th>Category</th><th class="num">Tokens</th><th class="num">Rate / MTok</th><th class="num">Cost</th></tr></thead>
     <tbody>
-      <tr><td>Input (uncached)</td><td class="num">1,177</td><td class="num">$5.00</td><td class="num">$0.01</td></tr>
-      <tr><td>Output</td><td class="num">423,847</td><td class="num">$25.00</td><td class="num">$10.60</td></tr>
-      <tr><td>Cache write</td><td class="num">799,540</td><td class="num">$6.25</td><td class="num">$5.00</td></tr>
-      <tr><td>Cache read</td><td class="num">148,997,542</td><td class="num">$0.50</td><td class="num">$74.50</td></tr>
-      <tr class="tot"><td>Session total</td><td class="num">150,222,106</td><td class="num">—</td><td class="num">$90.10</td></tr>
+      <tr><td>Input (uncached)</td><td class="num">1,273</td><td class="num">$5.00</td><td class="num">$0.01</td></tr>
+      <tr><td>Output</td><td class="num">484,160</td><td class="num">$25.00</td><td class="num">$12.10</td></tr>
+      <tr><td>Cache write</td><td class="num">1,501,619</td><td class="num">$6.25</td><td class="num">$9.39</td></tr>
+      <tr><td>Cache read</td><td class="num">183,378,360</td><td class="num">$0.50</td><td class="num">$91.69</td></tr>
+      <tr class="tot"><td>Session total</td><td class="num">185,365,412</td><td class="num">—</td><td class="num">$113.18</td></tr>
     </tbody>
   </table>
   <p style="font-size:12px;color:var(--ink3);margin-top:8px;margin-bottom:0">
     Measured from the session transcript, not estimated. Claude Opus 4.8 rates.
-    <b>99% of tokens were cache reads</b> — at full input price those same tokens would have cost $745, so
-    prompt caching saved roughly <b>$670</b> on this session alone. Excludes the app's own API spend
+    <b>99% of tokens were cache reads</b> — at full input price those same tokens would have cost $917, so
+    prompt caching saved roughly <b>$825</b> on this session alone. Excludes the app's own API spend
     (Voyage embeddings, Haiku classification, Sonnet agent runs), which bills to the project's keys separately.
   </p>
 

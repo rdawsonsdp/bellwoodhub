@@ -158,7 +158,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
           }
         >
           {!wall && [0, 1, 2, 3].map((i) => <div key={i} style={{ ...card, height: mobile ? 104 : 118, minWidth: 0, animation: "bwPulse 1.3s ease-in-out infinite" }} />)}
-          {wall?.cabinet.map((c) =>
+          {wall && attentionOrder(wall.cabinet).map((c) =>
             c.agentKey === "schedule" ? (
               <ScheduleCardView key={c.agentKey} c={c} schedule={wall.schedule} mobile={mobile} unseen={isUnseen(seen, c.agentKey, c.freshAt)} onOpen={() => openDigest(c.agentKey)} />
             ) : (
@@ -223,9 +223,47 @@ const headlineClamp = (mobile: boolean): CSSProperties => ({
   overflowWrap: "anywhere",
 });
 
+/** Attention order. The goal is to look once and see what needs you (RD
+ *  2026-07-18), and registry order can't do that — a red desk sits wherever the
+ *  cabinet happens to list it, below three quiet ones.
+ *
+ *  Tiers, not a full sort: red → needs-you → new items → quiet. WITHIN a tier
+ *  the original registry order is preserved, so cards keep stable relative
+ *  positions and only move when their state actually changes. A card that
+ *  jumped around on every render would cost more recognition than the ordering
+ *  buys. */
+function attentionOrder(cards: CabinetCard[]): CabinetCard[] {
+  const tier = (c: CabinetCard): number => {
+    if (c.statusDot === "red") return 0;
+    if (c.counts.needsYou > 0) return 1;
+    if (c.statusDot === "yellow") return 2;
+    if (c.counts.newItems > 0) return 3;
+    return 4;
+  };
+  return cards
+    .map((c, i) => ({ c, i, t: tier(c) }))
+    .sort((a, b) => a.t - b.t || a.i - b.i)
+    .map((x) => x.c);
+}
+
 function CabinetCardView({ c, mobile, unseen, onOpen }: { c: CabinetCard; mobile: boolean; unseen: boolean; onOpen: () => void }) {
+  // A desk with nothing to report RECEDES rather than the busy ones lighting up.
+  // Card colour is already the identity channel (deliberately kept away from the
+  // urgency reds/ambers), so a highlight tint would collide with it. Dimming the
+  // quiet desks makes the one that matters pop without inventing a new colour —
+  // and "quiet" reads as quiet, not as a problem. Still fully legible and
+  // clickable: this is de-emphasis, not disablement.
+  const quiet = c.counts.newItems === 0 && c.counts.needsYou === 0 && c.statusDot === "clear";
   return (
-    <button onClick={onOpen} style={{ ...cardShell(mobile), ...(unseen ? unseenRing : {}) }}>
+    <button
+      onClick={onOpen}
+      style={{
+        ...cardShell(mobile),
+        ...(unseen ? unseenRing : {}),
+        ...(quiet ? { opacity: 0.62, filter: "saturate(.55)" } : {}),
+        transition: "opacity .25s ease, filter .25s ease",
+      }}
+    >
       <div style={{ display: "flex", alignItems: "center", gap: mobile ? 7 : 9, minWidth: 0 }}>
         <AgentAvatar agentKey={c.agentKey} size={mobile ? 22 : 26} />
         {/* Name over the source it manages. "Gmail Email Agent" alone doesn't say
@@ -243,6 +281,15 @@ function CabinetCardView({ c, mobile, unseen, onOpen }: { c: CabinetCard; mobile
         <span style={{ width: 9, height: 9, borderRadius: 99, background: URGENCY_C[c.statusDot], flexShrink: 0, boxShadow: c.statusDot !== "clear" ? `0 0 0 3px ${URGENCY_C[c.statusDot]}22` : undefined }} />
       </div>
       <div style={headlineClamp(mobile)}>{c.headline}</div>
+      {/* Where this desk's information comes from. Obvious to us that every agent
+          reads the connected mailbox; not obvious to a mayor looking at a card
+          that says "Council & Records". */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 7, minWidth: 0 }}>
+        <span style={{ fontFamily: FONT.mono, fontSize: mobile ? 9 : 9.5, letterSpacing: ".06em", textTransform: "uppercase", color: C.dim, flexShrink: 0 }}>Reads</span>
+        <span style={{ fontFamily: FONT.mono, fontSize: mobile ? 9.5 : 10.5, color: C.muted, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {c.sources && c.sources.length ? c.sources.join(" · ") : "no source connected yet"}
+        </span>
+      </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: "auto", flexWrap: "wrap" }}>
         <span style={{ fontFamily: FONT.mono, fontSize: mobile ? 10.5 : 11.5, color: c.counts.needsYou ? C.goldHi : C.muted }}>
           {c.counts.newItems} new{c.counts.needsYou > 0 && ` · ${c.counts.needsYou} need you`}
@@ -256,8 +303,13 @@ function CabinetCardView({ c, mobile, unseen, onOpen }: { c: CabinetCard; mobile
 /** The Schedule seat wears a calendar face (the shared ComingUp component —
  *  a visual cue, not a calendar replacement; links go OUT to the real ones). */
 function ScheduleCardView({ c, schedule, mobile, unseen, onOpen }: { c: CabinetCard; schedule: WallSchedule; mobile: boolean; unseen: boolean; onOpen: () => void }) {
+  // Same rule as CabinetCardView — but a schedule card with upcoming events is
+  // never "quiet", even with no digest points: the calendar IS its content.
+  const quiet =
+    c.counts.newItems === 0 && c.counts.needsYou === 0 && c.statusDot === "clear" &&
+    schedule.days.every((d) => d.events.length === 0);
   return (
-    <div role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => e.key === "Enter" && onOpen()} style={{ ...cardShell(mobile), gap: 10, gridColumn: mobile ? "1 / -1" : undefined, padding: "14px 15px", ...(unseen ? unseenRing : {}) }}>
+    <div role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => e.key === "Enter" && onOpen()} style={{ ...cardShell(mobile), gap: 10, gridColumn: mobile ? "1 / -1" : undefined, padding: "14px 15px", ...(unseen ? unseenRing : {}), ...(quiet ? { opacity: 0.62, filter: "saturate(.55)" } : {}), transition: "opacity .25s ease, filter .25s ease" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
         <AgentAvatar agentKey={c.agentKey} size={26} />
         <span style={{ fontSize: 14, fontWeight: 800, flex: 1, minWidth: 0 }}>{shortName(c.name)}</span>

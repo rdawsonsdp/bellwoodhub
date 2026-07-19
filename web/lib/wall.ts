@@ -43,6 +43,12 @@ export interface CabinetCard {
    *  mailboxes (gov + walled business) that is the first thing you need to
    *  know. Absent for desks that aren't bound to one source. */
   subtitle?: string;
+  /** Where this desk's information actually comes from, in the user's words.
+   *  Obvious to us that every agent reads the connected mailbox; not obvious to
+   *  a mayor looking at a card that says "Council & Records". Shown on the card
+   *  so nobody has to take the output on faith. Empty = no source connected
+   *  yet, which is itself worth showing. */
+  sources?: string[];
   icon: string;
   color: string; // identity hue — recognition channel (urgency stays the action channel)
   statusDot: Urgency;
@@ -163,7 +169,15 @@ export async function getWall(opts: WallOpts = {}): Promise<WallPayload> {
       r.output.digest.forEach((d) => d.sourceMessageIds.forEach((id) => ids.add(id)));
       r.output.actItems.forEach((a) => a.citations.forEach((id) => ids.add(id)));
     }
-    const wall = assembleWall(runs, new Date().toISOString(), opts, await liveMessageMeta([...ids]));
+    const [msgMeta, govSources, bizSources] = await Promise.all([
+      liveMessageMeta([...ids]),
+      sourceLabelsFor(false),
+      sourceLabelsFor(true),
+    ]);
+    const wall = assembleWall(runs, new Date().toISOString(), opts, msgMeta, {
+      gov: govSources,
+      biz: bizSources,
+    });
     // the cage state rides the same payload as everything else (invariant 9)
     wall.sendLive = process.env.SEND_ENABLED === "1";
     // "Coming up" reads the live calendar mirror — fixture events never leak here
@@ -181,6 +195,23 @@ export async function getWall(opts: WallOpts = {}): Promise<WallPayload> {
  *  from pipeline.connector_accounts — no agent_runs required. The digest
  *  points are source-less by design: they are connector telemetry, not
  *  claims about mail content. */
+
+/** The mailboxes a desk actually reads, phrased for the person reading the card.
+ *  A walled desk sees only the private lane and a government desk only the
+ *  public-record lane — the same wall fetchRelatedContext and fetchFocusSlice
+ *  enforce (DEC-6), stated in the UI instead of left implicit. */
+async function sourceLabelsFor(walled: boolean): Promise<string[]> {
+  const { query } = await import("./db");
+  const rows = await query<{ provider: string; address: string; mailbox_id: string }>(
+    `SELECT provider, address, mailbox_id FROM pipeline.connector_accounts
+      WHERE status = 'active' ORDER BY created_at`,
+  ).catch(() => [] as { provider: string; address: string; mailbox_id: string }[]);
+  const lane = walled ? "biz" : "gov";
+  return rows
+    .filter((r) => r.mailbox_id === lane)
+    .map((r) => `${r.provider === "gmail" ? "Gmail" : "Outlook"} · ${r.address}`);
+}
+
 async function addConnectorCards(wall: WallPayload): Promise<void> {
   const { query } = await import("./db");
   const accounts = await query<{
@@ -225,6 +256,7 @@ async function addConnectorCards(wall: WallPayload): Promise<void> {
     const freshAt = a.last_synced_at ?? wall.generatedAt;
     seats.push({
       agentKey, name, subtitle, icon: "mail", color: a.provider === "gmail" ? "#5b8def" : "#67adff",
+      sources: [`${a.provider === "gmail" ? "Gmail" : "Outlook"} · ${a.address}`],
       statusDot, walled: a.mailbox_id === "biz", origin: "default",
       headline, counts: { newItems: Number(t.today), needsYou: 0 },
       lastRunLabel: a.last_synced_at ? relLabel(a.last_synced_at, wall.generatedAt) : "never synced",
@@ -318,7 +350,15 @@ async function recentSentDays(): Promise<SentDay[]> {
 /** Pure assembly over a set of latest runs — exported so the eval harness can
  *  prove the ranking/dedup/walled rules on fabricated runs too. `metaIn` is the
  *  live path's canonical metadata; absent → the demo fixtures resolve. */
-export function assembleWall(runs: AgentRun[], now: string, opts: WallOpts = {}, metaIn?: Map<string, MessageMeta>): WallPayload {
+export function assembleWall(
+  runs: AgentRun[],
+  now: string,
+  opts: WallOpts = {},
+  metaIn?: Map<string, MessageMeta>,
+  /** Per-lane source labels, resolved by the caller. Passed in rather than
+   *  queried so this stays a pure function the eval harness can drive. */
+  sources: { gov: string[]; biz: string[] } = { gov: [], biz: [] },
+): WallPayload {
   // one metadata pass over every cited message
   const allIds = new Set<string>();
   for (const r of runs) {
@@ -420,6 +460,7 @@ export function assembleWall(runs: AgentRun[], now: string, opts: WallOpts = {},
       color: agent.color,
       statusDot: run.output.urgency,
       walled: !!agent.walled,
+      sources: agent.walled ? sources.biz : sources.gov,
       headline: run.output.headline,
       counts: { newItems: run.output.digest.length, needsYou: run.output.actItems.length },
       lastRunLabel: relLabel(run.ranAt, now),

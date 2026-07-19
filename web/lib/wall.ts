@@ -20,6 +20,7 @@
 import { DOMAIN_AGENTS, domainAgentByKey, type Urgency, type DomainAgent } from "./domain-agents";
 import { URGENCY_RANK, type AgentRun } from "./agent-run";
 import { DEMO, DEMO_NOW, demoEvents, demoMessageMeta, type MessageMeta } from "./demo";
+import { agentSchedule } from "./agent-schedule";
 import { DEMO_AGENT_RUNS } from "./demo/data/domain-agents";
 
 export type WallAction = "Approve" | "Review" | "Read";
@@ -127,6 +128,10 @@ export interface WallSchedule {
 }
 
 export interface WallPayload {
+  /** When agents run, stated plainly. A quiet desk and a stopped scheduler are
+   *  indistinguishable without this, and that ambiguity is what makes an
+   *  operator stop trusting the agents. */
+  agentSchedule?: import("./agent-schedule").AgentScheduleInfo;
   greeting: string; // one sober, time-coherent line
   dateLabel: string; // derives from the SAME clock as the content
   needsYouNow: WallItem[];
@@ -543,6 +548,12 @@ export function assembleWall(
     needsYouNow,
     cabinet,
     schedule: buildSchedule(now),
+    // Latest run across all desks is the liveness signal — if nothing has run
+    // since well past a due slot, the scheduler is the story, not the digests.
+    agentSchedule: agentSchedule(
+      runs.length ? runs.map((r) => r.ranAt).sort().at(-1) ?? null : null,
+      new Date(now),
+    ),
     footer: { handled, waiting, etaMinutes },
     runs: runsOut,
     generatedAt: now,

@@ -266,7 +266,10 @@ export interface AgentRunResult {
  *  (2026-07-03) proved the alternative: models asked to report on nothing
  *  write uncited filler, and the constitution rightly rejects it. */
 const quietRun = (): AgentRunOutput => ({
-  headline: "Quiet desk — nothing new this pass.",
+  // Say it CHECKED. "Quiet desk" reads as absence; an operator can't tell it
+  // apart from an agent that never ran, and that ambiguity is what makes them
+  // stop trusting the roster.
+  headline: "Checked — nothing new since the last run.",
   urgency: "clear",
   digest: [],
   actItems: [],

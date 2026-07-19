@@ -146,7 +146,14 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
 
       {/* ── THE CABINET ── */}
       <div style={{ marginTop: mobile ? 13 : 26 }}>
-        <div style={sectionHead}>Agents</div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+          <div style={sectionHead}>Agents</div>
+          {/* WHEN THEY RUN, always visible. Without it a quiet desk and a
+              stopped scheduler look identical, and an operator who suspects the
+              second goes back to reading their own inbox — correctly, because
+              nothing here told them otherwise. */}
+          {wall?.agentSchedule && <ScheduleStrip s={wall.agentSchedule} />}
+        </div>
         {/* Mobile is a two-column GRID — the whole cabinet visible in one
             vertical scroll (horizontal decks fight the thumb; RD 2026-07-02).
             The Schedule card spans full width for its calendar face. */}
@@ -230,6 +237,38 @@ const headlineClamp = (mobile: boolean): CSSProperties => ({
   overflow: "hidden",
   overflowWrap: "anywhere",
 });
+
+
+/** The scheduler, in one line. Reads as a heartbeat when healthy and as a
+ *  warning when it isn't — never as silence, which is the state that costs
+ *  trust. */
+function ScheduleStrip({ s }: { s: NonNullable<WallPayload["agentSchedule"]> }) {
+  const next = new Date(s.nextRunAt);
+  const mins = Math.max(0, Math.round((next.getTime() - Date.now()) / 60000));
+  const untilText = mins <= 0 ? "any moment" : mins < 60 ? `in ${mins} min` : `in about ${Math.round(mins / 60)}h`;
+  const at = next.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+  if (s.stale) {
+    return (
+      <span
+        title={s.staleReason ?? undefined}
+        style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: FONT.mono, fontSize: 10.5, color: C.orange, background: "rgba(240,163,60,.12)", border: "1px solid rgba(240,163,60,.3)", borderRadius: 99, padding: "3px 9px" }}
+      >
+        <span style={{ width: 6, height: 6, borderRadius: 99, background: C.orange, flexShrink: 0 }} />
+        agents may be stopped — {s.staleReason}
+      </span>
+    );
+  }
+  return (
+    <span
+      title={`${s.cadence}. Next run ${at}.`}
+      style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: FONT.mono, fontSize: 10.5, color: C.text3 }}
+    >
+      <span style={{ width: 6, height: 6, borderRadius: 99, background: C.greenText, flexShrink: 0 }} />
+      running hourly · next {untilText} ({at})
+    </span>
+  );
+}
 
 /** Attention order. The goal is to look once and see what needs you (RD
  *  2026-07-18), and registry order can't do that — a red desk sits wherever the

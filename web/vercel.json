@@ -1,7 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "regions": ["iad1"],
+  "regions": [
+    "iad1"
+  ],
   "crons": [
     {
       "path": "/api/cron/refresh",
@@ -34,6 +36,14 @@
     {
       "path": "/api/cron/sentinel",
       "schedule": "30 * * * *"
+    },
+    {
+      "schedule": "0 11 * * *",
+      "path": "/api/cron/triage"
+    },
+    {
+      "schedule": "0 12-22 * * *",
+      "path": "/api/cron/triage"
     }
   ]
 }

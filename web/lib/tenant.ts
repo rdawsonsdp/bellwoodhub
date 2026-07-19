@@ -21,6 +21,10 @@ export interface TenantConfig {
   title: string;       // browser/document title
   persona: CosPersona; // Chief-of-Staff voice defaults
   githubRepo: string;  // where in-app feedback opens issues
+  /** Municipal tenants get the FOIA/village vocabulary and the built-in
+   *  Police/Fire/Council cabinet. Non-municipal tenants (a bakery) start with an
+   *  empty roster + their own created agents, and drop the civic words. */
+  isMunicipal?: boolean;
 }
 
 const bellwood: TenantConfig = {
@@ -33,12 +37,34 @@ const bellwood: TenantConfig = {
   title: "Mayor's AI Chief of Staff — Village of Bellwood",
   persona: { mayorName: "Mayor Harvey", greeting: "Good {timeOfDay}, {name}.", tone: "warm", instructions: "" },
   githubRepo: "rdawsonsdp/bellwoodhub",
+  isMunicipal: true,
+};
+
+/*
+ * Brown Sugar Bakery — the first non-municipal tenant. The fields were named
+ * for a village (orgName/state/established/seal), but they generalize: orgName
+ * is just the org, `established` is the founding year, and the "mayor" persona
+ * field is simply the person being briefed. `appName` carries what the product
+ * calls itself in the chrome. `isMunicipal: false` is the switch that turns off
+ * the village-only vocabulary and the built-in Police/Fire/Council cabinet — a
+ * bakery starts with an empty roster and its own created agents.
+ */
+const brownsugar: TenantConfig = {
+  id: "brownsugar",
+  appName: "Shop Assistant",
+  orgName: "Brown Sugar Bakery",
+  shortName: "Brown Sugar",
+  state: "Chicago",
+  established: "2002",
+  title: "Brown Sugar Bakery — Shop Assistant",
+  persona: { mayorName: "Stephanie", greeting: "Good {timeOfDay}, {name}.", tone: "warm", instructions: "" },
+  githubRepo: "rdawsonsdp/bellwoodhub",
+  isMunicipal: false,
 };
 
 export const TENANTS: Record<string, TenantConfig> = {
   bellwood,
-  // Add new customers here (or split into lib/tenants/<id>.ts as the list grows):
-  // riverton: { id: "riverton", orgName: "City of Riverton", ... },
+  brownsugar,
 };
 
 export const TENANT_ID = (process.env.NEXT_PUBLIC_TENANT || "bellwood").toLowerCase();

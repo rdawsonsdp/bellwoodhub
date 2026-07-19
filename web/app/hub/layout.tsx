@@ -1,7 +1,8 @@
+import { tenant } from "@/lib/tenant";
 import type { ReactNode } from "react";
 
 export const metadata = {
-  title: "Mayor's AI Chief of Staff — Village of Bellwood",
+  title: tenant.title,
   description:
     "Graph-augmented, entity-resolved institutional memory for the Mayor's office. Agents draft; the Mayor decides.",
 };

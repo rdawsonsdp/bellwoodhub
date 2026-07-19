@@ -1,16 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import { tenant } from "@/lib/tenant";
 
 export const metadata: Metadata = {
-  title: "Bellwood Hub — Mayor's AI Chief of Staff",
+  title: tenant.title,
   description:
-    "Ask the Village of Bellwood's entire email and daily-report archive in plain English — grounded, cited answers over a Supabase pgvector store.",
+    `Ask ${tenant.orgName}'s entire archive in plain English — grounded, cited answers.`,
   manifest: "/manifest.webmanifest",
   // Standalone PWA + American-flag home-screen icon (app/apple-icon.png) on iOS.
   appleWebApp: {
     capable: true,
-    title: "Bellwood Hub",
+    title: tenant.shortName,
     statusBarStyle: "black-translucent",
   },
 };

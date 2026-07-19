@@ -21,6 +21,7 @@ import { DOMAIN_AGENTS, domainAgentByKey, type Urgency, type DomainAgent } from 
 import { URGENCY_RANK, type AgentRun } from "./agent-run";
 import { DEMO, DEMO_NOW, demoEvents, demoMessageMeta, type MessageMeta } from "./demo";
 import { agentSchedule } from "./agent-schedule";
+import { tenant } from "./tenant";
 import { DEMO_AGENT_RUNS } from "./demo/data/domain-agents";
 
 export type WallAction = "Approve" | "Review" | "Read";
@@ -540,7 +541,7 @@ export function assembleWall(
   // fire (invariant: never playful when red exists; no weather, no coffee).
   const hour = opts.hour ?? 8;
   const part = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
-  const greeting = `Good ${part}, ${(opts.mayorName || "Mayor Harvey").trim()}.`;
+  const greeting = `Good ${part}, ${(opts.mayorName || tenant.persona.mayorName).trim()}.`;
 
   return {
     greeting,

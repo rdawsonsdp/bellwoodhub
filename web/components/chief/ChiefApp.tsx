@@ -12,6 +12,7 @@
  * events in time, and state what's missing.
  */
 import { createContext, useContext, useState, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { tenant, orgPrefix } from "@/lib/tenant";
 import { C, FONT, APP_BG, card, eyebrow, cite } from "@/lib/cos-design";
 import { IS_LIVE_BUILD } from "@/lib/live";
 import { ASK_SEEDS } from "@/lib/ask-seeds";
@@ -239,7 +240,7 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
           <svg width="22" height="22" viewBox="0 0 24 24" fill="#0a1322"><path d="M12 1.5l2 6.5 6.5 2-6.5 2-2 6.5-2-6.5L3.5 10l6.5-2z" /></svg>
         </span>
         <div style={{ lineHeight: 1.15 }}>
-          <div style={{ fontFamily: FONT.serif, fontSize: 18, fontWeight: 600, color: C.text }}>Chief of Staff</div>
+          <div style={{ fontFamily: FONT.serif, fontSize: 18, fontWeight: 600, color: C.text }}>{tenant.appName}</div>
           <div style={{ ...eyebrow(C.dim), fontSize: 9.5, letterSpacing: ".06em", marginTop: 1 }}>Institutional Memory</div>
           <ReleaseTag />
         </div>
@@ -1375,7 +1376,7 @@ function Approvals() {
             <Ico d={["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z", "M14 2v6h6M9 15l2 2 4-4"]} w={19} sw={1.8} stroke={C.blue} />
             <div style={{ flex: 1 }}><div style={{ fontSize: 13.5, color: C.text, fontWeight: 600 }}>Audit trail</div><div style={{ fontSize: 11, color: C.muted, marginTop: 1 }}>every retrieval, draft &amp; action logged</div></div>
           </div>
-          <div style={{ textAlign: "center", fontFamily: FONT.mono, fontSize: 9.5, color: "#445", letterSpacing: ".05em" }}>VILLAGE OF BELLWOOD · INSTITUTIONAL MEMORY v1.0</div>
+          <div style={{ textAlign: "center", fontFamily: FONT.mono, fontSize: 9.5, color: "#445", letterSpacing: ".05em" }}>{`${orgPrefix ? orgPrefix + " " : ""}${tenant.shortName.toUpperCase()} · ${tenant.isMunicipal ? "INSTITUTIONAL MEMORY" : "SHOP MEMORY"} v1.0`}</div>
         </div>
       </div>
     </div>

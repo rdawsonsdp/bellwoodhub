@@ -18,6 +18,7 @@
  * created and built-in agents. Nothing in this table can widen them.
  */
 import { DOMAIN_AGENTS, type DomainAgent, type DomainAutonomy } from "./domain-agents";
+import { tenant } from "./tenant";
 import { query } from "./db";
 import type { AgentOverrides } from "./agent-instruction";
 
@@ -103,10 +104,16 @@ export async function getCustomAgent(key: string): Promise<CustomAgentRow | null
  * time too; this is the second lock.
  */
 export async function allAgents(): Promise<DomainAgent[]> {
-  const builtinKeys = new Set(DOMAIN_AGENTS.map((a) => a.key));
+  // The built-in cabinet (Police, Fire, Council, …) is municipal furniture. A
+  // non-municipal tenant — a bakery — starts with NO built-in desks and runs
+  // entirely on the agents its operator creates. This is the single chokepoint
+  // the runner (runAllAgents) and the Hub (getWall) both read, so scoping here
+  // scopes what actually runs and appears.
+  const builtins = tenant.isMunicipal === false ? [] : DOMAIN_AGENTS;
+  const builtinKeys = new Set(builtins.map((a) => a.key));
   const custom = await loadCustomAgents();
   return [
-    ...DOMAIN_AGENTS,
+    ...builtins,
     ...custom.filter((r) => !builtinKeys.has(r.agent_key)).map(toDomainAgent),
   ];
 }

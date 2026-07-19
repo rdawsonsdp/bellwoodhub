@@ -1,3 +1,4 @@
+import { tenant } from "./tenant";
 /*
  * morning.ts — the Chief of Staff "morning briefing" contract + persona config.
  *
@@ -19,7 +20,7 @@ export interface CosPersona {
 }
 
 export const COS_PERSONA_DEFAULT: CosPersona = {
-  mayorName: "Mayor Harvey",
+  mayorName: tenant.persona.mayorName,
   greeting: "Good {timeOfDay}, {name}.",
   tone: "warm",
   instructions: "",

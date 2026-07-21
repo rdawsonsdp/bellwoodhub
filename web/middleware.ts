@@ -17,6 +17,10 @@ import { auth } from "@/lib/auth";
 // before a session exists.
 const OPEN: RegExp[] = [
   /^\/api\/auth\//,
+  // the graceful sign-in error page — its whole audience is people WITHOUT a
+  // session (an Outlook consent failure lands here); gating it behind auth
+  // bounced them straight back to signin (seen live on bellwood-mayor).
+  /^\/auth\/error$/,
   /^\/api\/cron\//,
   /^\/api\/telemetry$/,
   /^\/api\/(mcp|sse|message)/,

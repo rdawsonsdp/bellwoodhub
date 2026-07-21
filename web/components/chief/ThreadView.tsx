@@ -24,20 +24,37 @@ interface Props {
   onGoQueue?: () => void;
 }
 
+/** What went wrong loading the email — surfaced at the TOP of the box, since a
+ *  failed connection is exactly where the eye looks first. */
+type LoadError = { kind: "notfound" | "connection"; detail: string };
+
 export default function ThreadView({ mid, onOpenHistory, onGoQueue }: Props) {
   const [detail, setDetail] = useState<EmailDetail | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [error, setError] = useState<LoadError | null>(null);
   const [queueMatch, setQueueMatch] = useState<QueueItem | null>(null);
   const [entities, setEntities] = useState<EntityListItem[]>([]);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let live = true;
     setDetail(null);
-    setFailed(false);
+    setError(null);
     fetch(`/api/email?mid=${encodeURIComponent(mid)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then(async (r) => {
+        if (r.ok) return r.json();
+        // 404 = the message isn't in the record; anything else = the source /
+        // hydration connection failed. Both are shown at the top, worded plainly.
+        throw { kind: r.status === 404 ? "notfound" : "connection", detail: `The mail source returned ${r.status}.` } as LoadError;
+      })
       .then((d) => live && setDetail(d))
-      .catch(() => live && setFailed(true));
+      .catch((e: unknown) => {
+        if (!live) return;
+        // a rejected fetch() (network/DNS/TLS) has no HTTP status — it's a
+        // connection failure, the same class as the mail-mirror "fetch failed".
+        const le = e && typeof e === "object" && "kind" in e ? (e as LoadError)
+          : { kind: "connection" as const, detail: "The connection to the mail source failed." };
+        setError(le);
+      });
     fetch("/api/queue")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((q: { items: QueueItem[] }) => {
@@ -49,10 +66,40 @@ export default function ThreadView({ mid, onOpenHistory, onGoQueue }: Props) {
       .then((d: { entities?: EntityListItem[] }) => live && setEntities(d.entities ?? []))
       .catch(() => { /* chips optional */ });
     return () => { live = false; };
-  }, [mid]);
+  }, [mid, reloadKey]);
 
-  if (failed) return <div style={{ padding: 26, textAlign: "center", color: C.dim, fontSize: 13.5 }}>That document could not be found.</div>;
+  // A failed connection belongs at the TOP of the box — the intuitive place to
+  // look — as a clear banner with a way to try again, not a lonely muted line.
+  if (error) return (
+    <div style={{ padding: "0 2px 8px" }}>
+      <div style={{ ...card, padding: 15, borderColor: error.kind === "connection" ? "rgba(224,108,79,.5)" : C.line, background: error.kind === "connection" ? "rgba(224,108,79,.08)" : "rgba(var(--ink),.03)" }}>
+        <div style={{ fontFamily: FONT.serif, fontSize: 16, fontWeight: 600, color: C.text, marginBottom: 4 }}>
+          {error.kind === "connection" ? "Couldn't load this email" : "This email isn't in the record"}
+        </div>
+        <div style={{ fontSize: 13, color: C.text2, lineHeight: 1.5 }}>
+          {error.kind === "connection"
+            ? "The connection to the mail source failed. The message is still in your mailbox — try again, or open it in your email."
+            : "It may not have been mirrored yet, or it lives in a walled mailbox this view can't reach."}
+        </div>
+        {error.kind === "connection" && (
+          <button onClick={() => setReloadKey((k) => k + 1)} style={{ marginTop: 12, cursor: "pointer", border: 0, borderRadius: 10, padding: "9px 15px", fontWeight: 800, fontSize: 13, fontFamily: FONT.sans, background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322" }}>
+            ↻ Try again
+          </button>
+        )}
+      </div>
+    </div>
+  );
   if (!detail) return <div style={{ padding: 26, textAlign: "center", color: C.dim, fontSize: 13.5 }}>Opening the source document…</div>;
+
+  // The always-present action at the top of the box: open the message in the
+  // real mail client (Gmail deep-links by RFC message-id; Outlook opens the
+  // mailbox). This is never a dead end — every email has an action.
+  const bareId = mid.replace(/^[<\s]+|[>\s]+$/g, "");
+  const openUrl =
+    detail.provider === "gmail" ? `https://mail.google.com/mail/u/0/#search/rfc822msgid:${encodeURIComponent(bareId)}`
+    : detail.provider === "outlook" ? "https://outlook.office.com/mail/"
+    : `https://mail.google.com/mail/u/0/#search/rfc822msgid:${encodeURIComponent(bareId)}`;
+  const providerLabel = detail.provider === "outlook" ? "Outlook" : "Gmail";
 
   // entity chips: names the record resolves that actually appear in this message
   const hay = `${detail.fromName ?? ""} ${detail.subject ?? ""} ${detail.bodyClean ?? ""}`.toLowerCase();
@@ -63,6 +110,19 @@ export default function ThreadView({ mid, onOpenHistory, onGoQueue }: Props) {
 
   return (
     <div style={{ padding: "0 2px 8px" }}>
+      {/* action bar — every email has an action at the top: reply (if an agent
+          drafted one, → the Queue) and open the message in the real mail client */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+        {queueMatch && onGoQueue && (
+          <button onClick={onGoQueue} style={{ cursor: "pointer", border: 0, borderRadius: 10, padding: "9px 15px", fontWeight: 800, fontSize: 13, fontFamily: FONT.sans, background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322" }}>
+            Reply — drafted, open Queue →
+          </button>
+        )}
+        <a href={openUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", cursor: "pointer", borderRadius: 10, padding: "9px 15px", fontWeight: 800, fontSize: 13, fontFamily: FONT.sans, border: `1px solid ${C.line}`, background: "rgba(var(--ink),.04)", color: C.text }}>
+          Open in {providerLabel} ↗
+        </a>
+      </div>
+
       <div style={{ ...card, padding: 14, marginBottom: 14 }}>
         <Row k="From" v={`${detail.fromName ?? ""}${detail.fromEmail ? ` · ${detail.fromEmail}` : ""}`} />
         <Row k="To" v={detail.toEmail} />
@@ -89,17 +149,6 @@ export default function ThreadView({ mid, onOpenHistory, onGoQueue }: Props) {
                 {e.name} ↗
               </button>
             ))}
-        </div>
-      )}
-
-      {/* the reply path — never a dead end, never a lie */}
-      {queueMatch && onGoQueue ? (
-        <button onClick={onGoQueue} style={{ display: "flex", alignItems: "center", gap: 9, width: "100%", cursor: "pointer", border: 0, borderRadius: 12, padding: "12px 15px", marginBottom: 14, fontWeight: 800, fontSize: 13.5, fontFamily: FONT.sans, background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322", textAlign: "left" }}>
-          A reply is drafted and waiting — open your Queue →
-        </button>
-      ) : (
-        <div style={{ padding: "9px 13px", borderRadius: 11, marginBottom: 14, fontSize: 11.5, fontFamily: FONT.mono, color: C.dim, background: "rgba(var(--ink),.045)", border: `1px solid ${C.line}` }}>
-          No draft yet — live drafting arrives with agent runs (Phase 5).
         </div>
       )}
 

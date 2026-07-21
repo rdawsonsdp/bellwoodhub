@@ -630,12 +630,12 @@ export async function getEmailByMessageId(mid: string): Promise<EmailDetail | nu
   const canon = await query<{
     subject: string | null; from_name: string | null; from_email: string | null;
     to_email: string | null; cc: string | null; direction: Direction;
-    topic: string | null; sent_at: Date; clean_body: string | null;
+    topic: string | null; sent_at: Date; clean_body: string | null; provider: string | null;
   }>(
     `SELECT m.subject, m.from_name, m.from_email, m.to_email, m.cc, m.direction,
             (SELECT t.topic FROM canonical.message_topics t
               WHERE t.message_id = m.message_id ORDER BY t.confidence DESC LIMIT 1) AS topic,
-            m.sent_at, m.clean_body
+            m.sent_at, m.clean_body, m.provenance->>'_provider' AS provider
        FROM canonical.messages m WHERE m.source_ref = $1 LIMIT 1`,
     [mid],
   );
@@ -653,6 +653,7 @@ export async function getEmailByMessageId(mid: string): Promise<EmailDetail | nu
       date: c.sent_at.toISOString(),
       bodyClean: cleanEmailText(c.clean_body ?? ""),
       bodyRaw: c.clean_body ?? "",
+      provider: c.provider,
     };
   }
 

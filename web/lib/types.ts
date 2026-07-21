@@ -60,6 +60,9 @@ export interface EmailDetail {
   date: string;
   bodyClean: string;
   bodyRaw: string;
+  /** the source system this message was mirrored from (provenance._provider) —
+   *  drives the "Open in Gmail/Outlook" action. Optional: demo/poc rows omit it. */
+  provider?: "gmail" | "outlook" | string | null;
 }
 
 export interface AppliedFilters {

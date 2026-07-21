@@ -152,7 +152,7 @@ export default function ThreadView({ mid, onOpenHistory, onGoQueue }: Props) {
         </div>
       )}
 
-      <div style={{ fontSize: 15, lineHeight: 1.7, color: C.text2, whiteSpace: "pre-wrap" }}>
+      <div style={{ fontSize: 15, lineHeight: 1.7, color: C.text2, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
         {detail.bodyRaw || detail.bodyClean}
       </div>
     </div>
@@ -164,7 +164,7 @@ function Row({ k, v }: { k: string; v: string | null }) {
   return (
     <div style={{ display: "flex", gap: 10, padding: "3px 0", fontSize: 13 }}>
       <span style={{ flex: "0 0 48px", fontFamily: FONT.mono, fontSize: 10.5, color: C.dim, textTransform: "uppercase", paddingTop: 2 }}>{k}</span>
-      <span style={{ flex: 1, color: C.text2, minWidth: 0 }}>{v}</span>
+      <span style={{ flex: 1, color: C.text2, minWidth: 0, overflowWrap: "anywhere" }}>{v}</span>
     </div>
   );
 }

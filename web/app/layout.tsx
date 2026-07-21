@@ -18,6 +18,12 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#0a1322",
+  // width/initial-scale pin responsive scaling; viewport-fit=cover is what makes
+  // the env(safe-area-inset-*) variables non-zero on notched phones — without it
+  // every safe-area padding in the app (header, nav, sheets) collapsed to 0.
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

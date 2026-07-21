@@ -60,7 +60,7 @@ export default function AgentDigestSheet({ run, card: c, schedule, variant, onCl
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,.5)", backdropFilter: "blur(2px)" }}>
-      <div className="scrl" onClick={(e) => e.stopPropagation()} style={{ ...panel, background: "var(--c-appbg)", overflowY: "auto", padding: "18px 18px 28px", color: C.text, fontFamily: FONT.sans }}>
+      <div className="scrl" onClick={(e) => e.stopPropagation()} style={{ ...panel, background: "var(--c-appbg)", overflowY: "auto", padding: mobile ? "18px 18px calc(env(safe-area-inset-bottom) + 28px)" : "18px 18px 28px", color: C.text, fontFamily: FONT.sans }}>
         {/* header: the agent's mark + name; urgency stays on the status dot */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <AgentAvatar agentKey={c.agentKey} size={32} />

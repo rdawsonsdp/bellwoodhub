@@ -14,7 +14,6 @@ import WallScreen from "./WallScreen";
 import QueueScreen from "./QueueScreen";
 import NeedsYouScreen from "./NeedsYouScreen";
 import ThreadView from "./ThreadView";
-import { ASK_SEEDS } from "@/lib/ask-seeds";
 import { loadOperatorMode, saveOperatorMode } from "@/lib/operator-mode";
 import { logUsage } from "@/lib/usage";
 import SyncButton from "./SyncButton";
@@ -399,7 +398,11 @@ function PullToRefresh({ onRefresh, children }: { onRefresh: () => Promise<void>
           </svg>
         </span>
       </div>
-      <div style={{ transform: `translateY(${pull}px)`, transition: startY.current === null ? "transform .24s cubic-bezier(.2,.8,.2,1)" : "none" }}>
+      {/* transform ONLY while pulling — at rest it must be `none`, or the
+          translateY(0) still creates a containing block + stacking context that
+          traps every position:fixed modal (agent sheet, thread view) below the
+          nav bar (bug: agent card opened off-screen, 2026-07-20). */}
+      <div style={{ transform: pull > 0 ? `translateY(${pull}px)` : "none", transition: startY.current === null ? "transform .24s cubic-bezier(.2,.8,.2,1)" : "none" }}>
         {children}
       </div>
     </div>
@@ -428,7 +431,7 @@ function EmailSheet({ mid, onClose, onOpenHistory, onGoQueue }: { mid: string; o
             <Row k="Date" v={new Date(local.date).toLocaleString()} />
             <Row k="Stream" v={`${local.stream}${local.topic ? ` · ${local.topic}` : ""}`} />
           </div>
-          <div style={{ fontSize: 14.5, lineHeight: 1.7, color: C.text2, whiteSpace: "pre-wrap" }}>{local.bodyRaw || local.bodyClean}</div>
+          <div style={{ fontSize: 14.5, lineHeight: 1.7, color: C.text2, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{local.bodyRaw || local.bodyClean}</div>
         </div>
       </Sheet>
     );
@@ -446,7 +449,7 @@ function Row({ k, v }: { k: string; v: string | null }) {
   return (
     <div style={{ display: "flex", gap: 10, padding: "3px 0", fontSize: 13 }}>
       <span style={{ flex: "0 0 48px", fontFamily: FONT.mono, fontSize: 10.5, color: C.dim, textTransform: "uppercase", paddingTop: 2 }}>{k}</span>
-      <span style={{ flex: 1, color: C.text2, minWidth: 0 }}>{v}</span>
+      <span style={{ flex: 1, color: C.text2, minWidth: 0, overflowWrap: "anywhere" }}>{v}</span>
     </div>
   );
 }
@@ -1017,6 +1020,13 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
               <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
             </button>
           )}
+          {/* reset / new question — inside the one box (RD 2026-07-20) */}
+          {res && !loading && (
+            <button type="button" onClick={() => { setRes(null); setQ(""); setErr(null); }} aria-label="New question" title="New question"
+              style={{ flexShrink: 0, background: "rgba(var(--ink),.07)", border: 0, borderRadius: 999, padding: "9px 14px", cursor: "pointer", color: C.text3, fontSize: 13, fontWeight: 700, fontFamily: FONT.sans }}>
+              ✦ New
+            </button>
+          )}
           <button type="submit" disabled={loading || rec !== "idle"} style={{ padding: "10px 18px", borderRadius: 999, border: 0, background: loading ? "rgba(231,181,60,.85)" : C.gold, color: "#081627", fontWeight: 700, fontSize: 14, minWidth: loading ? 96 : undefined, animation: loading ? "bwPulse 1.2s ease-in-out infinite" : undefined }}>{loading ? "Searching…" : "Ask"}</button>
         </form>
 
@@ -1052,15 +1062,8 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
         {loading && <div style={{ padding: "0 16px", marginTop: 18 }}><Searching size={15} /></div>}
         {!res && !loading && (
           <div style={{ marginTop: 22 }}>
-            <div style={{ fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".1em", color: C.dim, textTransform: "uppercase", marginBottom: 10 }}>Try one of these</div>
-            <div style={{ display: "grid", gap: 8, marginBottom: 22 }}>
-              {ASK_SEEDS.map((s) => (
-                <button key={s} onClick={() => run(s)} style={{ ...cardS, padding: "12px 14px", textAlign: "left", cursor: "pointer", color: C.text2, fontSize: 14, lineHeight: 1.4, fontFamily: FONT.sans }}>
-                  <span style={{ color: C.gold, marginRight: 7 }}>✦</span>{s}
-                </button>
-              ))}
-            </div>
-            <div style={{ fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".1em", color: C.dim, textTransform: "uppercase", marginBottom: 10 }}>Recent searches</div>
+            {/* only recent questions here (RD 2026-07-20) — no seed suggestions */}
+            <div style={{ fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".1em", color: C.dim, textTransform: "uppercase", marginBottom: 10 }}>Recent questions</div>
             {recent.length ? (
               <div style={{ display: "grid" }}>
                 {recent.map((s) => (
@@ -1071,23 +1074,11 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
                 ))}
               </div>
             ) : (
-              <div style={{ fontSize: 13, color: C.dim }}>Your recent searches will appear here.</div>
+              <div style={{ fontSize: 13, color: C.dim }}>Your recent questions will appear here — ask anything using the box above.</div>
             )}
           </div>
         )}
-        {res && (
-          <>
-            {/* drill-down affordance (RD): keep asking about these results,
-                or purge the session and start clean */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 16 }}>
-              <span style={{ flex: 1, fontFamily: FONT.mono, fontSize: 10, color: C.dim, letterSpacing: ".06em" }}>ASK MORE — or start clean:</span>
-              <button onClick={() => { setRes(null); setQ(""); setErr(null); }} style={{ flexShrink: 0, background: "rgba(var(--ink),.07)", border: "1px solid var(--c-cardbd)", borderRadius: 9, padding: "7px 14px", cursor: "pointer", color: C.text2, fontSize: 12.5, fontWeight: 700, fontFamily: FONT.sans }}>
-                ✦ New Ask
-              </button>
-            </div>
-            <AskResult res={res} />
-          </>
-        )}
+        {res && <AskResult res={res} />}
       </div>
     </div>
   );
@@ -1170,12 +1161,14 @@ function Loading({ label = "Loading…" }: { label?: string }) {
 }
 function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 40, background: "var(--c-appbg)", display: "flex", flexDirection: "column", animation: "sheetUp .22s ease-out" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "var(--c-appbg)", display: "flex", flexDirection: "column", animation: "sheetUp .22s ease-out" }}>
       <div style={{ position: "sticky", top: 0, display: "flex", alignItems: "center", gap: 12, padding: "calc(env(safe-area-inset-top) + 12px) 16px 12px", borderBottom: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.04)", backdropFilter: "blur(12px)" }}>
         <button onClick={onClose} aria-label="Back" style={{ width: 36, height: 36, borderRadius: 99, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, display: "flex", alignItems: "center", justifyContent: "center" }}><Svg d={I.back} w={18} /></button>
         <span style={{ fontFamily: FONT.serif, fontSize: 18, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</span>
       </div>
-      <div style={{ flex: 1, overflow: "auto", paddingTop: 14 }}>{children}</div>
+      {/* z-50 clears the feedback FAB (z-45); safe-area bottom keeps the last
+          line off the home indicator on notched phones */}
+      <div style={{ flex: 1, overflow: "auto", paddingTop: 14, paddingBottom: "env(safe-area-inset-bottom)" }}>{children}</div>
     </div>
   );
 }

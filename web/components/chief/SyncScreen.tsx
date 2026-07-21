@@ -300,8 +300,8 @@ export default function SyncScreen() {
             {s.recent.length === 0 && <div style={{ marginTop: 10, fontSize: 13, color: C.dim }}>Nothing logged yet.</div>}
             {s.recent.map((r, i) => (
               <div key={i} style={{ display: "flex", gap: 12, alignItems: "baseline", padding: "7px 0", borderBottom: i < s.recent.length - 1 ? `1px solid ${C.line2}` : undefined }}>
-                <span style={{ fontFamily: FONT.mono, fontSize: 11.5, fontWeight: 700, color: C.text2, whiteSpace: "nowrap" }}>{r.action}</span>
-                <span style={{ fontSize: 12.5, color: C.text3, flex: 1, minWidth: 0 }}>{r.summary}</span>
+                <span style={{ fontFamily: FONT.mono, fontSize: 11.5, fontWeight: 700, color: C.text2, whiteSpace: "nowrap", flexShrink: 0, maxWidth: "40%", overflow: "hidden", textOverflow: "ellipsis" }}>{r.action}</span>
+                <span style={{ fontSize: 12.5, color: C.text3, flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>{r.summary}</span>
                 <span style={{ fontFamily: FONT.mono, fontSize: 11, color: C.muted, whiteSpace: "nowrap" }}>{fmtT(r.at)}</span>
               </div>
             ))}

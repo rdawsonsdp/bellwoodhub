@@ -118,13 +118,30 @@ export default function AgentDigestSheet({ run, card: c, schedule, variant, onCl
           </div>
         )}
 
-        {/* digest — every point cited */}
-        <div style={{ display: "grid", gap: 13, marginTop: 12 }}>
+        {/* digest — a news brief: each story is a mini-headline + key facts,
+            tagged NEW or UPDATE (an update advances a story the agent's memory
+            already tracks). Runs from before the news format have no title and
+            fall back to the plain bulleted point. Every story cited. */}
+        <div style={{ display: "grid", gap: 15, marginTop: 12 }}>
           {run.digest.map((d, i) => (
             <div key={i} style={{ display: "flex", gap: 10 }}>
-              <span style={{ color: URGENCY_C[run.urgency], fontSize: 15, lineHeight: 1.4, flexShrink: 0 }}>•</span>
+              <span style={{ width: 3, alignSelf: "stretch", borderRadius: 3, background: d.kind === "update" ? C.goldHi : URGENCY_C[run.urgency], flexShrink: 0, opacity: 0.8 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14.5, color: C.text2, lineHeight: 1.6 }}>{d.point}</div>
+                {d.title ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                      <span style={{ fontFamily: FONT.serif, fontSize: 15.5, fontWeight: 700, color: C.text, lineHeight: 1.3 }}>{d.title}</span>
+                      {d.kind && (
+                        <span style={{ fontFamily: FONT.mono, fontSize: 9, fontWeight: 800, letterSpacing: ".08em", padding: "2px 7px", borderRadius: 6, textTransform: "uppercase", color: d.kind === "update" ? C.goldHi : C.greenText, background: d.kind === "update" ? "rgba(231,181,60,.15)" : "rgba(52,201,139,.13)" }}>
+                          {d.kind === "update" ? "Update" : "New"}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 14, color: C.text2, lineHeight: 1.6, marginTop: 4 }}>{d.point}</div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: 14.5, color: C.text2, lineHeight: 1.6 }}>{d.point}</div>
+                )}
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
                   {d.sources.map((s) => (
                     <button key={s.messageId} onClick={() => onOpenMessage(s.messageId)} style={{ ...cite, border: 0, cursor: "pointer" }}>

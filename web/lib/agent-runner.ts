@@ -165,10 +165,18 @@ export function buildAgentPrompt(
             skills.map((s) => `### ${s.name}\n${s.content.slice(0, 6000)}`).join("\n\n"),
         ]
       : []),
+    `WRITE THE REPORT LIKE A NEWS BRIEF — you are the desk reporter filing today's ` +
+      `stories for the front page. "headline" is the banner: specific and factual, like a ` +
+      `newspaper lede ("Two red-light citations issued on 25th Ave", not "Checked the mail"). ` +
+      `Each digest item is one story: "title" is its mini-headline (≤8 words, active voice), ` +
+      `"point" is the key facts beneath it (who/what/when, 1-2 sentences). Set "kind":"update" ` +
+      `when the item advances a story already in your memory above — and say what changed since ` +
+      `("Third recovery attempt this week — first reported Monday"); use "kind":"new" for a ` +
+      `story appearing for the first time.`,
     `Respond with ONLY a JSON object:\n` +
-      `{"headline": string (one line for your cabinet card),\n` +
+      `{"headline": string (the banner headline for your card),\n` +
       ` "urgency": "red"|"yellow"|"clear",\n` +
-      ` "digest": [{"point": string, "sourceMessageIds": string[]}]  // max 8; EVERY point cited\n` +
+      ` "digest": [{"title": string, "kind": "new"|"update", "point": string, "sourceMessageIds": string[]}]  // max 8 stories; EVERY one cited\n` +
       ` "actItems": ${actShape},\n` +
       ` "memoryOps": [{"op":"upsert"|"close","kind":"open_issue"|"commitment"|"pattern"|"entity_note","title":string,"body"?:string,"entityId"?:string,"sourceMessageIds":string[]}]}`,
     `Hard rules: cite only messageIds present in the input (memory evidence included) — a messageId is the ` +

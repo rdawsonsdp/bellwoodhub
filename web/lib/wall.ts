@@ -68,6 +68,9 @@ export interface WallCitation {
   label: string;
 }
 export interface WallDigestPoint {
+  /** news-brief fields (optional — runs persisted before 2026-07-21 lack them) */
+  title?: string;
+  kind?: "new" | "update";
   point: string;
   sources: WallCitation[];
 }
@@ -511,6 +514,8 @@ export function assembleWall(
       urgency: run.output.urgency,
       headline: run.output.headline,
       digest: run.output.digest.map((d) => ({
+        title: d.title,
+        kind: d.kind,
         point: d.point,
         sources: d.sourceMessageIds.map((id) => ({ messageId: id, label: chipLabel(id) })),
       })),

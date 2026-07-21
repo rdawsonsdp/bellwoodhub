@@ -26,6 +26,12 @@ import type { DomainAgent, Urgency } from "./domain-agents";
 const UrgencyZ = z.enum(["red", "yellow", "clear"]);
 
 const DigestPointZ = z.object({
+  // News-brief fields (RD 2026-07-21): each point reads like a wire item — a
+  // short headline, the detail beneath it, and whether it's a NEW story or an
+  // UPDATE to one already in the agent's memory. Both optional so runs
+  // persisted before this change still parse.
+  title: z.string().min(1).optional(),          // mini-headline, ~8 words
+  kind: z.enum(["new", "update"]).optional(),   // update = advances a known story
   point: z.string().min(1),
   sourceMessageIds: z.array(z.string().min(1)).min(1), // every point cited — no exceptions
 });

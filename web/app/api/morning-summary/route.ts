@@ -24,6 +24,14 @@ export async function POST(req: Request) {
   } catch { /* defaults */ }
 
   if (DEMO) return NextResponse.json(await demoMorningSummary(persona, hour));
-  // Live path not yet wired — serve the fixture-derived briefing so Today renders.
-  return NextResponse.json(await demoMorningSummary(persona, hour));
+  // Live: the real "Needs to Know" briefing folds triage + drafts + calendar
+  // into one ranked digest, voiced in the configured persona. On any failure,
+  // fall back to the fixture briefing so the Hub always renders.
+  try {
+    const { liveMorningSummary } = await import("@/lib/morning-live");
+    return NextResponse.json(await liveMorningSummary(persona, hour));
+  } catch (err) {
+    console.error("[/api/morning-summary] live failed, serving fixture:", err instanceof Error ? err.message : err);
+    return NextResponse.json(await demoMorningSummary(persona, hour));
+  }
 }

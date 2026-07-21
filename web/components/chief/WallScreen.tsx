@@ -20,7 +20,7 @@ import { getCosPersona } from "@/lib/morning";
 import type { WallPayload, WallItem, CabinetCard, WallSchedule } from "@/lib/wall";
 import AgentDigestSheet from "./AgentDigestSheet";
 import AddAgentSheet from "./AddAgentSheet";
-import { TriageHubCard } from "./NeedsYouScreen";
+import NeedsToKnowCard from "./NeedsToKnowCard";
 import SendLivePill from "./SendLivePill";
 import ComingUp from "./ComingUp";
 import { AgentAvatar, AgentChip } from "./AgentBadge";
@@ -119,35 +119,10 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
         </div>
       </div>
 
-      {/* ── NEEDS YOU (triage preview) — the most critical piece, at the top ── */}
-      <TriageHubCard mobile={mobile} onOpenEmail={onOpenEmail} onSeeAll={() => onGoNeedsYou?.()} />
-
-      {/* ── NEEDS YOU NOW (agent drafts awaiting approval) ── */}
-      <div style={{ marginTop: mobile ? 13 : 24 }}>
-        <div style={sectionHead}>Needs you now</div>
-        <div style={{ ...card, overflow: "hidden" }}>
-          {!wall && !failed && <Empty text="…" />}
-          {failed && <Empty text="Couldn't reach your agents. Pull to refresh." />}
-          {wall && wall.needsYouNow.length === 0 && (
-            <Empty text={wall.footer.waiting > 0 ? `Nothing urgent. ${wall.footer.waiting} draft${wall.footer.waiting === 1 ? "" : "s"} ready.` : "Nothing urgent. Queue is clear."} />
-          )}
-          {wall?.needsYouNow.map((it, i) => (
-            <div key={it.id} role="button" tabIndex={0} onClick={() => act(it)} onKeyDown={(e) => e.key === "Enter" && act(it)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 14px", borderTop: i ? `1px solid ${C.line2}` : undefined, cursor: "pointer" }}>
-              <span style={{ width: 4, alignSelf: "stretch", borderRadius: 4, background: URGENCY_C[it.urgency], flexShrink: 0 }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: mobile ? 14.5 : 15, fontWeight: 700, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.line}</div>
-                <div style={{ display: "flex", gap: 10, marginTop: 5, flexWrap: "wrap" }}>
-                  {it.agentKeys.map((k) => {
-                    const c = wall.cabinet.find((x) => x.agentKey === k);
-                    return <AgentChip key={k} agentKey={k} label={c ? shortName(c.name) : k} />;
-                  })}
-                </div>
-              </div>
-              <span style={{ color: C.gold, fontSize: 13, fontWeight: 800, fontFamily: FONT.sans, whiteSpace: "nowrap", flexShrink: 0 }}>{it.action} →</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* ── NEEDS TO KNOW — the Chief of Staff briefing: combines the old
+             "Needs you" (triage) + "Needs you now" (drafts) into one ranked
+             intelligence section (narrative + top issues + upcoming events). ── */}
+      <NeedsToKnowCard mobile={mobile} onOpenEmail={onOpenEmail} onGoNeedsYou={onGoNeedsYou} onGoApprovals={onGoApprovals} />
 
       {/* ── THE CABINET ── */}
       <div style={{ marginTop: mobile ? 13 : 26 }}>

@@ -9,7 +9,11 @@ import { query } from "../db";
 import { TENANT_ID } from "../tenant";
 
 export interface TriageItem {
+  /** canonical message_id — the internal key corrections are recorded against. */
   messageId: string;
+  /** RFC source_ref — the id the email viewer (/api/email → getEmailByMessageId)
+   *  resolves by. THIS is what "Open →" must pass; messageId won't resolve. */
+  sourceRef: string;
   subject: string | null;
   fromName: string | null;
   fromEmail: string | null;
@@ -37,12 +41,12 @@ export interface TriageView {
  */
 export async function readTriage(tenant = TENANT_ID): Promise<TriageView> {
   const rows = await query<{
-    message_id: string; bucket: TriageItem["bucket"]; rank: number | null;
+    message_id: string; source_ref: string; bucket: TriageItem["bucket"]; rank: number | null;
     score: string; reason: string; classified_at: string;
     subject: string | null; from_name: string | null; from_email: string | null; sent_at: string;
     correction: string | null;
   }>(
-    `SELECT t.message_id, t.bucket, t.rank, t.score, t.reason, t.classified_at::text,
+    `SELECT t.message_id, m.source_ref, t.bucket, t.rank, t.score, t.reason, t.classified_at::text,
             m.subject, m.from_name, m.from_email, m.sent_at::text,
             (SELECT c.correction FROM app.triage_corrections c
               WHERE c.tenant = t.tenant AND c.message_id = t.message_id
@@ -55,6 +59,7 @@ export async function readTriage(tenant = TENANT_ID): Promise<TriageView> {
 
   const items: TriageItem[] = rows.map((r) => ({
     messageId: r.message_id,
+    sourceRef: r.source_ref,
     subject: r.subject, fromName: r.from_name, fromEmail: r.from_email, sentAt: r.sent_at,
     bucket: r.bucket, rank: r.rank, score: Number(r.score), reason: r.reason,
     correction: r.correction,

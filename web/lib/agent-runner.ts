@@ -527,6 +527,26 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
       ...related.map((r) => r.messageId),
       ...focusHits.map((m) => m.messageId), // focus matches are citable evidence
     ]);
+    // Every id a citation resolves to must be a REAL message. memory's
+    // sourceMessageIds are prior-run citations, so a single hallucinated id (a
+    // message-id the model lifted from an email body) is laundered into `known`
+    // and then trusted forever — the citation renders, but the link opens
+    // "document could not be found" (observed on google-search, 2026-07-19).
+    // So drop any known id that isn't in canonical.messages before resolving.
+    // A message cited but not (yet) landed simply isn't citable — silence over a
+    // dead link. Best-effort: a failed check leaves `known` as-is rather than
+    // stripping every citation.
+    const knownArr = [...known];
+    if (knownArr.length) {
+      const real = await query<{ source_ref: string }>(
+        `SELECT source_ref FROM canonical.messages WHERE source_ref = ANY($1::text[])`,
+        [knownArr],
+      ).catch(() => null);
+      if (real) {
+        const realSet = new Set(real.map((r) => r.source_ref));
+        for (const id of knownArr) if (!realSet.has(id)) known.delete(id);
+      }
+    }
     // UNKNOWN CITATIONS ARE PRUNED, NOT FATAL.
     //
     // The rule that matters is "no claim without evidence" — and dropping the

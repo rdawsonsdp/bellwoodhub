@@ -183,8 +183,8 @@ export default function ChiefApp() {
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <Topbar onAsk={(question) => { setScreen("ask"); runAsk(question); }} />
         <div className="scrl" style={{ flex: 1, overflowY: "auto" }}>
-          {screen === "today" && <WallScreen variant="desktop" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} onOpenAgent={(k) => { setAgentFocus(k); setScreen("agents"); }} />}
-          {screen === "needsyou" && <NeedsYouScreen variant="desktop" />}
+          {screen === "today" && <WallScreen variant="desktop" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} onOpenAgent={(k) => { setAgentFocus(k); setScreen("agents"); }} onGoNeedsYou={() => setScreen("needsyou")} />}
+          {screen === "needsyou" && <NeedsYouScreen variant="desktop" onOpenEmail={setEmailMid} />}
           {screen === "queue" && <QueueScreen variant="desktop" onOpenEmail={setEmailMid} />}
           {screen === "brief" && <Brief go={go} onAsk={() => runAsk("Every flooding conversation, in order — who promised what and whether it happened.")} />}
           {screen === "ask" && <Ask asked={asked} loading={loading} res={res} err={err} q={q} setQ={setQ} runAsk={runAsk} resetAsk={resetAsk} go={go} />}

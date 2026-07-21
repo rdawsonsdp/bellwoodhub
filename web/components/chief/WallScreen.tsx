@@ -20,6 +20,7 @@ import { getCosPersona } from "@/lib/morning";
 import type { WallPayload, WallItem, CabinetCard, WallSchedule } from "@/lib/wall";
 import AgentDigestSheet from "./AgentDigestSheet";
 import AddAgentSheet from "./AddAgentSheet";
+import { TriageHubCard } from "./NeedsYouScreen";
 import SendLivePill from "./SendLivePill";
 import ComingUp from "./ComingUp";
 import { AgentAvatar, AgentChip } from "./AgentBadge";
@@ -34,13 +35,14 @@ interface Props {
   onGoApprovals: () => void;
   /** The digest sheet's gear → this agent's detail on Staff Agents. */
   onOpenAgent?: (agentKey: string) => void;
+  onGoNeedsYou?: () => void;
 }
 
 const URGENCY_C: Record<string, string> = { red: C.red, yellow: C.orange, clear: C.green };
 
 const shortName = (name: string) => name.replace(/ Agent$/, "");
 
-export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpenAgent }: Props) {
+export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpenAgent, onGoNeedsYou }: Props) {
   const [wall, setWall] = useState<WallPayload | null>(null);
   const [failed, setFailed] = useState(false);
   const [openAgent, setOpenAgent] = useState<string | null>(null);
@@ -117,7 +119,10 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
         </div>
       </div>
 
-      {/* ── NEEDS YOU NOW ── */}
+      {/* ── NEEDS YOU (triage preview) — the most critical piece, at the top ── */}
+      <TriageHubCard mobile={mobile} onOpenEmail={onOpenEmail} onSeeAll={() => onGoNeedsYou?.()} />
+
+      {/* ── NEEDS YOU NOW (agent drafts awaiting approval) ── */}
       <div style={{ marginTop: mobile ? 13 : 24 }}>
         <div style={sectionHead}>Needs you now</div>
         <div style={{ ...card, overflow: "hidden" }}>

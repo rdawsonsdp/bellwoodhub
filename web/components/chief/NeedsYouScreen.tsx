@@ -16,7 +16,7 @@ import { useCallback, useEffect, useState } from "react";
 import { C, FONT } from "@/lib/cos-design";
 
 interface Item {
-  messageId: string; subject: string | null; fromName: string | null; fromEmail: string | null;
+  messageId: string; sourceRef: string; subject: string | null; fromName: string | null; fromEmail: string | null;
   sentAt: string; bucket: string; rank: number | null; score: number; reason: string; correction: string | null;
 }
 interface View { needsReply: Item[]; awaitingOthers: Item[]; fyi: Item[]; classifiedAt: string | null }
@@ -28,7 +28,7 @@ const ago = (iso: string): string => {
   return d === 1 ? "yesterday" : `${d} days ago`;
 };
 
-export default function NeedsYouScreen({ variant }: { variant: "desktop" | "mobile" }) {
+export default function NeedsYouScreen({ variant, onOpenEmail }: { variant: "desktop" | "mobile"; onOpenEmail?: (mid: string) => void }) {
   const mobile = variant === "mobile";
   const [view, setView] = useState<View | null>(null);
   const [senders, setSenders] = useState<Sender[]>([]);
@@ -80,7 +80,11 @@ export default function NeedsYouScreen({ variant }: { variant: "desktop" | "mobi
                 <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
                   <span style={{ fontFamily: FONT.mono, fontSize: 12, color: it.correction === "bump_up" ? C.goldHi : C.dim, flexShrink: 0, fontWeight: 700 }}>{i + 1}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14.5, fontWeight: 700, color: C.text, lineHeight: 1.35 }}>{it.subject || "(no subject)"}</div>
+                    {/* the subject links straight to the actual email (by source_ref) */}
+                    <button onClick={() => onOpenEmail?.(it.sourceRef)} disabled={!onOpenEmail}
+                      style={{ display: "block", textAlign: "left", background: "none", border: 0, padding: 0, cursor: onOpenEmail ? "pointer" : "default", fontSize: 14.5, fontWeight: 700, color: C.text, lineHeight: 1.35, fontFamily: FONT.sans }}>
+                      {it.subject || "(no subject)"}
+                    </button>
                     <div style={{ fontSize: 12.5, color: C.text3, marginTop: 1 }}>{it.fromName || it.fromEmail || "—"}</div>
                     {/* the templated reason — the defensible "why" */}
                     <div style={{ fontSize: 13, color: C.text2, marginTop: 7, lineHeight: 1.5, display: "flex", gap: 7, alignItems: "flex-start" }}>
@@ -193,6 +197,62 @@ function SendersRail({ senders, onChange, mobile }: { senders: Sender[]; onChang
           you can edit this anytime · no developer needed
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * TriageHubCard — the compact "Needs you" preview on the Hub. The most critical
+ * piece, so it sits at the top: the first few ranked items with their reason,
+ * each linking to the actual email, and a click-through to the full screen.
+ * Self-fetching; renders nothing (or a clean empty state) when the pass hasn't
+ * produced a list.
+ */
+export function TriageHubCard({ onOpenEmail, onSeeAll, mobile }: { onOpenEmail?: (mid: string) => void; onSeeAll: () => void; mobile: boolean }) {
+  const [items, setItems] = useState<Item[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/triage").then((r) => (r.ok ? r.json() : null)).then((v: View | null) => {
+      if (alive && v) setItems(v.needsReply);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  const top = (items ?? []).slice(0, 3);
+  return (
+    <div style={{ marginTop: mobile ? 13 : 24 }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+        <div style={{ fontFamily: FONT.serif, fontSize: 17, fontWeight: 700, color: C.text }}>Needs you</div>
+        {items !== null && (
+          <button onClick={onSeeAll} style={{ cursor: "pointer", background: "none", border: 0, color: C.gold, fontSize: 13, fontWeight: 800, fontFamily: FONT.sans }}>
+            {items.length > top.length ? `See all ${items.length} →` : "Open →"}
+          </button>
+        )}
+      </div>
+      <div style={{ marginTop: 8, borderRadius: 14, border: `1px solid ${C.line}`, overflow: "hidden" }}>
+        {items === null && <div style={{ padding: "14px 15px", color: C.dim, fontSize: 13.5 }}>Sorting your mail…</div>}
+        {items !== null && top.length === 0 && (
+          <div style={{ padding: "16px 15px", color: C.text2, fontSize: 13.5, lineHeight: 1.5 }}>
+            <b style={{ color: C.text }}>Nothing needs you right now.</b> No one is waiting on a reply.
+          </div>
+        )}
+        {top.map((it, i) => (
+          <div key={it.messageId} style={{ display: "flex", alignItems: "flex-start", gap: 11, padding: "12px 15px", borderTop: i ? `1px solid ${C.line2}` : undefined }}>
+            <span style={{ fontFamily: FONT.mono, fontSize: 12, color: C.dim, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <button onClick={() => onOpenEmail?.(it.sourceRef)} disabled={!onOpenEmail}
+                style={{ display: "block", textAlign: "left", background: "none", border: 0, padding: 0, cursor: onOpenEmail ? "pointer" : "default", fontSize: mobile ? 14 : 14.5, fontWeight: 700, color: C.text, lineHeight: 1.35, fontFamily: FONT.sans, width: "100%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {it.subject || "(no subject)"}
+              </button>
+              <div style={{ fontSize: 12.5, color: C.text2, marginTop: 3, lineHeight: 1.45, display: "flex", gap: 6, alignItems: "flex-start" }}>
+                <span style={{ color: C.gold, flexShrink: 0 }}>&#9656;</span>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{it.reason}</span>
+              </div>
+            </div>
+            <button onClick={() => onOpenEmail?.(it.sourceRef)} disabled={!onOpenEmail} style={{ cursor: onOpenEmail ? "pointer" : "default", background: "none", border: 0, color: C.gold, fontSize: 13, fontWeight: 800, fontFamily: FONT.sans, whiteSpace: "nowrap", flexShrink: 0, marginTop: 1 }}>Open →</button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

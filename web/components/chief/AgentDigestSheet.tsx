@@ -168,15 +168,27 @@ export default function AgentDigestSheet({ run, card: c, schedule, variant, onCl
                           long addresses must not widen the sheet on a phone */}
                       {open && (
                         <div style={{ ...card, overflow: "hidden", maxWidth: "100%" }}>
-                          {day.items.map((s, i) => (
-                            <div key={i} style={{ padding: "10px 13px", borderTop: i ? `1px solid ${C.line2}` : undefined, display: "flex", gap: 10, alignItems: "baseline", minWidth: 0 }}>
-                              <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim, width: 50, flexShrink: 0 }}>{s.timeLabel}</span>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 12.5, fontWeight: 700, color: C.text, ...clampLines(1) }}>{s.to}</div>
-                                <div style={{ fontSize: 11.5, color: C.text3, marginTop: 2, lineHeight: 1.45, ...clampLines(2) }}>{s.subject}</div>
-                              </div>
-                            </div>
-                          ))}
+                          {day.items.map((s, i) => {
+                            // Every sent email links to the message it answered
+                            // (app.drafts.to_message_id → source_ref). No source →
+                            // plain row, never a dead link.
+                            const linked = !!s.sourceMessageId;
+                            return (
+                              <button
+                                key={i}
+                                onClick={linked ? () => onOpenMessage(s.sourceMessageId!) : undefined}
+                                disabled={!linked}
+                                style={{ display: "flex", width: "100%", textAlign: "left", background: "none", border: 0, padding: "10px 13px", borderTop: i ? `1px solid ${C.line2}` : undefined, gap: 10, alignItems: "baseline", minWidth: 0, cursor: linked ? "pointer" : "default", fontFamily: FONT.sans }}
+                              >
+                                <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim, width: 50, flexShrink: 0 }}>{s.timeLabel}</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: 12.5, fontWeight: 700, color: C.text, ...clampLines(1) }}>{s.to}</div>
+                                  <div style={{ fontSize: 11.5, color: C.text3, marginTop: 2, lineHeight: 1.45, ...clampLines(2) }}>{s.subject}</div>
+                                </div>
+                                {linked && <span style={{ color: C.gold, fontSize: 12, flexShrink: 0, alignSelf: "center" }}>↗</span>}
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

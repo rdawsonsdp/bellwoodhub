@@ -84,6 +84,10 @@ export interface SentEmail {
   timeLabel: string; // "3:51 PM" (Mayor-local)
   to: string;
   subject: string;
+  /** source_ref of the message this reply answered (app.drafts.to_message_id).
+   *  Present → the row links to that source email; null → plain text, no dead
+   *  link (a draft not tied to an inbound message can't resolve to one). */
+  sourceMessageId: string | null;
 }
 export interface SentDay {
   date: string; // ISO day, Mayor-local
@@ -323,9 +327,9 @@ async function addConnectorCards(wall: WallPayload): Promise<void> {
 const MAYOR_TZ = "America/Chicago";
 async function recentSentDays(): Promise<SentDay[]> {
   const { query } = await import("./db");
-  type Row = { recipients: string | null; subject: string | null; sent_at: string };
+  type Row = { recipients: string | null; subject: string | null; sent_at: string; to_message_id: string | null };
   const rows = await query<Row>(
-    `SELECT recipients, subject, sent_at::text AS sent_at
+    `SELECT recipients, subject, sent_at::text AS sent_at, to_message_id
        FROM app.drafts
       WHERE sent_at IS NOT NULL AND sent_at > now() - interval '3 days'
       ORDER BY sent_at DESC LIMIT 100`,
@@ -351,6 +355,7 @@ async function recentSentDays(): Promise<SentDay[]> {
       timeLabel: at.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: MAYOR_TZ }),
       to: r.recipients ?? "—",
       subject: r.subject ?? "(no subject)",
+      sourceMessageId: r.to_message_id,
     });
   }
   return days;

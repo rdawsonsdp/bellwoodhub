@@ -156,8 +156,8 @@ export default function MobileApp() {
         <Header operator={operator} onMenu={() => setMenuOpen(true)} onProfile={() => setProfileOpen(true)} />
         <PullToRefresh onRefresh={doRefresh}>
           <div key={refreshKey} style={{ padding: "8px 0 20px" }}>
-            {screen === "today" && <WallScreen variant="mobile" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} onOpenAgent={(k) => { setAgentFocus(k); setScreen("agents"); }} />}
-            {screen === "needsyou" && <NeedsYouScreen variant="mobile" />}
+            {screen === "today" && <WallScreen variant="mobile" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} onOpenAgent={(k) => { setAgentFocus(k); setScreen("agents"); }} onGoNeedsYou={() => setScreen("needsyou")} />}
+            {screen === "needsyou" && <NeedsYouScreen variant="mobile" onOpenEmail={setEmailMid} />}
             {screen === "queue" && <QueueScreen variant="mobile" onOpenEmail={setEmailMid} />}
             {screen === "ask" && <AskScreen key={`${askMode ?? "plain"}:${askSeq}`} autoVoice={askMode === "voice"} textFocus={askMode === "text"} />}
             {screen === "emails" && <EmailsScreen onAsk={() => setScreen("ask")} />}

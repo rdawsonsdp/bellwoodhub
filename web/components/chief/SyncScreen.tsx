@@ -18,7 +18,7 @@ interface Account {
   address: string;
   mailbox: string;
   status: string;
-  phase: "backfill" | "incremental" | "first-pull" | "error";
+  phase: "backfill" | "incremental" | "first-pull" | "error" | "retrying";
   mirrored: number;
   mailboxTotal: number | null;
   lastSyncedAt: string | null;
@@ -49,6 +49,7 @@ const PHASE: Record<Account["phase"], { label: string; fg: string; bg: string }>
   backfill: { label: "Backfilling — first mirror", fg: "#E7B53C", bg: "rgba(231,181,60,.14)" },
   incremental: { label: "Up to date — incremental", fg: "#4CAF7D", bg: "rgba(76,175,125,.14)" },
   "first-pull": { label: "Queued — first pull", fg: "#6FA8DC", bg: "rgba(111,168,220,.14)" },
+  retrying: { label: "Retrying — connection hiccup", fg: "#E7B53C", bg: "rgba(231,181,60,.14)" },
   error: { label: "Error", fg: "#E06C5F", bg: "rgba(224,108,95,.14)" },
 };
 
@@ -230,7 +231,14 @@ export default function SyncScreen() {
                     <span style={{ marginLeft: "auto", fontFamily: FONT.mono, fontSize: 11, color: C.muted }}>synced {ago(a.lastSyncedAt)}</span>
                   </div>
                   <Bar num={a.mirrored} den={a.mailboxTotal} tone={a.phase === "error" ? C.red : "linear-gradient(90deg,#D7991C,#F4CB63)"} />
-                  {a.lastError && <div style={{ marginTop: 6, fontSize: 12, color: C.redText, overflowWrap: "anywhere" }}>{a.lastError}</div>}
+                  {a.lastError && (
+                    <div style={{ marginTop: 6, fontSize: 12, color: a.phase === "retrying" ? C.orangeText : C.redText, overflowWrap: "anywhere" }}>
+                      {a.lastError}
+                      {a.phase === "retrying" && (
+                        <span style={{ color: C.muted }}> · a network hiccup, not your credentials — retries automatically on the next pass.</span>
+                      )}
+                    </div>
+                  )}
                   {a.phase === "error" && s.live && (
                     // a dead token (invalid_grant) is fixed by consenting again —
                     // the re-consent rotates the vault secret and re-activates the row

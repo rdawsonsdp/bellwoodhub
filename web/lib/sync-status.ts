@@ -17,7 +17,7 @@ export interface SyncAccount {
   address: string;
   mailbox: string; // gov = public record, biz = walled (DEC-6)
   status: string; // active | pending | error
-  phase: "backfill" | "incremental" | "first-pull" | "error";
+  phase: "backfill" | "incremental" | "first-pull" | "error" | "retrying";
   mirrored: number;
   mailboxTotal: number | null; // live ask of the provider — best-effort
   lastSyncedAt: string | null;
@@ -77,6 +77,9 @@ interface AccountRow {
 
 function phaseOf(a: AccountRow): SyncAccount["phase"] {
   if (a.status === "error") return "error";
+  // active but the last pass hit a transient error — it self-heals on the next
+  // scheduled pass, so it reads as "retrying," not healthy and not broken.
+  if (a.last_error) return "retrying";
   if (!a.cursor) return "first-pull";
   return a.cursor.startsWith("bf:") ? "backfill" : "incremental";
 }

@@ -7,6 +7,7 @@ import { graphConnector } from "@/lib/connectors/graph";
 import { gmailConnector } from "@/lib/connectors/gmail";
 import { getRefreshToken } from "@/lib/connectors/token-store";
 import { cleanEmailText } from "@/lib/clean-text";
+import { describeIngestError, isAuthError, MAX_TRANSIENT_RETRIES, type RetryState } from "@/lib/connectors/ingest-error";
 import type { PulledMessage } from "@/lib/connectors/types";
 
 export const runtime = "nodejs";
@@ -48,6 +49,8 @@ interface AccountRow {
   address: string;
   mailbox_id: string;
   cursor: string | null;
+  /** connector_accounts.config jsonb — carries the transient-retry counter. */
+  config: { retry?: RetryState } | null;
 }
 
 /** Land one pulled message: RAW → ingest_log → staged → canonical. Returns
@@ -174,7 +177,7 @@ async function handle(req: NextRequest) {
       return NextResponse.json({ ok: true, mode: "demo", note: "DEMO mode: fixture mail serves the app; live ingest requires DATABASE_URL + active connector_accounts rows." });
     }
     const accounts = await query<AccountRow>(
-      `SELECT id, provider, address, mailbox_id, cursor
+      `SELECT id, provider, address, mailbox_id, cursor, config
          FROM pipeline.connector_accounts WHERE status = 'active' ORDER BY created_at`,
     );
     // the in-app enable switch (app.agent_configs, FEAT-19): a disabled email
@@ -229,7 +232,8 @@ async function handle(req: NextRequest) {
           cursor = batch.nextCursor ?? cursor;
           await query(
             `UPDATE pipeline.connector_accounts
-                SET cursor = $2, last_synced_at = NOW(), last_error = NULL WHERE id = $1`,
+                SET cursor = $2, last_synced_at = NOW(), last_error = NULL,
+                    config = COALESCE(config, '{}'::jsonb) - 'retry' WHERE id = $1`,
             [a.id, cursor],
           );
           if (batch.messages.length === 0) break; // caught up (or empty walk page)
@@ -242,14 +246,37 @@ async function handle(req: NextRequest) {
           backfillRemaining: !!cursor?.startsWith("bf:"),
         });
       } catch (err) {
-        // flag the account, keep the fleet moving — never throw the whole route
-        const message = err instanceof Error ? err.message : String(err);
-        console.error(`[/api/cron/ingest-email] ${a.provider}:${a.address}`, message);
+        // flag the account, keep the fleet moving — never throw the whole route.
+        // Classify: a dead token (auth) latches to status='error' and asks for a
+        // Reconnect; a network blip (transient) STAYS 'active' so the next
+        // scheduled pass retries automatically — only escalating to 'error' after
+        // MAX_TRANSIENT_RETRIES consecutive misses (~90 min) so a real outage
+        // still surfaces. This is the fix for the 15h-stranded backfill.
+        const message = describeIngestError(err);
+        const auth = isAuthError(message);
+        const prior = a.config?.retry;
+        const attempts = auth ? 0 : (prior?.attempts ?? 0) + 1;
+        const escalate = !auth && attempts >= MAX_TRANSIENT_RETRIES;
+        const latched = auth || escalate;
+        console.error(
+          `[/api/cron/ingest-email] ${a.provider}:${a.address} ${auth ? "AUTH" : `transient x${attempts}`}${escalate ? " → escalated" : ""}`,
+          message,
+        );
+        const retry: RetryState | null = auth
+          ? null
+          : { attempts, firstAt: prior?.firstAt ?? new Date().toISOString(), lastError: message };
         await query(
-          `UPDATE pipeline.connector_accounts SET status = 'error', last_error = $2 WHERE id = $1`,
-          [a.id, message.slice(0, 1000)],
+          `UPDATE pipeline.connector_accounts
+              SET status = $2, last_error = $3,
+                  config = jsonb_set(COALESCE(config, '{}'::jsonb), '{retry}', $4::jsonb)
+            WHERE id = $1`,
+          [a.id, latched ? "error" : "active", message.slice(0, 1000), JSON.stringify(retry)],
         ).catch(() => {});
-        results.push({ ok: false, provider: a.provider, account: a.address, error: message });
+        results.push({
+          ok: false, provider: a.provider, account: a.address, error: message,
+          failureKind: auth ? "auth" : "transient", ...(escalate ? { escalated: true } : {}),
+          ...(latched ? {} : { willRetry: true, attempt: attempts }),
+        });
       }
     }
     // per-run counts live in the audit ledger; pipeline.ingest_log stays the

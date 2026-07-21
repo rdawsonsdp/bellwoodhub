@@ -15,7 +15,6 @@ import { createContext, useContext, useState, useEffect, useRef, type CSSPropert
 import { tenant, orgPrefix } from "@/lib/tenant";
 import { C, FONT, APP_BG, card, eyebrow, cite } from "@/lib/cos-design";
 import { IS_LIVE_BUILD } from "@/lib/live";
-import { ASK_SEEDS } from "@/lib/ask-seeds";
 import { loadOperatorMode, saveOperatorMode } from "@/lib/operator-mode";
 import { logUsage } from "@/lib/usage";
 import type { AskResponse } from "@/lib/types";
@@ -181,7 +180,7 @@ export default function ChiefApp() {
       <Sidebar screen={screen} go={go} operator={operator} onToggleOperator={(on) => { saveOperatorMode(on); setOperator(on); }} goAgentSection={(sec) => { setAgentFocus(null); setAgentSection(sec); setScreen("agents"); }} agentSection={agentSection} />
 
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-        <Topbar onAsk={(question) => { setScreen("ask"); runAsk(question); }} />
+        <Topbar asked={asked} onReset={resetAsk} onAsk={(question) => { setScreen("ask"); runAsk(question); }} />
         <div className="scrl" style={{ flex: 1, overflowY: "auto" }}>
           {screen === "today" && <WallScreen variant="desktop" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} onOpenAgent={(k) => { setAgentFocus(k); setScreen("agents"); }} onGoNeedsYou={() => setScreen("needsyou")} />}
           {screen === "needsyou" && <NeedsYouScreen variant="desktop" onOpenEmail={setEmailMid} />}
@@ -338,7 +337,7 @@ function ThemeToggle() {
   );
 }
 
-function Topbar({ onAsk }: { onAsk?: (q: string) => void }) {
+function Topbar({ onAsk, onReset, asked }: { onAsk?: (q: string) => void; onReset?: () => void; asked?: boolean }) {
   // Ask lives at the TOP on desktop (RD 2026-07-05): an open box + a mic.
   // Enter or the mic's transcript routes straight to the Ask screen.
   const [v, setV] = useState("");
@@ -394,6 +393,18 @@ function Topbar({ onAsk }: { onAsk?: (q: string) => void }) {
             style={{ width: 22, height: 22, borderRadius: 99, border: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(var(--ink),.10)", color: C.text3, padding: 0 }}
           >
             <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        )}
+        {/* Reset / new question — lives INSIDE the one box (RD 2026-07-20).
+            Shows once there's an answer on screen or text typed. */}
+        {(asked || v) && (
+          <button
+            onClick={() => { setV(""); onReset?.(); }}
+            aria-label="New question"
+            title="New question"
+            style={{ flexShrink: 0, background: "rgba(var(--ink),.07)", border: 0, borderRadius: 999, padding: "7px 13px", cursor: "pointer", color: C.text3, fontSize: 12.5, fontWeight: 700, fontFamily: FONT.sans }}
+          >
+            ✦ New
           </button>
         )}
         <button
@@ -603,20 +614,12 @@ function Ask({ asked, loading, res, err, q, setQ, runAsk, resetAsk, go }:
   const [recent, setRecent] = useState<string[]>([]);
   useEffect(() => { if (!asked) setRecent(getRecentSearches()); }, [asked]);
   if (!asked) {
+    // The single Ask box lives in the header (Topbar) on every screen. This
+    // landing shows ONLY recent questions (RD 2026-07-20) — no second box, no
+    // seed suggestions, no info banner.
     return (
-      <div className="fu" style={{ padding: "48px 36px", maxWidth: 920, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Star /><span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim, letterSpacing: ".04em" }}>the whole village record · email + documents · every answer cites its sources</span></div>
-        <div style={{ fontFamily: FONT.serif, fontSize: 40, fontWeight: 400, color: C.text, lineHeight: 1.18, letterSpacing: "-.01em" }}>Ask</div>
-        <AskInput q={q} setQ={setQ} runAsk={runAsk} big />
-        <div style={{ ...eyebrow(C.dim) }}>Try one of these</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: -12 }}>
-          {ASK_SEEDS.map((s) => (
-            <button key={s} onClick={() => runAsk(s)} style={{ ...card, textAlign: "left", cursor: "pointer", padding: "12px 14px", fontSize: 13.5, color: C.text2, lineHeight: 1.4, fontFamily: FONT.sans }}>
-              <span style={{ color: C.gold, marginRight: 7 }}>✦</span>{s}
-            </button>
-          ))}
-        </div>
-        <div style={{ ...eyebrow(C.dim) }}>Recent searches</div>
+      <div className="fu" style={{ padding: "40px 36px", maxWidth: 920, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ ...eyebrow(C.dim) }}>Recent questions</div>
         {recent.length ? (
           <div style={{ ...card, overflow: "hidden" }}>
             {recent.map((s, i) => (
@@ -628,12 +631,8 @@ function Ask({ asked, loading, res, err, q, setQ, runAsk, resetAsk, go }:
             ))}
           </div>
         ) : (
-          <div style={{ fontSize: 13.5, color: C.dim, padding: "2px 2px 6px" }}>Your recent searches will appear here.</div>
+          <div style={{ fontSize: 13.5, color: C.dim, padding: "2px 2px 6px" }}>Your recent questions will appear here — ask anything using the box above.</div>
         )}
-        <div style={{ display: "flex", alignItems: "center", gap: 11, padding: "15px 16px", background: "rgba(157,139,255,.08)", border: "1px solid rgba(157,139,255,.2)", borderRadius: 14 }}>
-          <Ico d={ICON.info} w={18} sw={1.8} stroke={C.purpleText} />
-          <span style={{ fontSize: 13, color: "#B9B1E8", lineHeight: 1.45 }}>Every answer cites its sources, orders events in time, and <span style={{ color: C.text, fontWeight: 600 }}>tells you what&apos;s missing.</span></span>
-        </div>
       </div>
     );
   }

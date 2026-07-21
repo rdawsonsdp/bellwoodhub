@@ -214,25 +214,44 @@ export default function MobileApp() {
   );
 }
 
-/* Mayor-mode bottom tabs — Hub · Queue · Ask, thumb zone. */
-const TABS: [Screen, string, string][] = [
-  ["today", I.today, "Hub"],
-  ["needsyou", I.warn, "Needs You"],
-  ["queue", I.approvals, "Queue"],
-  ["ask", I.mic, "Ask"],
-];
+/* Mayor-mode bottom tabs — Hub · Needs You · [ASK] · Queue. Ask is the hero:
+ * a big raised gold circle dead-center in the bar (RD 2026-07-20). */
 function TabBar({ current, go }: { current: Screen; go: (s: Screen) => void }) {
+  const Tab = ({ s, d, label }: { s: Screen; d: string; label: string }) => {
+    const on = current === s;
+    return (
+      <button onClick={() => go(s)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "10px 0 8px", background: "none", border: 0, cursor: "pointer", color: on ? C.gold : C.muted }}>
+        <Svg d={d} w={22} sw={on ? 2.2 : 1.8} />
+        <span style={{ fontSize: 10.5, fontWeight: on ? 800 : 600, fontFamily: FONT.sans }}>{label}</span>
+      </button>
+    );
+  };
+  const askOn = current === "ask";
   return (
-    <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 40, display: "flex", background: "var(--c-sidebar, rgba(255,253,246,.88))", backdropFilter: "blur(16px)", borderTop: "1px solid var(--c-cardbd)", paddingBottom: "env(safe-area-inset-bottom)" }}>
-      {TABS.map(([s, d, label]) => {
-        const on = current === s;
-        return (
-          <button key={s} onClick={() => go(s)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "10px 0 8px", background: "none", border: 0, cursor: "pointer", color: on ? C.gold : C.muted }}>
-            <Svg d={d} w={22} sw={on ? 2.2 : 1.8} />
-            <span style={{ fontSize: 10.5, fontWeight: on ? 800 : 600, fontFamily: FONT.sans }}>{label}</span>
-          </button>
-        );
-      })}
+    <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 40, display: "flex", alignItems: "flex-end", background: "var(--c-sidebar, rgba(255,253,246,.88))", backdropFilter: "blur(16px)", borderTop: "1px solid var(--c-cardbd)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+      {/* left group */}
+      <div style={{ flex: 1, display: "flex" }}>
+        <Tab s="today" d={I.today} label="Hub" />
+        <Tab s="needsyou" d={I.warn} label="Needs You" />
+      </div>
+      {/* center gap the raised Ask FAB sits over — keeps the flex halves even
+          so the button lands dead-center */}
+      <div style={{ width: 78, flexShrink: 0 }} />
+      {/* right group */}
+      <div style={{ flex: 1, display: "flex" }}>
+        <Tab s="queue" d={I.approvals} label="Queue" />
+      </div>
+      {/* the hero Ask button */}
+      <button onClick={() => go("ask")} aria-label="Ask" style={{
+        position: "absolute", left: "50%", bottom: "calc(env(safe-area-inset-bottom) + 8px)", transform: "translateX(-50%)",
+        width: 64, height: 64, borderRadius: 99, border: "4px solid var(--c-appbg)", cursor: "pointer",
+        background: "linear-gradient(135deg,#F4CB63,#D7991C)",
+        boxShadow: askOn ? "0 0 0 3px rgba(231,181,60,.45), 0 10px 22px rgba(231,181,60,.5)" : "0 10px 22px rgba(231,181,60,.45)",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1, color: "#0a1322",
+      }}>
+        <Svg d={I.mic} w={23} sw={2.3} />
+        <span style={{ fontSize: 9.5, fontWeight: 900, fontFamily: FONT.sans }}>Ask</span>
+      </button>
     </div>
   );
 }

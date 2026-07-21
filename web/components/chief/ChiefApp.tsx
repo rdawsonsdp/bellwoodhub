@@ -407,16 +407,24 @@ function Topbar({ onAsk, onReset, asked }: { onAsk?: (q: string) => void; onRese
             ✦ New
           </button>
         )}
+        {/* the hero: a large, always-gold circle — obvious on every screen
+            (RD 2026-07-20). Dims (not greys) until there's a question to send. */}
         <button
           onClick={() => { if (v.trim()) { onAsk?.(v.trim()); setV(""); } }}
           disabled={!v.trim()}
           aria-label="Ask"
-          style={{ order: 2, padding: "9px 18px", borderRadius: 999, border: 0, cursor: v.trim() ? "pointer" : "default", flexShrink: 0, fontWeight: 700, fontSize: 13.5, fontFamily: FONT.sans, background: v.trim() ? C.gold : "rgba(var(--ink),.08)", color: v.trim() ? "#081627" : C.dim }}
+          className="askOrb"
+          style={{ order: 2, width: 50, height: 50, borderRadius: 999, border: "1px solid rgba(216,153,28,.9)", cursor: v.trim() ? "pointer" : "default", flexShrink: 0, fontWeight: 800, fontSize: 14, fontFamily: FONT.sans, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#F6D06B,#D7991C)", color: "#081627", opacity: v.trim() ? 1 : 0.72,
+            // raised: a layered drop shadow lifts it off the bar; the inset top
+            // highlight + bottom shade give it a rounded, pressable 3D face.
+            boxShadow: "0 6px 14px rgba(180,120,10,.45), 0 2px 4px rgba(180,120,10,.35), inset 0 1.5px 0 rgba(255,255,255,.55), inset 0 -2px 3px rgba(140,90,0,.35)",
+            transition: "opacity .15s, box-shadow .12s, transform .12s" }}
         >
           Ask
         </button>
+        {/* mic demoted to a subtle secondary control so Ask is the sole gold hero */}
         <button onClick={mic} aria-label={rec === "rec" ? "Stop and search" : "Ask by voice"} title={rec === "rec" ? "Listening — click to search" : "Ask by voice"}
-          style={{ width: 30, height: 30, borderRadius: 99, border: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: rec === "rec" ? "#fff" : "#0a1322", background: rec === "rec" ? "linear-gradient(135deg,#e8574a,#c23a2e)" : "linear-gradient(135deg,#F4CB63,#D7991C)", animation: rec === "rec" ? "cosPulse 1.1s infinite" : undefined }}>
+          style={{ width: 34, height: 34, borderRadius: 99, border: `1px solid ${C.line}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: rec === "rec" ? "#fff" : C.text2, background: rec === "rec" ? "linear-gradient(135deg,#e8574a,#c23a2e)" : "rgba(var(--ink),.06)", animation: rec === "rec" ? "cosPulse 1.1s infinite" : undefined }}>
           {rec === "busy"
             ? <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" style={{ animation: "cosSpin .8s linear infinite" }}><path d="M21 12a9 9 0 0 0-9-9" /></svg>
             : <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M9 2h6v12a3 3 0 0 1-6 0zM5 11a7 7 0 0 0 14 0M12 18v3" /></svg>}

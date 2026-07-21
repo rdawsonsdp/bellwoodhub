@@ -23,7 +23,22 @@ if (process.env.AUTH_MICROSOFT_ENTRA_ID_ID && process.env.AUTH_MICROSOFT_ENTRA_I
       // what the Graph mail ingest reads with — no second consent screen.
       // Calendars.Read rides along so the Outlook-calendar fast-follow (MH-5)
       // never needs a re-consent.
-      authorization: { params: { scope: "openid profile email offline_access Mail.Read Calendars.Read" } },
+      //
+      // prompt=consent MIRRORS THE GOOGLE PROVIDER (line ~46) and does two jobs:
+      //   1. Guarantees a refresh token is minted every sign-in (Entra, like
+      //      Google, only reliably returns one on an explicit consent), so the
+      //      Outlook connect flow behaves exactly like the Gmail/Calendar one.
+      //   2. Lets a MAYOR WHO HOLDS A TENANT ADMIN ROLE (Global / Application /
+      //      Cloud App / Privileged Role Administrator — NOT merely local
+      //      desktop admin) approve inline: on a consent-restricted government
+      //      tenant, the consent screen an admin sees carries a "Consent on
+      //      behalf of your organization" checkbox. Ticking it grants the app
+      //      for the village ONCE and signs him in in the same step — no
+      //      separate IT ticket. (A non-admin still gets "needs approval"; that
+      //      case is handled by the graceful sign-in error screen.)
+      // Delegated-only: org consent here still lets the app read ONLY the
+      // mailbox of whoever actually signs in — never anyone else's.
+      authorization: { params: { scope: "openid profile email offline_access Mail.Read Calendars.Read", prompt: "consent" } },
     }),
   );
 }
@@ -63,6 +78,10 @@ function allowedEmails(): Set<string> {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
+  // Custom error surface: a first Outlook sign-in on a consent-restricted
+  // government tenant fails with a raw Microsoft error otherwise — /auth/error
+  // turns it into a "one approval needed" screen with an admin + email-IT path.
+  pages: { error: "/auth/error" },
   session: { strategy: "jwt" }, // no adapter; the session lives in the cookie
   callbacks: {
     // Authn is the provider's job; authz is ONLY the allowlist.

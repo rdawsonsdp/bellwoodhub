@@ -45,6 +45,11 @@ const shortName = (name: string) => name.replace(/ Agent$/, "");
 export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpenAgent, onGoNeedsYou }: Props) {
   const [wall, setWall] = useState<WallPayload | null>(null);
   const [failed, setFailed] = useState(false);
+  // Agents fold away for a clean first screen (RD 2026-07-21): a peek row of
+  // avatars until tapped open. The choice sticks per device.
+  const [agentsOpen, setAgentsOpen] = useState(false);
+  useEffect(() => { try { setAgentsOpen(localStorage.getItem("bw-agents-open") === "1"); } catch { /* default closed */ } }, []);
+  const toggleAgents = () => setAgentsOpen((o) => { try { localStorage.setItem("bw-agents-open", o ? "0" : "1"); } catch { /* */ } return !o; });
   const [openAgent, setOpenAgent] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [seen, setSeen] = useState<SeenMap>({});
@@ -124,24 +129,49 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
              intelligence section (narrative + top issues + upcoming events). ── */}
       <NeedsToKnowCard mobile={mobile} onOpenEmail={onOpenEmail} onGoNeedsYou={onGoNeedsYou} onGoApprovals={onGoApprovals} />
 
-      {/* ── THE CABINET ── */}
+      {/* ── THE CABINET — folded to a peek for a clean first screen; tap to
+             open the grid. The schedule strip and stale warning stay visible
+             even folded (trust signals never hide). ── */}
       <div style={{ marginTop: mobile ? 13 : 26 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-          <div style={sectionHead}>Agents</div>
+        <button onClick={toggleAgents} aria-expanded={agentsOpen}
+          style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", background: "none", border: 0, padding: "2px 0", cursor: "pointer", textAlign: "left", flexWrap: "wrap" }}>
+          <span style={{ ...sectionHead, marginBottom: 0 }}>Agents</span>
+          <span style={{ fontSize: 11, color: C.dim, transform: agentsOpen ? "rotate(90deg)" : undefined, display: "inline-block", transition: "transform .12s ease" }}>▶</span>
+          {/* the peek: attention-ordered avatars with status dots + new count */}
+          {wall && !agentsOpen && (
+            <span style={{ display: "flex", alignItems: "center" }}>
+              {attentionOrder(wall.cabinet).slice(0, 8).map((c, i) => (
+                <span key={c.agentKey} style={{ position: "relative", marginLeft: i ? -7 : 0, display: "inline-flex", borderRadius: 99, border: "2px solid var(--c-appbg)" }}>
+                  <AgentAvatar agentKey={c.agentKey} size={mobile ? 22 : 24} />
+                  {(c.statusDot === "red" || isUnseen(seen, c.agentKey, c.freshAt)) && (
+                    <span style={{ position: "absolute", top: -1, right: -1, width: 8, height: 8, borderRadius: 99, border: "1.5px solid var(--c-appbg)", background: c.statusDot === "red" ? C.red : C.gold }} />
+                  )}
+                </span>
+              ))}
+              {wall.cabinet.length > 8 && <span style={{ marginLeft: 5, fontFamily: FONT.mono, fontSize: 10.5, color: C.dim }}>+{wall.cabinet.length - 8}</span>}
+            </span>
+          )}
+          {wall && !agentsOpen && (() => {
+            const fresh = wall.cabinet.filter((c) => isUnseen(seen, c.agentKey, c.freshAt)).length;
+            return fresh > 0
+              ? <span style={{ fontFamily: FONT.mono, fontSize: 10, fontWeight: 800, color: C.goldHi, background: "rgba(231,181,60,.14)", border: "1px solid rgba(231,181,60,.35)", padding: "2px 8px", borderRadius: 99 }}>{fresh} new</span>
+              : null;
+          })()}
           {/* WHEN THEY RUN, always visible. Without it a quiet desk and a
               stopped scheduler look identical, and an operator who suspects the
               second goes back to reading their own inbox — correctly, because
               nothing here told them otherwise. */}
           {wall?.agentSchedule && <ScheduleStrip s={wall.agentSchedule} />}
-        </div>
+        </button>
         {/* Mobile is a two-column GRID — the whole cabinet visible in one
             vertical scroll (horizontal decks fight the thumb; RD 2026-07-02).
             The Schedule card spans full width for its calendar face. */}
+        {agentsOpen && (
         <div
           style={
             mobile
-              ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, alignItems: "start" }
-              : { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 12, alignItems: "start" }
+              ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, alignItems: "start", marginTop: 10 }
+              : { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 12, alignItems: "start", marginTop: 12 }
           }
         >
           {!wall && [0, 1, 2, 3].map((i) => <div key={i} style={{ ...card, height: mobile ? 104 : 118, minWidth: 0, animation: "bwPulse 1.3s ease-in-out infinite" }} />)}
@@ -154,6 +184,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
           )}
           {wall && <AddAgentCard mobile={mobile} onOpen={() => setAddOpen(true)} />}
         </div>
+        )}
       </div>
 
       {/* ── FOOTER: the day in one line ── */}

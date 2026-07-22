@@ -105,9 +105,18 @@ export default function AgentDigestSheet({ run, card: c, schedule, variant, onCl
 
         <div style={{ fontFamily: FONT.serif, fontSize: 19, fontWeight: 600, lineHeight: 1.25, margin: "14px 0 4px" }}>{run.headline}</div>
 
-        {/* the trace link — transparency beats trust-me */}
-        <button onClick={toggleWork} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: 0, padding: "2px 0", cursor: "pointer", fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".06em", color: workOpen ? C.gold : C.dim }}>
-          {workOpen ? "▾" : "▸"} SHOW THE WORK — model · prompt · timing · validation
+        {/* the trace button — transparency beats trust-me. A real, pushable
+            control (RD 2026-07-21): informational grey, brain to the left. */}
+        <button onClick={toggleWork} style={{ display: "inline-flex", alignItems: "center", gap: 9, marginTop: 7, cursor: "pointer", borderRadius: 11, padding: "9px 15px", border: `1px solid ${workOpen ? "rgba(231,181,60,.55)" : C.line}`, background: workOpen ? "rgba(231,181,60,.1)" : "rgba(var(--ink),.07)", color: workOpen ? C.goldHi : C.text2, fontFamily: FONT.sans, fontWeight: 800, fontSize: 12.5, boxShadow: workOpen ? "none" : "0 2px 5px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.07)", transition: "background .12s, box-shadow .12s" }}>
+          {/* the brain — the agent's thinking */}
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" />
+            <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z" />
+            <path d="M12 5v13" />
+          </svg>
+          Show the work
+          <span style={{ fontFamily: FONT.mono, fontSize: 9.5, letterSpacing: ".06em", color: workOpen ? C.gold : C.dim, fontWeight: 500 }}>model · prompt · timing</span>
+          <span style={{ fontSize: 10, transform: workOpen ? "rotate(90deg)" : undefined, display: "inline-block", transition: "transform .12s" }}>▶</span>
         </button>
         {workOpen && <WorkPanel diag={diag} />}
 

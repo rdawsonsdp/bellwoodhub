@@ -16,6 +16,7 @@ import { tenant, orgPrefix } from "@/lib/tenant";
 import { C, FONT, APP_BG, card, eyebrow, cite } from "@/lib/cos-design";
 import { IS_LIVE_BUILD } from "@/lib/live";
 import { loadOperatorMode, saveOperatorMode } from "@/lib/operator-mode";
+import { getCosPersona } from "@/lib/morning";
 import { logUsage } from "@/lib/usage";
 import NoteButton from "./NoteButton";
 import type { AskResponse } from "@/lib/types";
@@ -181,9 +182,10 @@ export default function ChiefApp() {
       <Sidebar screen={screen} go={go} operator={operator} onToggleOperator={(on) => { saveOperatorMode(on); setOperator(on); }} goAgentSection={(sec) => { setAgentFocus(null); setAgentSection(sec); setScreen("agents"); }} agentSection={agentSection} />
 
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+        {screen === "today" && <GreetingBanner />}
         <Topbar asked={asked} onReset={resetAsk} onAsk={(question) => { setScreen("ask"); runAsk(question); }} />
         <div className="scrl" style={{ flex: 1, overflowY: "auto" }}>
-          {screen === "today" && <WallScreen variant="desktop" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} onOpenAgent={(k) => { setAgentFocus(k); setScreen("agents"); }} onGoNeedsYou={() => setScreen("needsyou")} onGoCalendar={() => setScreen("track")} onGoSync={() => setScreen("sync")} onGoAgents={() => { setAgentFocus(null); setScreen("agents"); }} />}
+          {screen === "today" && <WallScreen variant="desktop" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} onOpenAgent={(k) => { setAgentFocus(k); setScreen("agents"); }} onGoNeedsYou={() => setScreen("needsyou")} onGoCalendar={() => setScreen("track")} onGoSync={() => setScreen("sync")} onGoAgents={() => { setAgentFocus(null); setScreen("agents"); }} onGoActivity={() => setScreen("activity")} />}
           {screen === "needsyou" && <NeedsYouScreen variant="desktop" onOpenEmail={setEmailMid} />}
           {screen === "queue" && <QueueScreen variant="desktop" onOpenEmail={setEmailMid} />}
           {screen === "brief" && <Brief go={go} onAsk={() => runAsk("Every flooding conversation, in order — who promised what and whether it happened.")} />}
@@ -321,6 +323,28 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
           )}
           {!collapsed && <span style={{ color: C.dim, fontSize: 15, letterSpacing: "1px" }}>⋯</span>}
         </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── the greeting letterhead, ABOVE the Ask bar (RD 2026-07-22) — derived
+      from the persona + clock, so it needs no wall fetch. Dashboard only. */
+function GreetingBanner() {
+  const persona = getCosPersona();
+  const now = new Date();
+  const part = now.getHours() < 12 ? "morning" : now.getHours() < 17 ? "afternoon" : "evening";
+  return (
+    <div style={{ padding: "16px 32px 0", maxWidth: 1144, margin: "0 auto", width: "100%" }}>
+      <div style={{ position: "relative", overflow: "hidden", borderRadius: 20, padding: "22px 28px 20px", background: "#FFFFFF", border: "1.5px solid rgba(20,51,92,.30)", boxShadow: "0 10px 28px rgba(20,40,80,.10)" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/bellwood.webp" alt="" aria-hidden style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", right: -150, height: 200, opacity: 1, pointerEvents: "none", userSelect: "none" }} />
+        <div style={{ position: "relative", maxWidth: "72%" }}>
+          <div style={{ ...eyebrow("#8a6a1f"), fontWeight: 700 }}>{now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
+          <div style={{ fontFamily: FONT.serif, fontSize: "clamp(20px, 3.6vw, 27px)", fontWeight: 600, color: "#14335c", lineHeight: 1.12, marginTop: 7, letterSpacing: "-.01em" }}>
+            Good {part}, {persona.mayorName}.
+          </div>
+        </div>
       </div>
     </div>
   );

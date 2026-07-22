@@ -168,8 +168,10 @@ export async function liveMorningSummary(persona: CosPersona, hour?: number): Pr
         `Respond with a JSON object: {"greeting": string, "briefing": string, "order": number[]}. ` +
         `"greeting": a short, personal ONE-sentence greeting addressing him by name (${persona.mayorName}), fitting the ${part}, in your own voice — not a generic "Good ${part}, Mayor." ` +
         `"briefing": 2-3 short sentences: what most needs him, the single most important thing, and a nod to what's on his calendar. ` +
-        `"order": the numbered articles below re-ranked by IMPORTANCE TO THE MAYOR, most important first ` +
-        `(public safety and emergencies, then commitments he made, then money and deadlines, then repeat follow-ups, then routine). ` +
+        `"order": the numbered articles below re-ranked by IMPORTANCE TO THE MAYOR, most important first. ` +
+        `Weigh three named factors: URGENCY (time pressure, escalation), RELEVANCE (does this touch his duties, commitments, constituents), ` +
+        `and RISK (safety, security, money, reputation). Each entry: {"n": number, "why": string} — "why" is ONE short clause ` +
+        `naming the deciding factor(s), e.g. "risk: active account takeover" or "urgency: 3rd follow-up, 6 days". ` +
         `Use ONLY the facts below; never invent items or numbers. Plain text, no markdown.`;
       const ctx = [
         `The articles, numbered: ${pressing.map((p, i) => `${i + 1}. ${p.title} [${p.tag}] — ${p.why}`).join(" | ") || "none"}.`,
@@ -180,17 +182,31 @@ export async function liveMorningSummary(persona: CosPersona, hour?: number): Pr
       ].join("\n");
       const out = await chat(sys, ctx, { temperature: 0.85, json: true });
       if (out) {
-        const j = JSON.parse(out) as { greeting?: string; briefing?: string; order?: number[] };
+        const j = JSON.parse(out) as { greeting?: string; briefing?: string; order?: (number | { n?: number; why?: string })[] };
         if (j.greeting && j.briefing) { greeting = String(j.greeting).trim(); narrative = String(j.briefing).trim(); live = true; }
-        // the CoS's own ranking of the page — applied only if it's a valid
-        // permutation-subset; anything it skipped keeps the deterministic order
+        // the CoS's own ranking — urgency/relevance/risk, applied only as a
+        // valid permutation-subset; anything skipped keeps deterministic order.
+        // THE DECISION IS TRACKED: rationale rides each item (rankWhy) and the
+        // full ranking lands in the audit ledger (RD 2026-07-22).
         if (Array.isArray(j.order) && j.order.length) {
           const picked = j.order
-            .map((n) => pressing[Number(n) - 1])
+            .map((e) => {
+              const n = typeof e === "number" ? e : Number(e?.n);
+              const item = pressing[n - 1];
+              if (item && typeof e === "object" && e?.why) item.rankWhy = String(e.why).slice(0, 140);
+              return item;
+            })
             .filter((x): x is PressingItem => !!x);
           if (picked.length) {
             const rest = pressing.filter((p) => !picked.includes(p));
             pressing.splice(0, pressing.length, ...picked, ...rest);
+            try {
+              const { logAudit } = await import("./audit");
+              void logAudit({ actor: null, action: "brief.rank", objectType: "briefing", meta: {
+                factors: "urgency·relevance·risk",
+                ranking: picked.map((p, i) => ({ pos: i + 1, title: p.title.slice(0, 90), by: p.agentName ?? null, why: p.rankWhy ?? null })),
+              } });
+            } catch { /* the ledger must never break the briefing */ }
           }
         }
       }

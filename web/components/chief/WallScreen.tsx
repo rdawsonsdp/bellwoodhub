@@ -41,13 +41,14 @@ interface Props {
   onGoCalendar?: () => void;
   onGoSync?: () => void;
   onGoAgents?: () => void;
+  onGoActivity?: () => void;
 }
 
 const URGENCY_C: Record<string, string> = { red: C.red, yellow: C.orange, clear: C.green };
 
 const shortName = (name: string) => name.replace(/ Agent$/, "");
 
-export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpenAgent, onGoNeedsYou, onGoCalendar, onGoSync, onGoAgents }: Props) {
+export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpenAgent, onGoNeedsYou, onGoCalendar, onGoSync, onGoAgents, onGoActivity }: Props) {
   const [wall, setWall] = useState<WallPayload | null>(null);
   const [failed, setFailed] = useState(false);
   // Agents fold away for a clean first screen (RD 2026-07-21): a peek row of
@@ -111,13 +112,14 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
           wordmark and only the bell emblem shows). Fixed palette, like real
           letterhead, so it reads in all four themes; dated by the SAME clock
           as the content below it (invariant 9). ── */}
+      {mobile && (
       <div style={{ position: "relative", overflow: "hidden", borderRadius: 20, marginTop: mobile ? 8 : 0, padding: mobile ? "12px 15px 11px" : "30px 28px 26px", background: "#FFFFFF", border: "1.5px solid rgba(20,51,92,.30)", boxShadow: "0 14px 36px rgba(20,40,80,.16)" }}>
         {(() => {
           const h = mobile ? 130 : 285; // logo is 400×170; bell ≈ left 37.5%
           const w = h * (400 / 170);
           return (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img src="/bellwood.webp" alt="" aria-hidden style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", right: -(w * 0.605), height: h, opacity: 0.32, pointerEvents: "none", userSelect: "none" }} />
+            <img src="/bellwood.webp" alt="" aria-hidden style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", right: -(w * 0.605), height: h, opacity: 1, pointerEvents: "none", userSelect: "none" }} />
           );
         })()}
         <div style={{ position: "relative", maxWidth: mobile ? "78%" : "72%" }}>
@@ -128,6 +130,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
           {wall?.sendLive && <div style={{ marginTop: 10 }}><SendLivePill /></div>}
         </div>
       </div>
+      )}
 
       {/* ── MOBILE: the Brief (swipe-first). DESKTOP: the actionable widget
              dashboard (RB-UX 2026-07-22) — same data, executive-density. ── */}
@@ -136,7 +139,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
           onOpenAgent={(k) => { if (wall?.runs[k]) openDigest(k); else onOpenAgent?.(k); }} />
       ) : (
         <DashboardHub wall={wall} onOpenEmail={onOpenEmail} onGoApprovals={onGoApprovals} onGoNeedsYou={onGoNeedsYou}
-          onGoCalendar={onGoCalendar} onGoSync={onGoSync} onGoAgents={onGoAgents}
+          onGoCalendar={onGoCalendar} onGoSync={onGoSync} onGoAgents={onGoAgents} onGoActivity={onGoActivity}
           onOpenAgent={(k) => { if (wall?.runs[k]) openDigest(k); else onOpenAgent?.(k); }} />
       )}
 

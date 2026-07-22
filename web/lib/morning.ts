@@ -60,6 +60,8 @@ export interface PressingItem {
   title: string; why: string; tag: string; messageId?: string;
   /** the desk that filed this article — byline on the Brief (RD 2026-07-21) */
   agentKey?: string; agentName?: string;
+  /** the Brief agent's ranking rationale — urgency/relevance/risk (tracked) */
+  rankWhy?: string;
 }
 export interface BriefCalendarItem {
   id: string; title: string; when: string; source?: "gov" | "gmail";

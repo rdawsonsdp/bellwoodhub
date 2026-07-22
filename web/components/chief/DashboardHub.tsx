@@ -21,8 +21,9 @@ import { getCosPersona, type MorningSummary, type PressingItem } from "@/lib/mor
 import type { WallPayload } from "@/lib/wall";
 import { AgentAvatar } from "./AgentBadge";
 
-/* ── palette (spec) ─────────────────────────────────────────────────────── */
-const P = {
+/* ── palette (spec) — THE app design system (RD 2026-07-22): every screen
+      adopts these tokens + primitives, not just the dashboard ────────────── */
+export const P = {
   bg: "#FFFFFF",
   card: "#FFFFFF",
   cardAlt: "#FFFFFF",
@@ -38,17 +39,17 @@ const P = {
   greenBg: "#DCEFE2",
 };
 
-const SANS = "'Public Sans','Inter',system-ui,sans-serif";
+export const SANS = "'Public Sans','Inter',system-ui,sans-serif";
 
 /* ── shared card chrome ─────────────────────────────────────────────────── */
-function WCard({ children, span, alt }: { children: React.ReactNode; span?: number; alt?: boolean }) {
+export function WCard({ children, span, alt }: { children: React.ReactNode; span?: number; alt?: boolean }) {
   return (
     <div style={{ gridColumn: span ? `span ${span}` : undefined, background: alt ? P.cardAlt : P.card, border: `1px solid ${P.border}`, borderRadius: 16, padding: "16px 18px", boxShadow: "0 1px 3px rgba(30,30,30,.05)", display: "flex", flexDirection: "column", minWidth: 0 }}>
       {children}
     </div>
   );
 }
-function WHead({ title, onMore }: { title: string; onMore?: () => void }) {
+export function WHead({ title, onMore }: { title: string; onMore?: () => void }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
       <span style={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", color: P.text2 }}>{title}</span>
@@ -58,8 +59,8 @@ function WHead({ title, onMore }: { title: string; onMore?: () => void }) {
     </div>
   );
 }
-const btnSolid: React.CSSProperties = { cursor: "pointer", border: 0, borderRadius: 9, padding: "9px 15px", fontFamily: SANS, fontWeight: 800, fontSize: 12, letterSpacing: ".04em", textTransform: "uppercase", background: `linear-gradient(135deg, ${P.amber}, ${P.amberDeep})`, color: "#fff" };
-const btnOutline: React.CSSProperties = { cursor: "pointer", borderRadius: 9, padding: "8px 14px", fontFamily: SANS, fontWeight: 800, fontSize: 12, letterSpacing: ".04em", textTransform: "uppercase", background: "#fff", border: `1.5px solid ${P.border}`, color: P.text2 };
+export const btnSolid: React.CSSProperties = { cursor: "pointer", border: 0, borderRadius: 9, padding: "9px 15px", fontFamily: SANS, fontWeight: 800, fontSize: 12, letterSpacing: ".04em", textTransform: "uppercase", background: `linear-gradient(135deg, ${P.amber}, ${P.amberDeep})`, color: "#fff" };
+export const btnOutline: React.CSSProperties = { cursor: "pointer", borderRadius: 9, padding: "8px 14px", fontFamily: SANS, fontWeight: 800, fontSize: 12, letterSpacing: ".04em", textTransform: "uppercase", background: "#fff", border: `1.5px solid ${P.border}`, color: P.text2 };
 
 /* ── 1. Critical Security Alerts (priority card, 2 columns) ─────────────── */
 export function SecurityAlertsCard({ alerts, onOpenEmail, onOpenAgent }: {
@@ -67,43 +68,81 @@ export function SecurityAlertsCard({ alerts, onOpenEmail, onOpenAgent }: {
   onOpenEmail?: (mid: string) => void;
   onOpenAgent?: (agentKey: string) => void;
 }) {
+  // TOP ISSUES from ALL desks (RD 2026-07-22) — ranked by the Brief agent on
+  // urgency · relevance · risk (rationale shown per item, decision tracked in
+  // the audit ledger). Scrollable when the list runs long.
+  const critical = alerts.filter((a) => a.tag === "update").length;
+  const pill = (a: PressingItem) =>
+    a.tag === "update" ? { t: "UNRESOLVED", bg: P.red }
+    : a.tag === "new" ? { t: "NEW", bg: P.green }
+    : a.tag === "draft ready" ? { t: "DRAFT READY", bg: P.amberDeep }
+    : { t: "NEEDS REPLY", bg: P.amber };
   return (
-    <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 3px rgba(30,30,30,.06)", minWidth: 0 }}>
+    <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 3px rgba(30,30,30,.06)", minWidth: 0, display: "flex", flexDirection: "column" }}>
       {/* high-contrast banner */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", background: `linear-gradient(120deg, ${P.rust}, #A93F10)`, color: "#fff" }}>
         <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#F6C563" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" />
         </svg>
-        <div>
-          <div style={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.85 }}>Critical security alerts</div>
-          <div style={{ fontFamily: SANS, fontSize: 17, fontWeight: 800 }}>{alerts.length ? `${alerts.length} unresolved — action required` : "All clear"}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.85 }}>Top issues · all desks</div>
+          <div style={{ fontFamily: SANS, fontSize: 17, fontWeight: 800 }}>{alerts.length ? `${alerts.length} ranked by your Chief of Staff${critical ? ` · ${critical} critical` : ""}` : "All clear"}</div>
         </div>
+        <span style={{ fontFamily: SANS, fontSize: 9, fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", opacity: 0.75, textAlign: "right" }}>urgency · relevance · risk<br />ranking tracked</span>
       </div>
       {alerts.length === 0 && (
-        <div style={{ padding: "18px", fontFamily: SANS, fontSize: 13.5, color: P.text2 }}>No critical alerts from any desk right now.</div>
+        <div style={{ padding: "18px", fontFamily: SANS, fontSize: 13.5, color: P.text2 }}>Nothing ranked as a top issue right now.</div>
       )}
-      {alerts.map((a, i) => (
-        <div key={i} style={{ padding: "14px 18px", borderTop: i ? `1px solid ${P.border}` : undefined }}>
+      {/* THE INDEX (RD 2026-07-22): every identified issue in one glance —
+          built for many; each row jumps to its item below. */}
+      {alerts.length > 1 && (
+        <div style={{ padding: "10px 18px 11px", borderTop: `1px solid ${P.border}`, background: "#FAFBFC" }}>
+          <div style={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: P.text3, marginBottom: 7 }}>Index · {alerts.length} issues</div>
+          <div style={{ display: "grid", gap: 3 }}>
+            {alerts.map((a, i) => {
+              const pl = pill(a);
+              return (
+                <button key={i}
+                  onClick={() => document.getElementById(`dash-issue-${i}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" })}
+                  style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: 0, padding: "2px 0", cursor: "pointer", textAlign: "left", minWidth: 0 }}>
+                  <span style={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, color: P.text3, width: 16, flexShrink: 0 }}>{i + 1}</span>
+                  <span style={{ width: 7, height: 7, borderRadius: 99, background: pl.bg, flexShrink: 0 }} />
+                  <span style={{ fontFamily: SANS, fontSize: 12, fontWeight: 700, color: P.text2, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.title}</span>
+                  <span style={{ fontFamily: SANS, fontSize: 9, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: P.text3, flexShrink: 0 }}>{a.agentName}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {/* scrollable body */}
+      <div className="scrl" style={{ overflowY: "auto", maxHeight: 560 }}>
+      {alerts.map((a, i) => {
+        const pl = pill(a);
+        return (
+        <div key={i} id={`dash-issue-${i}`} style={{ padding: "14px 18px", borderTop: `1px solid ${P.border}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ fontFamily: SANS, fontSize: 12, color: P.text3, fontWeight: 700 }}>{i + 1}</span>
+            <span style={{ width: 21, height: 21, borderRadius: 7, background: i === 0 ? P.red : i < 3 ? P.amber : "#A8A29A", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 11.5, fontWeight: 800 }}>{i + 1}</span>
             {a.agentKey && <AgentAvatar agentKey={a.agentKey} size={17} />}
             <span style={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", color: P.text2 }}>{a.agentName}</span>
-            <span style={{ marginLeft: "auto", fontFamily: SANS, fontSize: 10, fontWeight: 800, letterSpacing: ".08em", padding: "3px 10px", borderRadius: 99, background: a.tag === "update" ? P.red : P.green, color: "#fff" }}>
-              {a.tag === "update" ? "UNRESOLVED" : "NEW"}
-            </span>
+            <span style={{ marginLeft: "auto", fontFamily: SANS, fontSize: 10, fontWeight: 800, letterSpacing: ".08em", padding: "3px 10px", borderRadius: 99, background: pl.bg, color: "#fff" }}>{pl.t}</span>
           </div>
           <div style={{ fontFamily: SANS, fontSize: 16.5, fontWeight: 800, color: P.text, lineHeight: 1.25, marginTop: 6, overflowWrap: "anywhere" }}>{a.title}</div>
           {a.why && <div style={{ fontFamily: SANS, fontSize: 13, color: P.text2, lineHeight: 1.55, marginTop: 5, overflowWrap: "anywhere" }}>{a.why}</div>}
+          {a.rankWhy && (
+            <div style={{ fontFamily: SANS, fontSize: 11.5, color: P.text3, marginTop: 5, fontStyle: "italic" }}>ranked here — {a.rankWhy}</div>
+          )}
           <div style={{ display: "flex", gap: 9, marginTop: 11, flexWrap: "wrap" }}>
             {a.messageId && onOpenEmail && (
               <button onClick={() => onOpenEmail(a.messageId!)} style={btnSolid}>Open email ↗</button>
             )}
-            {a.agentKey && onOpenAgent && (
+            {a.agentKey && onOpenAgent && a.tag !== "needs reply" && (
               <button onClick={() => onOpenAgent(a.agentKey!)} style={btnOutline}>View report</button>
             )}
           </div>
         </div>
-      ))}
+      );})}
+      </div>
     </div>
   );
 }
@@ -176,10 +215,11 @@ export function SyncChartWidget({ onGo }: { onGo?: () => void }) {
         {series === null && <span style={{ fontFamily: SANS, fontSize: 12, color: P.text3 }}>…</span>}
         {series !== null && series.length === 0 && <span style={{ fontFamily: SANS, fontSize: 12, color: P.text3 }}>No sync activity in this window.</span>}
         {(series ?? []).map((s, i) => (
-          <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, minWidth: 0 }} title={`${s.n.toLocaleString()} rows`}>
+          <button key={i} onClick={onGo} title={`${s.n.toLocaleString()} rows — open Sync`}
+            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", gap: 4, minWidth: 0, background: "none", border: 0, padding: 0, cursor: onGo ? "pointer" : "default" }}>
             <div style={{ width: "100%", maxWidth: 26, height: Math.max(3, Math.round((s.n / max) * 70)), borderRadius: 5, background: `linear-gradient(180deg, ${P.amber}, ${P.amberDeep})` }} />
             <span style={{ fontFamily: SANS, fontSize: 9, color: P.text3, whiteSpace: "nowrap" }}>{s.label}</span>
-          </div>
+          </button>
         ))}
       </div>
       {onGo && <button onClick={onGo} style={{ ...btnOutline, alignSelf: "flex-start", marginTop: 10 }}>Sync detail ›</button>}
@@ -188,28 +228,31 @@ export function SyncChartWidget({ onGo }: { onGo?: () => void }) {
 }
 
 /* ── 5. Priority matrix (urgency × importance, from live triage) ────────── */
-export function MatrixWidget({ counts, onGo }: {
+export function MatrixWidget({ counts, onGo, onGoApprovals }: {
   counts: { needsReply: number; waiting: number; awaiting: number; fyi: number };
   onGo?: () => void;
+  onGoApprovals?: () => void;
 }) {
   const total = Math.max(1, counts.needsReply + counts.waiting + counts.awaiting + counts.fyi);
   const pct = (n: number) => `${Math.round((n / total) * 100)}%`;
-  const cell = (bg: string, label: string, n: number): React.ReactNode => (
-    <div style={{ background: bg, borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
+  // every quadrant drills to its list (RD 2026-07-22)
+  const cell = (bg: string, label: string, n: number, go?: () => void): React.ReactNode => (
+    <button onClick={go} disabled={!go} title={go ? `Open ${label}` : undefined}
+      style={{ background: bg, border: 0, borderRadius: 10, padding: "10px 8px", textAlign: "center", cursor: go ? "pointer" : "default" }}>
       <div style={{ fontFamily: SANS, fontSize: 17, fontWeight: 800, color: "#fff" }}>{pct(n)}</div>
       <div style={{ fontFamily: SANS, fontSize: 9.5, fontWeight: 700, color: "rgba(255,255,255,.9)" }}>{label}</div>
-    </div>
+    </button>
   );
   return (
     <WCard>
       <WHead title="Priority matrix" onMore={onGo} />
       <div style={{ display: "grid", gridTemplateColumns: "14px 1fr 1fr", gap: 6, alignItems: "stretch", flex: 1 }}>
         <div style={{ fontFamily: SANS, fontSize: 9.5, color: P.text3, writingMode: "vertical-rl", transform: "rotate(180deg)", textAlign: "center" }}>urgency →</div>
-        {cell(P.red, "needs reply", counts.needsReply)}
-        {cell(P.amber, "drafts waiting", counts.waiting)}
+        {cell(P.red, "needs reply", counts.needsReply, onGo)}
+        {cell(P.amber, "drafts waiting", counts.waiting, onGoApprovals)}
         <span />
-        {cell("#5B8C5A", "awaiting others", counts.awaiting)}
-        {cell("#A8A29A", "FYI", counts.fyi)}
+        {cell("#5B8C5A", "awaiting others", counts.awaiting, onGo)}
+        {cell("#A8A29A", "FYI", counts.fyi, onGo)}
       </div>
       <div style={{ fontFamily: SANS, fontSize: 9.5, color: P.text3, textAlign: "center", marginTop: 5 }}>share of classified mail · live triage</div>
     </WCard>
@@ -217,15 +260,23 @@ export function MatrixWidget({ counts, onGo }: {
 }
 
 /* ── 6a. List metrics ───────────────────────────────────────────────────── */
-export function ListMetricsCard({ rows, title, onGo }: { title: string; rows: { label: string; n: number }[]; onGo?: () => void }) {
+export function ListMetricsCard({ rows, title, onGo }: { title: string; rows: { label: string; n: number; onGo?: () => void; expand?: React.ReactNode }[]; onGo?: () => void }) {
+  const [open, setOpen] = useState<string | null>(null);
   return (
     <WCard>
       <WHead title={title} onMore={onGo} />
       <div style={{ display: "grid", gap: 9, flex: 1 }}>
         {rows.map((r) => (
-          <div key={r.label} style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-            <span style={{ fontFamily: SANS, fontSize: 13, color: P.text2, flex: 1 }}>{r.label}</span>
-            <span style={{ fontFamily: SANS, fontSize: 16, fontWeight: 800, color: P.text }}>{r.n.toLocaleString()}</span>
+          <div key={r.label}>
+            <button
+              onClick={r.expand ? () => setOpen((o) => (o === r.label ? null : r.label)) : r.onGo}
+              disabled={!r.onGo && !r.expand}
+              style={{ display: "flex", alignItems: "baseline", gap: 10, width: "100%", background: "none", border: 0, padding: 0, cursor: r.onGo || r.expand ? "pointer" : "default", textAlign: "left" }}>
+              <span style={{ fontFamily: SANS, fontSize: 13, color: P.text2, flex: 1 }}>{r.label}</span>
+              <span style={{ fontFamily: SANS, fontSize: 16, fontWeight: 800, color: P.text }}>{r.n.toLocaleString()}</span>
+              {(r.onGo || r.expand) && <span style={{ fontFamily: SANS, fontSize: 12, color: P.text3, transform: r.expand && open === r.label ? "rotate(90deg)" : undefined, display: "inline-block" }}>›</span>}
+            </button>
+            {r.expand && open === r.label && <div style={{ marginTop: 7 }}>{r.expand}</div>}
           </div>
         ))}
       </div>
@@ -256,7 +307,7 @@ export function ActiveAgentsCard({ wall, onOpenAgent, onGo }: { wall: WallPayloa
 }
 
 /* ── the grid ───────────────────────────────────────────────────────────── */
-export default function DashboardHub({ wall, onOpenEmail, onOpenAgent, onGoApprovals, onGoNeedsYou, onGoCalendar, onGoSync, onGoAgents }: {
+export default function DashboardHub({ wall, onOpenEmail, onOpenAgent, onGoApprovals, onGoNeedsYou, onGoCalendar, onGoSync, onGoAgents, onGoActivity }: {
   wall: WallPayload | null;
   onOpenEmail?: (mid: string) => void;
   onOpenAgent?: (agentKey: string) => void;
@@ -265,10 +316,11 @@ export default function DashboardHub({ wall, onOpenEmail, onOpenAgent, onGoAppro
   onGoCalendar?: () => void;
   onGoSync?: () => void;
   onGoAgents?: () => void;
+  onGoActivity?: () => void;
 }) {
   const [sum, setSum] = useState<MorningSummary | null>(null);
   const [triage, setTriage] = useState<{ needsReply: number; awaiting: number; fyi: number }>({ needsReply: 0, awaiting: 0, fyi: 0 });
-  const [notes, setNotes] = useState(0);
+  const [notes, setNotes] = useState<{ id: string; title: string; stale: boolean }[]>([]);
 
   useEffect(() => {
     let live = true;
@@ -282,18 +334,14 @@ export default function DashboardHub({ wall, onOpenEmail, onOpenAgent, onGoAppro
         live && setTriage({ needsReply: d.needsReply?.length ?? 0, awaiting: d.awaitingOthers?.length ?? 0, fyi: d.fyi?.length ?? 0 }))
       .catch(() => {});
     fetch("/api/cos-notes").then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: { notes?: unknown[] }) => live && setNotes(d.notes?.length ?? 0)).catch(() => {});
+      .then((d: { notes?: { id: string; title: string; stale: boolean }[] }) => live && setNotes(d.notes ?? [])).catch(() => {});
     return () => { live = false; };
   }, []);
 
   const pressing = sum?.pressing ?? [];
-  // critical = stories filed by a desk whose LATEST RUN is red urgency (the
-  // run's own judgment — not the card dot, which can reflect account status)
-  const redDesks = new Set(
-    Object.values(wall?.runs ?? {}).filter((r) => r.urgency === "red").map((r) => r.agentKey),
-  );
-  const isStory = (p: PressingItem) => p.tag === "update" || p.tag === "new";
-  const alerts = pressing.filter((p) => isStory(p) && p.agentKey && redDesks.has(p.agentKey)).slice(0, 3);
+  // the Top Issues panel carries the WHOLE ranked page — every desk's stories
+  // plus mail signals, in the Brief agent's tracked order (RD 2026-07-22)
+  const alerts = pressing;
   const waiting = wall?.footer.waiting ?? 0;
   const handled = wall?.footer.handled ?? 0;
 
@@ -302,7 +350,7 @@ export default function DashboardHub({ wall, onOpenEmail, onOpenAgent, onGoAppro
       {/* the CoS briefing line — a bordered card at the top (RD 2026-07-22),
           same chrome as the widgets; full text, never clipped mid-sentence */}
       {sum?.narrative && (
-        <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 14, boxShadow: "0 1px 3px rgba(30,30,30,.05)", padding: "13px 16px", marginBottom: 14, display: "flex", gap: 11, alignItems: "flex-start" }}>
+        <div style={{ position: "sticky", top: 6, zIndex: 40, background: P.card, border: `1px solid ${P.border}`, borderRadius: 14, boxShadow: "0 6px 18px rgba(30,30,30,.10)", padding: "13px 16px", marginBottom: 14, display: "flex", gap: 11, alignItems: "flex-start" }}>
           <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={P.amber} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
             <path d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z" />
           </svg>
@@ -318,12 +366,24 @@ export default function DashboardHub({ wall, onOpenEmail, onOpenAgent, onGoAppro
       <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
         <div style={{ width: 258, flexShrink: 0, display: "grid", gap: 14 }}>
           <SyncChartWidget onGo={onGoSync} />
-          <MatrixWidget counts={{ needsReply: triage.needsReply, waiting, awaiting: triage.awaiting, fyi: triage.fyi }} onGo={onGoNeedsYou} />
+          <MatrixWidget counts={{ needsReply: triage.needsReply, waiting, awaiting: triage.awaiting, fyi: triage.fyi }} onGo={onGoNeedsYou} onGoApprovals={onGoApprovals} />
           <ListMetricsCard title="Recent email actions" onGo={onGoNeedsYou}
             rows={[
-              { label: "Need your reply", n: triage.needsReply },
-              { label: "Handled by agents", n: handled },
-              { label: "Your open notes", n: notes },
+              { label: "Need your reply", n: triage.needsReply, onGo: onGoNeedsYou },
+              { label: "Handled by agents", n: handled, onGo: onGoActivity },
+              { label: "Your open notes", n: notes.length, expand: (
+                <div style={{ display: "grid", gap: 6, borderTop: `1px solid ${P.border}`, paddingTop: 8 }}>
+                  {notes.length === 0 && <span style={{ fontFamily: SANS, fontSize: 12, color: P.text3 }}>No open notes — use the pencil (top bar) or hold Ask and say &ldquo;remember to…&rdquo;.</span>}
+                  {notes.map((n) => (
+                    <div key={n.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <button title="Mark done" onClick={() => { setNotes((xs) => xs.filter((x) => x.id !== n.id)); void fetch("/api/cos-notes", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: n.id, status: "done" }) }).catch(() => {}); }}
+                        style={{ width: 17, height: 17, borderRadius: 99, border: `1.6px solid ${P.amber}`, background: "transparent", cursor: "pointer", flexShrink: 0 }} />
+                      <span style={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: P.text, flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>{n.title}</span>
+                      {n.stale && <span style={{ fontFamily: SANS, fontSize: 9, fontWeight: 800, color: P.red }}>STILL OPEN</span>}
+                    </div>
+                  ))}
+                </div>
+              ) },
             ]} />
           <ActiveAgentsCard wall={wall} onOpenAgent={onOpenAgent} onGo={onGoAgents} />
         </div>

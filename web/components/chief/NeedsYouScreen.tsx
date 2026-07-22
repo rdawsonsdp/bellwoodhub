@@ -14,6 +14,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { C, FONT } from "@/lib/cos-design";
+import { P, SANS } from "./DashboardHub";
 
 interface Item {
   messageId: string; sourceRef: string; subject: string | null; fromName: string | null; fromEmail: string | null;
@@ -56,12 +57,19 @@ export default function NeedsYouScreen({ variant, onOpenEmail }: { variant: "des
   const list = view?.needsReply ?? [];
 
   return (
-    <div className="fu" style={{ padding: mobile ? "22px 16px 40px" : "30px 36px 48px", maxWidth: 1100 }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 4 }}>
-        <div style={{ fontFamily: FONT.serif, fontSize: mobile ? 27 : 34, fontWeight: 500, color: C.text, letterSpacing: "-.015em", lineHeight: 1 }}>Email Actions</div>
-        {view && <span style={{ fontSize: 13, color: C.text3 }}>{list.length} waiting on your reply{view.classifiedAt ? ` · sorted ${ago(view.classifiedAt)}` : ""}</span>}
+    <div className="fu" style={{ padding: mobile ? "22px 16px 40px" : "26px 36px 48px", maxWidth: 1100 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 6 }}>
+        <div style={{ fontFamily: SANS, fontSize: mobile ? 22 : 26, fontWeight: 800, color: P.text, letterSpacing: "-.01em", lineHeight: 1 }}>Email Actions</div>
+        {view && (
+          <span style={{ display: "inline-flex", gap: 7, flexWrap: "wrap" }}>
+            <span style={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, padding: "4px 11px", borderRadius: 99, background: P.red, color: "#fff" }}>{list.length} waiting on you</span>
+            <span style={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, padding: "4px 11px", borderRadius: 99, background: "#5B8C5A", color: "#fff" }}>{view.awaitingOthers.length} awaiting others</span>
+            <span style={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, padding: "4px 11px", borderRadius: 99, background: "#A8A29A", color: "#fff" }}>{view.fyi.length} FYI</span>
+          </span>
+        )}
+        {view?.classifiedAt && <span style={{ fontFamily: SANS, fontSize: 11.5, color: P.text3 }}>sorted {ago(view.classifiedAt)}</span>}
       </div>
-      <div style={{ fontSize: 12.5, color: C.text3, marginBottom: 18, lineHeight: 1.5 }}>
+      <div style={{ fontFamily: SANS, fontSize: 12.5, color: P.text3, marginBottom: 18, lineHeight: 1.5 }}>
         Ranked by who&rsquo;s waiting, what has a deadline, who&rsquo;s followed up, and who they are.
       </div>
 
@@ -75,34 +83,41 @@ export default function NeedsYouScreen({ variant, onOpenEmail }: { variant: "des
             </div>
           )}
           <div style={{ display: "grid", gap: 9 }}>
-            {list.map((it, i) => (
-              <div key={it.messageId} style={{ border: `1px solid ${C.line}`, borderRadius: 13, padding: "13px 15px", background: "rgba(var(--ink),.02)" }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-                  <span style={{ fontFamily: FONT.mono, fontSize: 12, color: it.correction === "bump_up" ? C.goldHi : C.dim, flexShrink: 0, fontWeight: 700 }}>{i + 1}</span>
+            {list.map((it, i) => {
+              const repeat = /followed up/i.test(it.reason);
+              return (
+              <div key={it.messageId} style={{ border: `1px solid ${P.border}`, borderRadius: 14, padding: "14px 16px", background: P.card, boxShadow: "0 1px 3px rgba(30,30,30,.05)" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 11 }}>
+                  <span style={{ width: 24, height: 24, borderRadius: 8, background: i === 0 ? P.red : i < 3 ? P.amber : "#A8A29A", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: SANS, fontSize: 12.5, fontWeight: 800, flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    {/* the subject links straight to the actual email (by source_ref) */}
-                    <button onClick={() => onOpenEmail?.(it.sourceRef)} disabled={!onOpenEmail}
-                      style={{ display: "block", textAlign: "left", background: "none", border: 0, padding: 0, cursor: onOpenEmail ? "pointer" : "default", fontSize: 14.5, fontWeight: 700, color: C.text, lineHeight: 1.35, fontFamily: FONT.sans }}>
-                      {it.subject || "(no subject)"}
-                    </button>
-                    <div style={{ fontSize: 12.5, color: C.text3, marginTop: 1 }}>{it.fromName || it.fromEmail || "—"}</div>
-                    {/* the templated reason — the defensible "why" */}
-                    <div style={{ fontSize: 13, color: C.text2, marginTop: 7, lineHeight: 1.5, display: "flex", gap: 7, alignItems: "flex-start" }}>
-                      <span style={{ color: C.gold, flexShrink: 0 }}>&#9656;</span>
-                      <span>{it.reason}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      {/* the subject links straight to the actual email (by source_ref) */}
+                      <button onClick={() => onOpenEmail?.(it.sourceRef)} disabled={!onOpenEmail}
+                        style={{ textAlign: "left", background: "none", border: 0, padding: 0, cursor: onOpenEmail ? "pointer" : "default", fontSize: 15, fontWeight: 800, color: P.text, lineHeight: 1.3, fontFamily: SANS, minWidth: 0, flex: 1, overflowWrap: "anywhere" }}>
+                        {it.subject || "(no subject)"}
+                      </button>
+                      <span style={{ flexShrink: 0, fontFamily: SANS, fontSize: 9.5, fontWeight: 800, letterSpacing: ".07em", padding: "3px 9px", borderRadius: 99, background: repeat ? P.red : P.amber, color: "#fff" }}>
+                        {repeat ? "REPEAT FOLLOW-UP" : "AWAITING REPLY"}
+                      </span>
                     </div>
+                    <div style={{ fontFamily: SANS, fontSize: 12.5, color: P.text3, marginTop: 2 }}>{it.fromName || it.fromEmail || "—"}</div>
+                    {/* the templated reason — the defensible "why" */}
+                    <div style={{ fontFamily: SANS, fontSize: 13, color: P.text2, marginTop: 6, lineHeight: 1.55 }}>{it.reason}</div>
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 7, marginTop: 11, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: 8, marginTop: 11, flexWrap: "wrap" }}>
+                  {onOpenEmail && (
+                    <button onClick={() => onOpenEmail(it.sourceRef)} style={{ cursor: "pointer", border: 0, borderRadius: 9, padding: "8px 14px", fontFamily: SANS, fontWeight: 800, fontSize: 11.5, letterSpacing: ".04em", textTransform: "uppercase", background: `linear-gradient(135deg, ${P.amber}, ${P.amberDeep})`, color: "#fff" }}>Open email ↗</button>
+                  )}
                   {[["not_important", "Not important"], ["bump_up", "Bump up"], ["not_waiting_on_me", "Not waiting on me"]].map(([val, label]) => (
                     <button key={val} onClick={() => correct(it.messageId, val)}
-                      style={{ cursor: "pointer", fontSize: 11.5, fontWeight: 700, fontFamily: FONT.sans, padding: "5px 11px", borderRadius: 8, border: `1px solid ${C.line}`, background: it.correction === val ? "rgba(231,181,60,.14)" : "transparent", color: it.correction === val ? C.goldHi : C.text3 }}>
+                      style={{ cursor: "pointer", fontFamily: SANS, fontSize: 11.5, fontWeight: 800, letterSpacing: ".03em", padding: "8px 13px", borderRadius: 9, border: `1.5px solid ${it.correction === val ? P.amber : P.border}`, background: it.correction === val ? "rgba(217,119,6,.10)" : P.card, color: it.correction === val ? P.amberDeep : P.text2 }}>
                       {label}
                     </button>
                   ))}
                 </div>
               </div>
-            ))}
+            );})}
           </div>
 
           {/* secondary buckets, collapsed */}
@@ -165,8 +180,8 @@ function SendersRail({ senders, onChange, mobile }: { senders: Sender[]; onChang
   };
 
   return (
-    <div style={{ border: `1px solid ${C.line}`, borderRadius: 14, padding: 15, background: "rgba(var(--ink),.03)" }}>
-      <div style={{ fontFamily: FONT.serif, fontSize: 16, fontWeight: 700, color: C.text }}>People who matter</div>
+    <div style={{ border: `1px solid ${P.border}`, borderRadius: 16, padding: "15px 17px", background: P.card, boxShadow: "0 1px 3px rgba(30,30,30,.05)" }}>
+      <div style={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", color: P.text2 }}>People who matter</div>
       <div style={{ fontSize: 11.5, color: C.text3, lineHeight: 1.5, margin: "3px 0 12px" }}>
         Mail from these people ranks higher. Add or remove anyone — it takes effect on the next sort.
       </div>

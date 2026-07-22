@@ -247,3 +247,14 @@ a {
    !important to beat the inline style. */
 .askOrb:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(180,120,10,.55), inset 0 1.5px 0 rgba(255,255,255,.6) !important; }
 .askOrb:active { transform: translateY(1px); box-shadow: 0 3px 8px rgba(180,120,10,.45), inset 0 2px 4px rgba(140,90,0,.4) !important; }
+
+/* Needs to Know lede — newsprint drop cap on the Chief of Staff's summary
+   (pseudo-elements can't be inlined, so this one class lives here). */
+.nkLede::first-letter {
+  float: left;
+  font-size: 2.55em;
+  line-height: 0.85;
+  padding: 4px 8px 0 0;
+  font-weight: 700;
+  color: var(--c-goldhi, #E7B53C);
+}

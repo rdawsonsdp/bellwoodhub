@@ -68,12 +68,22 @@ export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onG
       </div>
 
       <div style={{ borderRadius: 16, border: `1px solid ${C.line}`, overflow: "hidden", background: "rgba(var(--ink),.02)" }}>
-        {/* the narrative — the synthesized intelligence, in the CoS voice */}
-        <div style={{ padding: mobile ? "14px 15px" : "16px 18px", borderBottom: pressing.length || events.length ? `1px solid ${C.line2}` : undefined }}>
+        {/* the narrative — set like a front-page lede (same treatment as the
+            stories below): dateline masthead, serif body, drop cap. */}
+        <div style={{ padding: mobile ? "15px 15px 16px" : "18px 18px 19px", borderBottom: pressing.length || events.length ? `1px solid ${C.line2}` : undefined }}>
           {!sum && !failed && <div style={{ color: C.dim, fontSize: 13.5 }}>Reading the morning…</div>}
           {failed && <div style={{ color: C.dim, fontSize: 13.5 }}>Couldn&rsquo;t reach your Chief of Staff. Pull to refresh.</div>}
           {sum && (
-            <div style={{ fontSize: mobile ? 14.5 : 15.5, color: C.text, lineHeight: 1.6, fontFamily: FONT.sans }}>{sum.narrative}</div>
+            <>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8, borderBottom: `2px solid ${C.text}`, paddingBottom: 6, marginBottom: 11 }}>
+                <span style={{ fontFamily: FONT.mono, fontSize: 9.5, fontWeight: 800, letterSpacing: ".16em", textTransform: "uppercase", color: C.text }}>The Morning Brief</span>
+                <span style={{ flex: 1 }} />
+                <span style={{ fontFamily: FONT.mono, fontSize: 9.5, letterSpacing: ".08em", textTransform: "uppercase", color: C.dim }}>
+                  {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+                </span>
+              </div>
+              <div className="nkLede" style={{ fontSize: mobile ? 15.5 : 17, color: C.text, lineHeight: 1.55, fontFamily: FONT.serif }}>{sum.narrative}</div>
+            </>
           )}
         </div>
 

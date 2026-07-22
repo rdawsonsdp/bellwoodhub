@@ -21,6 +21,7 @@ import type { WallPayload, WallItem, CabinetCard, WallSchedule } from "@/lib/wal
 import AgentDigestSheet from "./AgentDigestSheet";
 import AddAgentSheet from "./AddAgentSheet";
 import NeedsToKnowCard from "./NeedsToKnowCard";
+import DashboardHub from "./DashboardHub";
 import SendLivePill from "./SendLivePill";
 import ComingUp from "./ComingUp";
 import { AgentAvatar, AgentChip } from "./AgentBadge";
@@ -36,13 +37,17 @@ interface Props {
   /** The digest sheet's gear → this agent's detail on Staff Agents. */
   onOpenAgent?: (agentKey: string) => void;
   onGoNeedsYou?: () => void;
+  /* dashboard navigation (desktop widget grid, RB-UX 2026-07-22) */
+  onGoCalendar?: () => void;
+  onGoSync?: () => void;
+  onGoAgents?: () => void;
 }
 
 const URGENCY_C: Record<string, string> = { red: C.red, yellow: C.orange, clear: C.green };
 
 const shortName = (name: string) => name.replace(/ Agent$/, "");
 
-export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpenAgent, onGoNeedsYou }: Props) {
+export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpenAgent, onGoNeedsYou, onGoCalendar, onGoSync, onGoAgents }: Props) {
   const [wall, setWall] = useState<WallPayload | null>(null);
   const [failed, setFailed] = useState(false);
   // Agents fold away for a clean first screen (RD 2026-07-21): a peek row of
@@ -124,17 +129,22 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
         </div>
       </div>
 
-      {/* ── NEEDS TO KNOW — the Chief of Staff briefing: combines the old
-             "Needs you" (triage) + "Needs you now" (drafts) into one ranked
-             intelligence section (narrative + top issues + upcoming events). ── */}
-      <NeedsToKnowCard mobile={mobile} onOpenEmail={onOpenEmail} onGoNeedsYou={onGoNeedsYou} onGoApprovals={onGoApprovals}
-        /* byline tap → the agent's report sheet; desks without a run (Mail
-           Triage rides email-gmail) fall through to the Agents page detail */
-        onOpenAgent={(k) => { if (wall?.runs[k]) openDigest(k); else onOpenAgent?.(k); }} />
+      {/* ── MOBILE: the Brief (swipe-first). DESKTOP: the actionable widget
+             dashboard (RB-UX 2026-07-22) — same data, executive-density. ── */}
+      {mobile ? (
+        <NeedsToKnowCard mobile={mobile} onOpenEmail={onOpenEmail} onGoNeedsYou={onGoNeedsYou} onGoApprovals={onGoApprovals}
+          onOpenAgent={(k) => { if (wall?.runs[k]) openDigest(k); else onOpenAgent?.(k); }} />
+      ) : (
+        <DashboardHub wall={wall} onOpenEmail={onOpenEmail} onGoApprovals={onGoApprovals} onGoNeedsYou={onGoNeedsYou}
+          onGoCalendar={onGoCalendar} onGoSync={onGoSync} onGoAgents={onGoAgents}
+          onOpenAgent={(k) => { if (wall?.runs[k]) openDigest(k); else onOpenAgent?.(k); }} />
+      )}
 
       {/* ── THE CABINET — folded to a peek for a clean first screen; tap to
              open the grid. The schedule strip and stale warning stay visible
-             even folded (trust signals never hide). ── */}
+             even folded (trust signals never hide). MOBILE ONLY — the desktop
+             dashboard carries the Active Agents widget instead. ── */}
+      {mobile && (
       <div style={{ marginTop: mobile ? 13 : 26 }}>
         <button onClick={toggleAgents} aria-expanded={agentsOpen}
           style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", background: "none", border: 0, padding: "2px 0", cursor: "pointer", textAlign: "left", flexWrap: "wrap" }}>
@@ -189,6 +199,8 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
         </div>
         )}
       </div>
+
+      )}
 
       {/* ── FOOTER: the day in one line ── */}
       {wall && (

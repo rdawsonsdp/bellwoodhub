@@ -24,11 +24,13 @@ const TAG_C: Record<string, { fg: string; bg: string }> = {
   "open issue": { fg: C.text2, bg: "rgba(var(--ink),.07)" },
 };
 
-export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onGoApprovals }: {
+export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onGoApprovals, onOpenAgent }: {
   mobile: boolean;
   onOpenEmail?: (mid: string) => void;
   onGoNeedsYou?: () => void;
   onGoApprovals?: () => void;
+  /** byline tap → the agent that filed the article (RD 2026-07-21) */
+  onOpenAgent?: (agentKey: string) => void;
 }) {
   const [sum, setSum] = useState<MorningSummary | null>(null);
   const [failed, setFailed] = useState(false);
@@ -100,14 +102,27 @@ export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onG
           const tag = TAG_C[p.tag] ?? TAG_C["needs reply"];
           const clickable = !!(p.messageId && onOpenEmail);
           return (
-            <button key={i} onClick={clickable ? () => onOpenEmail!(p.messageId!) : undefined} disabled={!clickable}
-              style={{ display: "flex", gap: 12, width: "100%", textAlign: "left", background: "none", border: 0, padding: mobile ? "13px 15px 14px" : "15px 18px 16px", borderTop: `1px solid ${C.line2}`, cursor: clickable ? "pointer" : "default", fontFamily: FONT.sans, alignItems: "flex-start" }}>
+            <div key={i} role={clickable ? "button" : undefined} tabIndex={clickable ? 0 : undefined}
+              onClick={clickable ? () => onOpenEmail!(p.messageId!) : undefined}
+              onKeyDown={clickable ? (e) => e.key === "Enter" && onOpenEmail!(p.messageId!) : undefined}
+              style={{ display: "flex", gap: 12, width: "100%", textAlign: "left", padding: mobile ? "13px 15px 14px" : "15px 18px 16px", borderTop: `1px solid ${C.line2}`, cursor: clickable ? "pointer" : "default", fontFamily: FONT.sans, alignItems: "flex-start" }}>
               <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: C.dim, fontWeight: 700, flexShrink: 0, marginTop: 3 }}>{i + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                {/* kicker — the byline: WHICH desk filed this article, then the tag */}
+                {/* kicker — the byline: WHICH desk filed this article (tap → the
+                    agent itself), then the tag. stopPropagation so the byline
+                    wins over the row's open-email. */}
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  {p.agentKey && <AgentAvatar agentKey={p.agentKey} size={15} />}
-                  {p.agentName && <span style={{ fontFamily: FONT.mono, fontSize: 9.5, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", color: C.text2 }}>{p.agentName}</span>}
+                  {(p.agentKey || p.agentName) && (
+                    <span
+                      role={onOpenAgent && p.agentKey ? "button" : undefined}
+                      onClick={onOpenAgent && p.agentKey ? (e) => { e.stopPropagation(); onOpenAgent(p.agentKey!); } : undefined}
+                      title={p.agentName ? `Open ${p.agentName}` : undefined}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: onOpenAgent && p.agentKey ? "pointer" : undefined }}
+                    >
+                      {p.agentKey && <AgentAvatar agentKey={p.agentKey} size={15} />}
+                      {p.agentName && <span style={{ fontFamily: FONT.mono, fontSize: 9.5, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", color: C.text2, textDecoration: onOpenAgent && p.agentKey ? "underline dotted rgba(120,120,120,.5)" : undefined, textUnderlineOffset: 3 }}>{p.agentName}</span>}
+                    </span>
+                  )}
                   <span style={{ fontFamily: FONT.mono, fontSize: 9.5, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: tag.fg }}>{p.agentName ? `· ${p.tag}` : p.tag}</span>
                 </span>
                 {/* headline — bold serif, wraps like newsprint */}
@@ -118,7 +133,7 @@ export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onG
                 {p.why && <div style={{ fontSize: mobile ? 12.5 : 13, color: C.text3, marginTop: 5, lineHeight: 1.5, overflowWrap: "anywhere" }}>{p.why}</div>}
               </div>
               {clickable && <span style={{ color: C.gold, fontSize: 14, fontWeight: 800, flexShrink: 0, alignSelf: "center" }}>→</span>}
-            </button>
+            </div>
           );
         })}
 

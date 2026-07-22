@@ -127,7 +127,10 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
       {/* ── NEEDS TO KNOW — the Chief of Staff briefing: combines the old
              "Needs you" (triage) + "Needs you now" (drafts) into one ranked
              intelligence section (narrative + top issues + upcoming events). ── */}
-      <NeedsToKnowCard mobile={mobile} onOpenEmail={onOpenEmail} onGoNeedsYou={onGoNeedsYou} onGoApprovals={onGoApprovals} />
+      <NeedsToKnowCard mobile={mobile} onOpenEmail={onOpenEmail} onGoNeedsYou={onGoNeedsYou} onGoApprovals={onGoApprovals}
+        /* byline tap → the agent's report sheet; desks without a run (Mail
+           Triage rides email-gmail) fall through to the Agents page detail */
+        onOpenAgent={(k) => { if (wall?.runs[k]) openDigest(k); else onOpenAgent?.(k); }} />
 
       {/* ── THE CABINET — folded to a peek for a clean first screen; tap to
              open the grid. The schedule strip and stale warning stay visible

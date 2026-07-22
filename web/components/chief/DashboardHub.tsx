@@ -137,7 +137,7 @@ export function SecurityAlertsCard({ alerts, onOpenEmail, onOpenAgent }: {
               <button onClick={() => onOpenEmail(a.messageId!)} style={btnSolid}>Open email ↗</button>
             )}
             {a.agentKey && onOpenAgent && a.tag !== "needs reply" && (
-              <button onClick={() => onOpenAgent(a.agentKey!)} style={btnOutline}>View report</button>
+              <button onClick={() => onOpenAgent(a.agentKey!)} style={btnOutline}>View agent</button>
             )}
           </div>
         </div>

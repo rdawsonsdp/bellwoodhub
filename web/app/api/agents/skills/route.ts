@@ -23,14 +23,16 @@ export async function GET(req: NextRequest) {
     const { query } = await import("@/lib/db");
     type Row = {
       skill_id: string; name: string; kind: string; version: number;
-      updated_at: string; chars: string; attached: boolean;
+      updated_at: string; chars: string; attached: boolean; agents: string[];
     };
     // table absent until migration 013 is applied → empty list, no crash
     const rows = await query<Row>(
       `SELECT s.skill_id, s.name, s.kind, s.version, s.updated_at::text,
               length(s.content)::text AS chars,
               EXISTS (SELECT 1 FROM app.agent_skills a
-                       WHERE a.skill_id = s.skill_id AND a.agent_key = $1) AS attached
+                       WHERE a.skill_id = s.skill_id AND a.agent_key = $1) AS attached,
+              COALESCE((SELECT array_agg(a.agent_key ORDER BY a.agent_key)
+                          FROM app.agent_skills a WHERE a.skill_id = s.skill_id), '{}') AS agents
          FROM app.skills s
         ORDER BY s.updated_at DESC`,
       [agentKey],
@@ -40,6 +42,7 @@ export async function GET(req: NextRequest) {
       skills: rows.map((r) => ({
         skillId: r.skill_id, name: r.name, kind: r.kind, version: r.version,
         updatedAt: r.updated_at, chars: Number(r.chars), attached: r.attached,
+        agents: r.agents ?? [],
       })),
     });
   } catch (err) {
@@ -61,6 +64,9 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as {
       action?: "upload" | "attach" | "detach";
       name?: string; kind?: string; content?: string; skillId?: string; agentKey?: string;
+      /** voice uploads: attach to EVERY draft-ceiling desk in one act, so one
+       *  voice covers all reply-writing agents (RD 2026-07-22). */
+      attachDrafting?: boolean;
     };
     const { query } = await import("@/lib/db");
 
@@ -100,6 +106,17 @@ export async function POST(req: NextRequest) {
            VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
           [body.agentKey, skillId, actor],
         );
+      }
+      if (body.attachDrafting) {
+        const { allAgents } = await import("@/lib/agent-registry");
+        const drafting = (await allAgents()).filter((a) => a.autonomy === "draft");
+        for (const a of drafting) {
+          await query(
+            `INSERT INTO app.agent_skills (agent_key, skill_id, attached_by)
+             VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+            [a.key, skillId, actor],
+          );
+        }
       }
       await logAudit({ actor, action: "skill.upload", objectType: "skill", objectRef: skillId, meta: { name, agentKey: body.agentKey ?? null, chars: content.length }, req });
       return NextResponse.json({ ok: true, skillId });

@@ -6,6 +6,7 @@
  * The team is open-ended: today it's email; tomorrow it could be approving time cards.
  */
 import { useEffect, useState } from "react";
+import VoiceSkillCard from "./VoiceSkillCard";
 import { C, FONT, card, eyebrow, pill } from "@/lib/cos-design";
 import { COS_AGENTS, AUTONOMY_LABEL, agentByKey, type CosAgent } from "@/lib/cos-agents";
 import { DOMAIN_AGENTS, domainAgentByKey } from "@/lib/domain-agents";
@@ -277,6 +278,10 @@ export default function AgentsPage({ initialAgentKey, initialSection }: { initia
         <Metric n={IS_LIVE_BUILD ? "—" : String(actions)} label="recent actions" />
       </div>
       {IS_LIVE_BUILD && <RunAgentsButton running={running} onRunning={setRunning} />}
+
+      {/* THE place to upload your voice (RD 2026-07-22) — the foundation of
+          auto-respond; one upload covers every drafting desk. */}
+      {IS_LIVE_BUILD && <VoiceSkillCard />}
 
       <UsagePanel />
 

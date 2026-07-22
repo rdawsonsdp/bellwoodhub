@@ -28,6 +28,13 @@ const TZ = "America/Chicago"; // the Mayor's clock, not the server's
 const prettyKey = (k: string) =>
   k.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
+/** the slice of a persisted agent run the Brief agent reads */
+type RunOutput = {
+  headline?: string;
+  urgency?: string;
+  digest?: { title?: string; kind?: string; point?: string; sourceMessageIds?: string[] }[];
+};
+
 const whenLabel = (d: Date, allDay: boolean): string => {
   const day = d.toLocaleDateString("en-US", { weekday: "short", timeZone: TZ });
   const today = new Date().toLocaleDateString("en-CA", { timeZone: TZ });
@@ -74,16 +81,45 @@ export async function liveMorningSummary(persona: CosPersona, hour?: number): Pr
     messageId: it.sourceRef,
   }));
 
-  // Combine: actions first (a drafted reply is the most actionable), then the
-  // ranked email issues; dedup by messageId/title; cap the briefing at 6.
+  // ── every agent forwards its stories to the Brief agent (RD 2026-07-21).
+  // The latest run per desk contributes its news-brief digest items; the desk's
+  // urgency seeds a deterministic importance score (public-safety red beats a
+  // routine follow-up), which orders the page even keyless. The model re-ranks
+  // below when a key is present.
+  type Candidate = PressingItem & { score: number };
+  const runRows = await query<{ agent_key: string; output: RunOutput | null }>(
+    `SELECT DISTINCT ON (agent_key) agent_key, output FROM canonical.agent_runs ORDER BY agent_key, ran_at DESC`,
+  ).catch(() => [] as { agent_key: string; output: RunOutput | null }[]);
+  const URG: Record<string, number> = { red: 100, yellow: 55, clear: 15 };
+  const storyItems: Candidate[] = runRows.flatMap((r) => {
+    const base = URG[r.output?.urgency ?? "clear"] ?? 15;
+    return (r.output?.digest ?? [])
+      .filter((d) => (d.title || d.point || "").trim())
+      .slice(0, 3)
+      .map((d, i) => ({
+        title: d.title || (d.point ?? "").slice(0, 90),
+        why: d.point ?? "",
+        tag: prettyKey(r.agent_key),
+        messageId: d.sourceMessageIds?.[0],
+        score: base - i * 5 + (d.kind === "update" ? 3 : 0),
+      }));
+  });
+
+  // Merge the desks' stories with the mail signals; dedup; deterministic order
+  // by importance; the front page runs at most 7 articles.
+  const candidates: Candidate[] = [
+    ...actionItems.map((a, i) => ({ ...a, score: 80 - i })),
+    ...emailItems.map((e, i) => ({ ...e, score: 70 - i * 2 })),
+    ...storyItems,
+  ];
   const pressing: PressingItem[] = [];
   const seen = new Set<string>();
-  for (const it of [...actionItems, ...emailItems]) {
-    const key = it.messageId || it.title;
+  for (const it of candidates.sort((a, b) => b.score - a.score)) {
+    const key = it.messageId || it.title.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    pressing.push(it);
-    if (pressing.length >= 6) break;
+    pressing.push({ title: it.title, why: it.why, tag: it.tag, messageId: it.messageId });
+    if (pressing.length >= 7) break;
   }
 
   // ── 3. UPCOMING EVENTS — the calendar mirror
@@ -102,10 +138,7 @@ export async function liveMorningSummary(persona: CosPersona, hour?: number): Pr
   const eventsToday = evRows.filter((r) => new Date(r.starts_at).toLocaleDateString("en-CA", { timeZone: TZ }) === todayISO).length;
 
   // ── agent activity — each desk's latest run headline (context for the voice)
-  const runs = await query<{ agent_key: string; output: { headline?: string } | null }>(
-    `SELECT DISTINCT ON (agent_key) agent_key, output FROM canonical.agent_runs ORDER BY agent_key, ran_at DESC`,
-  ).catch(() => [] as { agent_key: string; output: { headline?: string } | null }[]);
-  const agents: AgentNote[] = runs
+  const agents: AgentNote[] = runRows
     .filter((r) => r.output?.headline && r.agent_key !== "chief")
     .slice(0, 5)
     .map((r) => ({ name: prettyKey(r.agent_key), note: r.output!.headline! }));
@@ -128,12 +161,14 @@ export async function liveMorningSummary(persona: CosPersona, hour?: number): Pr
       const sys =
         `You are ${persona.mayorName}'s chief of staff, briefing the mayor as the ${part} begins. ` +
         `${COS_TONE_PRESETS[tone].prompt} ${persona.instructions || ""} ` +
-        `Respond with a JSON object: {"greeting": string, "briefing": string}. ` +
+        `Respond with a JSON object: {"greeting": string, "briefing": string, "order": number[]}. ` +
         `"greeting": a short, personal ONE-sentence greeting addressing him by name (${persona.mayorName}), fitting the ${part}, in your own voice — not a generic "Good ${part}, Mayor." ` +
         `"briefing": 2-3 short sentences: what most needs him, the single most important thing, and a nod to what's on his calendar. ` +
+        `"order": the numbered articles below re-ranked by IMPORTANCE TO THE MAYOR, most important first ` +
+        `(public safety and emergencies, then commitments he made, then money and deadlines, then repeat follow-ups, then routine). ` +
         `Use ONLY the facts below; never invent items or numbers. Plain text, no markdown.`;
       const ctx = [
-        `Most pressing (${pressing.length}): ${pressing.map((p) => `${p.title} [${p.tag}]`).join("; ") || "nothing urgent"}.`,
+        `The articles, numbered: ${pressing.map((p, i) => `${i + 1}. ${p.title} [${p.tag}] — ${p.why}`).join(" | ") || "none"}.`,
         `The mayor's own notes (${notes.length}): ${notes.map((n) => n.title + (n.stale ? " (still open for days)" : "")).join("; ") || "none"}. Mention his notes naturally — they're promises he made in person. Nudge ONLY the ones marked "still open for days"; never invent how long anything has been open.`,
         `Upcoming events (${calendar.length}): ${calendar.map((c) => c.title + (c.when ? ` (${c.when})` : "")).join("; ") || "nothing scheduled"}.`,
         `Agent activity: ${agents.map((a) => `${a.name} — ${a.note}`).join("; ") || "quiet"}.`,
@@ -141,8 +176,19 @@ export async function liveMorningSummary(persona: CosPersona, hour?: number): Pr
       ].join("\n");
       const out = await chat(sys, ctx, { temperature: 0.85, json: true });
       if (out) {
-        const j = JSON.parse(out) as { greeting?: string; briefing?: string };
+        const j = JSON.parse(out) as { greeting?: string; briefing?: string; order?: number[] };
         if (j.greeting && j.briefing) { greeting = String(j.greeting).trim(); narrative = String(j.briefing).trim(); live = true; }
+        // the CoS's own ranking of the page — applied only if it's a valid
+        // permutation-subset; anything it skipped keeps the deterministic order
+        if (Array.isArray(j.order) && j.order.length) {
+          const picked = j.order
+            .map((n) => pressing[Number(n) - 1])
+            .filter((x): x is PressingItem => !!x);
+          if (picked.length) {
+            const rest = pressing.filter((p) => !picked.includes(p));
+            pressing.splice(0, pressing.length, ...picked, ...rest);
+          }
+        }
       }
     } catch { /* keep the deterministic baseline */ }
   }

@@ -62,11 +62,7 @@ export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onG
 
   return (
     <div style={{ marginTop: mobile ? 13 : 22 }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 9 }}>
-        <div style={{ fontFamily: FONT.serif, fontSize: mobile ? 18 : 19, fontWeight: 700, color: C.text }}>Needs to know</div>
-        {sum && <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.dim, letterSpacing: ".04em" }}>Chief of Staff{sum.live ? "" : " · draft"}</span>}
-      </div>
-
+      {/* no section label — the nameplate below IS the section (RD 2026-07-21) */}
       <div style={{ borderRadius: 16, border: `1px solid ${C.line}`, overflow: "hidden", background: "rgba(var(--ink),.02)" }}>
         {/* the narrative — set like a front-page lede (same treatment as the
             stories below): dateline masthead, serif body, drop cap. */}
@@ -75,12 +71,18 @@ export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onG
           {failed && <div style={{ color: C.dim, fontSize: 13.5 }}>Couldn&rsquo;t reach your Chief of Staff. Pull to refresh.</div>}
           {sum && (
             <>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 8, borderBottom: `2px solid ${C.text}`, paddingBottom: 6, marginBottom: 11 }}>
-                <span style={{ fontFamily: FONT.mono, fontSize: 9.5, fontWeight: 800, letterSpacing: ".16em", textTransform: "uppercase", color: C.text }}>The Morning Brief</span>
+              {/* the nameplate — blackletter, centered, Tribune-style; the
+                  edition tracks the clock (Morning / Midday / Evening) */}
+              <div style={{ textAlign: "center", borderBottom: `2.5px solid ${C.text}`, paddingBottom: 7, marginBottom: 5 }}>
+                <div style={{ fontFamily: FONT.masthead, fontSize: mobile ? 30 : 38, fontWeight: 400, color: C.text, lineHeight: 1.05, letterSpacing: ".015em" }}>
+                  {(() => { const h = new Date().getHours(); return h < 12 ? "The Morning Brief" : h < 17 ? "The Midday Brief" : "The Evening Brief"; })()}
+                </div>
+              </div>
+              {/* dateline bar between rules, like a real front page */}
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8, borderBottom: `1px solid ${C.line2}`, padding: "4px 0 5px", marginBottom: 13, fontFamily: FONT.mono, fontSize: 9.5, letterSpacing: ".09em", textTransform: "uppercase", color: C.dim }}>
+                <span>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</span>
                 <span style={{ flex: 1 }} />
-                <span style={{ fontFamily: FONT.mono, fontSize: 9.5, letterSpacing: ".08em", textTransform: "uppercase", color: C.dim }}>
-                  {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-                </span>
+                <span>By your Chief of Staff{sum.live ? "" : " · draft"}</span>
               </div>
               <div className="nkLede" style={{ fontSize: mobile ? 15.5 : 17, color: C.text, lineHeight: 1.55, fontFamily: FONT.serif }}>{sum.narrative}</div>
             </>

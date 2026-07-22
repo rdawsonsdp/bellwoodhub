@@ -17,6 +17,7 @@ import ThreadView from "./ThreadView";
 import { loadOperatorMode, saveOperatorMode } from "@/lib/operator-mode";
 import { logUsage } from "@/lib/usage";
 import SyncButton from "./SyncButton";
+import NoteButton from "./NoteButton";
 import ReleaseTag from "./ReleaseTag";
 import AnswerMd from "./AnswerMd";
 import Searching from "./Searching";
@@ -500,6 +501,8 @@ function Header({ operator, onMenu, onProfile }: { operator: boolean; onMenu: ()
           <ReleaseTag size={7.5} />
         </div>
       </div>
+      {/* the pencil — leave the CoS a note (RD 2026-07-21) */}
+      <NoteButton variant="mobile" />
       <button onClick={cycle} aria-label="Theme" style={{ width: 31, height: 31, borderRadius: 99, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, display: "flex", alignItems: "center", justifyContent: "center" }}>
         {light
           ? <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="4.2" /><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M5 5l1.8 1.8M17.2 17.2l1.8 1.8M19 5l-1.8 1.8M6.8 17.2 5 19" /></svg>

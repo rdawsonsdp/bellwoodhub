@@ -17,6 +17,7 @@ import { C, FONT, APP_BG, card, eyebrow, cite } from "@/lib/cos-design";
 import { IS_LIVE_BUILD } from "@/lib/live";
 import { loadOperatorMode, saveOperatorMode } from "@/lib/operator-mode";
 import { logUsage } from "@/lib/usage";
+import NoteButton from "./NoteButton";
 import type { AskResponse } from "@/lib/types";
 import type { NeedsYouToday } from "@/lib/capabilities";
 import type { MemoryDetail, EntityListItem, SourcesOverview, DraftRow } from "@/lib/screens";
@@ -466,6 +467,8 @@ function Topbar({ onAsk, onReset, asked }: { onAsk?: (q: string) => void; onRese
           </div>
         )}
       </div>
+      {/* the pencil — leave the CoS a note, OUTSIDE the Ask box (RD 2026-07-21) */}
+      <NoteButton variant="desktop" />
       <SyncButton />
       <ThemeToggle />
     </div>

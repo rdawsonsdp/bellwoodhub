@@ -70,7 +70,7 @@ export default function UploadSource({ onClose, onCommitted }: { onClose: () => 
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "calc(env(safe-area-inset-top) + 12px) 16px 12px", borderBottom: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.04)", backdropFilter: "blur(12px)" }}>
         <button onClick={onClose} aria-label="Close" style={iconBtn}><Svg d="M18 6 6 18M6 6l12 12" w={18} /></button>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: FONT.serif, fontSize: 18, fontWeight: 600 }}>{title}</div>
+          <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 18, fontWeight: 800 }}>{title}</div>
           {t && step !== "type" && <div style={{ fontFamily: FONT.mono, fontSize: 10.5, color: C.dim, marginTop: 1 }}>{t.label}{fileName ? ` · ${fileName}` : ""}</div>}
         </div>
         <span style={{ fontFamily: FONT.mono, fontSize: 10, color: C.gold, letterSpacing: ".08em" }}>AGENT INGEST</span>

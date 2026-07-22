@@ -415,7 +415,7 @@ function Empty({ text }: { text: string }) {
 
 /** Serif section heading — the "Coming up" idiom: quiet, readable, no caps. */
 const sectionHead: CSSProperties = {
-  fontFamily: FONT.serif, fontSize: 17, fontWeight: 600, color: C.text,
+  fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 17, fontWeight: 800, color: C.text,
   letterSpacing: "-.01em", marginBottom: 8,
 };
 

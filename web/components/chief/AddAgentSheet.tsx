@@ -116,7 +116,7 @@ export default function AddAgentSheet({ variant, onClose, onCreated }: Props) {
           {sel && (
             <button onClick={() => setSel(null)} aria-label="Back" style={{ background: "rgba(var(--ink),.06)", border: `1px solid ${C.line}`, borderRadius: 99, width: 30, height: 30, color: C.text2, cursor: "pointer", fontSize: 14, lineHeight: 1 }}>←</button>
           )}
-          <span style={{ fontFamily: FONT.serif, fontSize: 22, fontWeight: 600, flex: 1, letterSpacing: "-.01em" }}>{sel ? sel.name : "Add an agent"}</span>
+          <span style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 22, fontWeight: 800, flex: 1, letterSpacing: "-.01em" }}>{sel ? sel.name : "Add an agent"}</span>
           <button onClick={onClose} aria-label="Close" style={{ background: "rgba(var(--ink),.06)", border: `1px solid ${C.line}`, borderRadius: 99, width: 30, height: 30, color: C.text2, cursor: "pointer", fontSize: 14, lineHeight: 1 }}>✕</button>
         </div>
 

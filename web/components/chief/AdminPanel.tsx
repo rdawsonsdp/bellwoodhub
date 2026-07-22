@@ -100,7 +100,7 @@ export default function AdminPanel() {
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 20, marginBottom: 22, flexWrap: "wrap" }}>
         <div>
           <div style={eyebrow(C.dim)}>Admin · Operator console</div>
-          <div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1.05, marginTop: 6 }}>System configuration</div>
+          <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 26, fontWeight: 800, color: C.text, lineHeight: 1.05, marginTop: 6 }}>System configuration</div>
           <div style={{ fontSize: 13.5, color: C.text3, marginTop: 5 }}>Models, cost, autonomy rules, skills, and sources. Changes persist locally; they don&rsquo;t alter server config.</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -531,7 +531,7 @@ function Banner({ tone, title, body }: { tone: "gold" | "purple" | "blue" | "amb
 function Metric({ big, label, sub, color }: { big: string; label: string; sub: string; color: string }) {
   return (
     <div style={{ ...card, padding: 18 }}>
-      <div style={{ fontFamily: FONT.serif, fontSize: 28, fontWeight: 500, color }}>{big}</div>
+      <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 26, fontWeight: 800, color }}>{big}</div>
       <div style={{ fontSize: 13, color: C.text, fontWeight: 600, marginTop: 4 }}>{label}</div>
       <div style={{ fontSize: 11.5, color: C.muted, marginTop: 2 }}>{sub}</div>
     </div>

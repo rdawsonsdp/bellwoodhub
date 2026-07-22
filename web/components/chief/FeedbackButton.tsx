@@ -93,7 +93,7 @@ function FeedbackDialog({ onClose }: { onClose: () => void }) {
       <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 520, background: "var(--c-appbg)", borderRadius: "18px 18px 0 0", border: `1px solid ${C.cardBd}`, padding: "18px 18px calc(env(safe-area-inset-bottom) + 18px)", animation: "sheetUp .2s ease-out" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
           <span style={{ color: C.gold }}><Ic d={BUBBLE} w={20} /></span>
-          <div style={{ flex: 1, fontFamily: FONT.serif, fontSize: 18, fontWeight: 600, color: C.text }}>Quick note to the team</div>
+          <div style={{ flex: 1, fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 18, fontWeight: 800, color: C.text }}>Quick note to the team</div>
           <button onClick={onClose} aria-label="Close" style={{ width: 34, height: 34, borderRadius: 99, border: `1px solid ${C.cardBd}`, background: "rgba(var(--ink),.05)", color: C.text2, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><Ic d={CLOSE} w={16} /></button>
         </div>
 

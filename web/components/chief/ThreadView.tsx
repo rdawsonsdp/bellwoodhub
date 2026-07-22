@@ -73,7 +73,7 @@ export default function ThreadView({ mid, onOpenHistory, onGoQueue }: Props) {
   if (error) return (
     <div style={{ padding: "0 2px 8px" }}>
       <div style={{ ...card, padding: 15, borderColor: error.kind === "connection" ? "rgba(224,108,79,.5)" : C.line, background: error.kind === "connection" ? "rgba(224,108,79,.08)" : "rgba(var(--ink),.03)" }}>
-        <div style={{ fontFamily: FONT.serif, fontSize: 16, fontWeight: 600, color: C.text, marginBottom: 4 }}>
+        <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 16, fontWeight: 800, color: C.text, marginBottom: 4 }}>
           {error.kind === "connection" ? "Couldn't load this email" : "This email isn't in the record"}
         </div>
         <div style={{ fontSize: 13, color: C.text2, lineHeight: 1.5 }}>

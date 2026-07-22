@@ -7,6 +7,7 @@
  */
 import { useEffect, useState } from "react";
 import VoiceSkillCard from "./VoiceSkillCard";
+import { P, SANS } from "./DashboardHub";
 import { C, FONT, card, eyebrow, pill } from "@/lib/cos-design";
 import { COS_AGENTS, AUTONOMY_LABEL, agentByKey, type CosAgent } from "@/lib/cos-agents";
 import { DOMAIN_AGENTS, domainAgentByKey } from "@/lib/domain-agents";
@@ -64,17 +65,24 @@ function liveEmailOverlay(a: CosAgent, f: EmailFacts): CosAgent {
 
 const tone: Record<string, string> = { R1: C.blue, R2: C.orange, R3: C.purpleText, R4: C.green };
 
+/* dashboard-system card (RD 2026-07-22): white, navy border, soft shadow */
+const dashCard: React.CSSProperties = {
+  background: P.card, border: `1px solid ${P.border}`, borderRadius: 14,
+  boxShadow: "0 1px 3px rgba(30,30,30,.05)",
+};
+
 /** The section language of the staff pages (RD 2026-07-05): every section is
  *  a tinted panel with a serif header — color is the separator. */
 const panelStyle = (hue: string): React.CSSProperties => ({
-  marginTop: 16, borderRadius: 18, border: `1px solid rgba(${hue},.32)`,
-  background: `linear-gradient(180deg, rgba(${hue},.07), rgba(${hue},.02))`,
+  marginTop: 16, borderRadius: 16, border: `1px solid ${P.border}`,
+  borderTop: `3px solid rgba(${hue},.85)`,
+  background: P.card, boxShadow: "0 1px 3px rgba(30,30,30,.05)",
   padding: "14px 16px",
 });
 function PanelHead({ title, sub }: { title: string; sub?: string }) {
   return (
     <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
-      <span style={{ fontFamily: FONT.serif, fontSize: 17, fontWeight: 700, color: C.text }}>{title}</span>
+      <span style={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", color: P.text2 }}>{title}</span>
       {sub && <span style={{ fontSize: 12, color: C.text3 }}>{sub}</span>}
     </div>
   );
@@ -268,7 +276,7 @@ export default function AgentsPage({ initialAgentKey, initialSection }: { initia
   return (
     <div className="fu" style={{ padding: "30px 20px 56px", maxWidth: 1100, margin: "0 auto" }}>
       <div style={eyebrow(C.dim)}>The Chief of Staff</div>
-      <div style={{ fontFamily: FONT.serif, fontSize: 30, fontWeight: 500, color: C.text, lineHeight: 1.05, marginTop: 6 }}>Staff Agents</div>
+      <div style={{ fontFamily: SANS, fontSize: 26, fontWeight: 800, color: P.text, lineHeight: 1.05, marginTop: 6, letterSpacing: "-.01em" }}>Staff Agents</div>
       <div style={{ fontSize: 14, color: C.text3, marginTop: 7, maxWidth: 660, lineHeight: 1.55 }}>
         The Mayor&rsquo;s team of agents and the work they&rsquo;re doing. The team grows over time — today it handles email; tomorrow it could approve time cards. Agents draft and organize; every action stays a human gate.
       </div>
@@ -331,7 +339,7 @@ export default function AgentsPage({ initialAgentKey, initialSection }: { initia
                 <div key={s.id} style={{ marginTop: 14, borderRadius: 18, border: `1px solid rgba(${s.hue},.32)`, background: `linear-gradient(180deg, rgba(${s.hue},.07), rgba(${s.hue},.02))`, overflow: "hidden" }}>
                   <button onClick={() => toggle(s.id)} aria-expanded={open} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "14px 16px 4px", background: "none", border: 0, cursor: "pointer", textAlign: "left" }}>
                     <span style={{ fontSize: 11, color: C.text3, transform: open ? "rotate(90deg)" : undefined, transition: "transform .12s ease", flexShrink: 0 }}>▶</span>
-                    <span style={{ fontFamily: FONT.serif, fontSize: 19, fontWeight: 700, color: C.text }}>{s.title}</span>
+                    <span style={{ fontFamily: SANS, fontSize: 15, fontWeight: 800, color: P.text }}>{s.title}</span>
                     <span style={{ fontSize: 12.5, color: C.text3 }}>— {s.sub}</span>
                     <span style={{ marginLeft: "auto", fontFamily: FONT.mono, fontSize: 11, color: C.text3, flexShrink: 0 }}>{s.list.length}{open ? "" : " · tap to expand"}</span>
                   </button>
@@ -359,7 +367,7 @@ export default function AgentsPage({ initialAgentKey, initialSection }: { initia
 function Metric({ n, label }: { n: string; label: string }) {
   return (
     <div>
-      <div style={{ fontFamily: FONT.serif, fontSize: 24, fontWeight: 600, color: C.text }}>{n}</div>
+      <div style={{ fontFamily: SANS, fontSize: 26, fontWeight: 800, color: P.text }}>{n}</div>
       <div style={{ fontSize: 11.5, color: C.muted, marginTop: 1 }}>{label}</div>
     </div>
   );
@@ -368,7 +376,7 @@ function Metric({ n, label }: { n: string; label: string }) {
 function AgentCard({ a, activity, running, enabled = true, onFlip, onClick }: { a: CosAgent; activity?: string[]; running?: boolean; enabled?: boolean; onFlip?: () => void; onClick: () => void }) {
   const showRunning = running && isActive(a) && enabled;
   return (
-    <button onClick={onClick} style={{ ...card, padding: 17, textAlign: "left", color: C.text, cursor: "pointer", display: "block", width: "100%", opacity: !isActive(a) ? 0.62 : enabled ? 1 : 0.45 }}>
+    <button onClick={onClick} style={{ ...dashCard, padding: 17, textAlign: "left", color: C.text, cursor: "pointer", display: "block", width: "100%", opacity: !isActive(a) ? 0.62 : enabled ? 1 : 0.45 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 8 }}>
         <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{a.name}</span>
         <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 8 }}>
@@ -409,7 +417,7 @@ function AgentDetail({ a, activity, onBack, onOpenAgent }: { a: CosAgent; activi
     <div className="fu" style={{ padding: "24px 20px 56px", maxWidth: 760, margin: "0 auto" }}>
       <button onClick={onBack} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(var(--ink),.05)", border: "1px solid var(--c-cardbd)", borderRadius: 99, padding: "7px 14px", cursor: "pointer", color: C.text2, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans, marginBottom: 18 }}>← All agents</button>
       <div style={{ display: "flex", alignItems: "center", gap: 11, flexWrap: "wrap" }}>
-        <span style={{ fontFamily: FONT.serif, fontSize: 26, fontWeight: 500, color: C.text }}>{a.name}</span>
+        <span style={{ fontFamily: SANS, fontSize: 23, fontWeight: 800, color: P.text }}>{a.name}</span>
         <StateBadge a={a} />
         {/* see the agent → EDIT the agent (RD 2026-07-21): the editor lives
             further down this page; this is the obvious door to it. */}
@@ -452,7 +460,7 @@ function AgentDetail({ a, activity, onBack, onOpenAgent }: { a: CosAgent; activi
       <PanelHead title="Recent activity" sub="what this one has actually done" />
       {IS_LIVE_BUILD ? (
         activity?.length ? (
-          <div style={{ ...card, overflow: "hidden" }}>
+          <div style={{ ...dashCard, overflow: "hidden" }}>
             {activity.map((line, i) => (
               <div key={i} style={{ display: "flex", gap: 12, padding: "13px 16px", borderBottom: i < activity.length - 1 ? "1px solid var(--c-cardbd)" : undefined, alignItems: "flex-start" }}>
                 <span style={{ width: 7, height: 7, borderRadius: 99, background: tone[a.autonomy], flexShrink: 0, marginTop: 6 }} />
@@ -461,10 +469,10 @@ function AgentDetail({ a, activity, onBack, onOpenAgent }: { a: CosAgent; activi
             ))}
           </div>
         ) : (
-          <div style={{ ...card, padding: 24, textAlign: "center", color: C.dim, fontSize: 13 }}>{LIVE_ACTIVITY_NOTE}</div>
+          <div style={{ ...dashCard, padding: 24, textAlign: "center", color: C.dim, fontSize: 13 }}>{LIVE_ACTIVITY_NOTE}</div>
         )
       ) : a.recent.length ? (
-        <div style={{ ...card, overflow: "hidden" }}>
+        <div style={{ ...dashCard, overflow: "hidden" }}>
           {a.recent.map((r, i) => {
             const [text, time] = r.split(" · ");
             return (
@@ -479,7 +487,7 @@ function AgentDetail({ a, activity, onBack, onOpenAgent }: { a: CosAgent; activi
           })}
         </div>
       ) : (
-        <div style={{ ...card, padding: 24, textAlign: "center", color: C.dim, fontSize: 13 }}>No activity yet — this agent is planned. Configured in Claude Code when ready.</div>
+        <div style={{ ...dashCard, padding: 24, textAlign: "center", color: C.dim, fontSize: 13 }}>No activity yet — this agent is planned. Configured in Claude Code when ready.</div>
       )}
       </div>
     </div>
@@ -631,7 +639,7 @@ function InstructionsSection({ agentKey, onOpenAgent }: { agentKey: string; onOp
   return (
     <div style={panelStyle(HUE.instructions)}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
-        <span style={{ fontFamily: FONT.serif, fontSize: 17, fontWeight: 700, color: C.text }}>Instructions</span>
+        <span style={{ fontFamily: SANS, fontSize: 11.5, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", color: P.text2 }}>Instructions</span>
         <span style={{ fontSize: 12, color: C.text3 }}>the prompt this agent runs with — yours to edit</span>
         <span style={{ ...pill(edited ? C.goldHi : C.muted, edited ? "rgba(231,181,60,.14)" : "rgba(var(--ink),.06)"), fontSize: 9.5, fontWeight: 800 }}>{edited ? "EDITED" : "DEFAULT"}</span>
       </div>

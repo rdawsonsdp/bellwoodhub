@@ -316,7 +316,7 @@ export default function QueueScreen({ variant, onOpenEmail }: Props) {
   return (
     <Shell mobile={mobile}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: sendLive ? 8 : 12, flexWrap: "wrap" }}>
-        <div style={{ fontFamily: FONT.serif, fontSize: 22, fontWeight: 600, color: C.text, letterSpacing: "-.01em" }}>The queue</div>
+        <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: "-.01em" }}>The queue</div>
         <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: C.muted }}>
           {live.length} to clear{skipped > 0 && ` · ${skipped} skipped`}
         </span>

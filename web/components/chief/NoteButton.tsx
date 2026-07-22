@@ -103,7 +103,7 @@ export default function NoteButton({ variant }: { variant: "desktop" | "mobile" 
         </div>
       ) : prepared ? (
         <>
-          <div style={{ fontFamily: FONT.serif, fontSize: 16, fontWeight: 700, lineHeight: 1.25, color: C.text }}>{prepared.title}</div>
+          <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 16, fontWeight: 800, lineHeight: 1.25, color: C.text }}>{prepared.title}</div>
           {prepared.body !== prepared.title && <div style={{ fontSize: 13, color: C.text2, lineHeight: 1.5, marginTop: 4 }}>{prepared.body}</div>}
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             <button onClick={() => void keep()} style={{ flex: 1, cursor: "pointer", border: 0, borderRadius: 10, padding: "11px 14px", fontWeight: 800, fontSize: 13.5, fontFamily: FONT.sans, background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322" }}>✓ Keep it</button>

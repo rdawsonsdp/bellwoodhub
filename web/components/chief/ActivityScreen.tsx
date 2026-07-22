@@ -55,7 +55,7 @@ export default function ActivityScreen() {
   return (
     <div className="fu" style={{ padding: "24px 20px 56px", maxWidth: 980, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ fontFamily: FONT.serif, fontSize: 28, fontWeight: 500, color: C.text }}>Activity</div>
+        <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 26, fontWeight: 800, color: C.text }}>Activity</div>
         <span style={{ fontSize: 12.5, color: C.text3 }}>The ledger, live — every action the system takes.</span>
         <button onClick={() => setPaused((p) => !p)} style={{ marginLeft: "auto", cursor: "pointer", background: "rgba(var(--ink),.06)", border: `1px solid ${C.line}`, borderRadius: 99, padding: "5px 13px", color: paused ? C.orangeText : C.text2, fontFamily: FONT.mono, fontSize: 10.5, fontWeight: 700 }}>
           {paused ? "▶ resume" : "❚❚ auto-refresh 30s"}

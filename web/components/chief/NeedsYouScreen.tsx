@@ -237,7 +237,7 @@ export function TriageHubCard({ onOpenEmail, onSeeAll, mobile }: { onOpenEmail?:
   return (
     <div style={{ marginTop: mobile ? 13 : 24 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <div style={{ fontFamily: FONT.serif, fontSize: 17, fontWeight: 700, color: C.text }}>Needs you</div>
+        <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 17, fontWeight: 800, color: C.text }}>Needs you</div>
         {items !== null && (
           <button onClick={onSeeAll} style={{ cursor: "pointer", background: "none", border: 0, color: C.gold, fontSize: 13, fontWeight: 800, fontFamily: FONT.sans }}>
             {items.length > top.length ? `See all ${items.length} →` : "Open →"}

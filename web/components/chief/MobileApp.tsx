@@ -316,7 +316,7 @@ function NavMenu({ current, operator, onToggleOperator, go, goAgentSection, agen
             <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z" /></svg>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: FONT.serif, fontSize: 16, fontWeight: 600, lineHeight: 1 }}>Chief of Staff</div>
+            <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 16, fontWeight: 800, lineHeight: 1 }}>Chief of Staff</div>
             <div style={{ fontFamily: FONT.mono, fontSize: 9, letterSpacing: ".12em", color: C.dim, marginTop: 2 }}>INSTITUTIONAL MEMORY</div>
           </div>
           <button onClick={onClose} aria-label="Close" style={{ width: 34, height: 34, borderRadius: 99, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, display: "flex", alignItems: "center", justifyContent: "center" }}><Svg d={I.close} w={17} /></button>
@@ -598,7 +598,7 @@ function EmailsScreen({ onAsk }: { onAsk: () => void }) {
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 16px 0" }}>
-        <div style={{ fontFamily: FONT.serif, fontSize: 27, fontWeight: 500, lineHeight: 1 }}>Emails</div>
+        <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 26, fontWeight: 800, lineHeight: 1 }}>Emails</div>
         <button onClick={onAsk} aria-label="Search" style={{ marginLeft: "auto", width: 38, height: 38, borderRadius: 99, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, display: "flex", alignItems: "center", justifyContent: "center" }}><Svg d={I.search} w={18} /></button>
       </div>
 
@@ -1221,7 +1221,7 @@ function AskResult({ res }: { res: AskResponse }) {
 function ScreenHead({ title, sub, stats }: { title: string; sub?: string; stats?: [string, string][] }) {
   return (
     <div style={{ padding: "16px 18px 12px" }}>
-      <div style={{ fontFamily: FONT.serif, fontSize: 27, fontWeight: 500, lineHeight: 1 }}>{title}</div>
+      <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{title}</div>
       {sub && <div style={{ fontSize: 13.5, color: C.text3, marginTop: 6 }}>{sub}</div>}
       {stats && (
         <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
@@ -1234,7 +1234,7 @@ function ScreenHead({ title, sub, stats }: { title: string; sub?: string; stats?
 function Stat({ n, label }: { n: string; label: string }) {
   return (
     <div style={{ flex: 1, ...cardS, padding: "11px 12px", textAlign: "center" }}>
-      <div style={{ fontFamily: FONT.serif, fontSize: 21, fontWeight: 600, color: C.text }}>{n}</div>
+      <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 21, fontWeight: 800, color: C.text }}>{n}</div>
       <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{label}</div>
     </div>
   );
@@ -1247,7 +1247,7 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
     <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "var(--c-appbg)", display: "flex", flexDirection: "column", animation: "sheetUp .22s ease-out" }}>
       <div style={{ position: "sticky", top: 0, display: "flex", alignItems: "center", gap: 12, padding: "calc(env(safe-area-inset-top) + 12px) 16px 12px", borderBottom: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.04)", backdropFilter: "blur(12px)" }}>
         <button onClick={onClose} aria-label="Back" style={{ width: 36, height: 36, borderRadius: 99, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2, display: "flex", alignItems: "center", justifyContent: "center" }}><Svg d={I.back} w={18} /></button>
-        <span style={{ fontFamily: FONT.serif, fontSize: 18, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</span>
+        <span style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 18, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</span>
       </div>
       {/* z-50 clears the feedback FAB (z-45); safe-area bottom keeps the last
           line off the home indicator on notched phones */}

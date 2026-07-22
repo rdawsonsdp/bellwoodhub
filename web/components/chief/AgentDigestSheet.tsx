@@ -103,7 +103,7 @@ export default function AgentDigestSheet({ run, card: c, schedule, variant, onCl
           <button onClick={onClose} aria-label="Close" style={roundBtn}>✕</button>
         </div>
 
-        <div style={{ fontFamily: FONT.serif, fontSize: 19, fontWeight: 600, lineHeight: 1.25, margin: "14px 0 4px" }}>{run.headline}</div>
+        <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 19, fontWeight: 800, lineHeight: 1.25, margin: "14px 0 4px" }}>{run.headline}</div>
 
         {/* the trace button — transparency beats trust-me. A real, pushable
             control (RD 2026-07-21): informational grey, brain to the left. */}
@@ -189,7 +189,7 @@ export default function AgentDigestSheet({ run, card: c, schedule, variant, onCl
           <div style={{ marginTop: 20 }}>
             {/* the business-value number (RD): emails actually answered */}
             <div style={{ display: "flex", alignItems: "baseline", gap: 9, marginBottom: 10 }}>
-              <span style={{ fontFamily: FONT.serif, fontSize: 17, fontWeight: 700, color: C.text }}>Agent responded</span>
+              <span style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 17, fontWeight: 800, color: C.text }}>Agent responded</span>
               <span style={{ ...eyebrow(C.dim), fontSize: 9.5 }}>past 3 days</span>
             </div>
             {run.sent.length === 0 ? (

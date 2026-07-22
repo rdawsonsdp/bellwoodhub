@@ -252,7 +252,7 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
         </button>
         {!collapsed && (
         <div style={{ lineHeight: 1.15 }}>
-          <div style={{ fontFamily: FONT.serif, fontSize: 18, fontWeight: 600, color: C.text }}>{tenant.appName}</div>
+          <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 18, fontWeight: 800, color: C.text }}>{tenant.appName}</div>
           <div style={{ ...eyebrow(C.dim), fontSize: 9.5, letterSpacing: ".06em", marginTop: 1 }}>Institutional Memory</div>
           <ReleaseTag />
         </div>
@@ -351,6 +351,7 @@ function GreetingBanner() {
 }
 
 /* ════════════════════════ TOPBAR ════════════════════════ */
+const P_SANS = "'Public Sans','Inter',system-ui,sans-serif";
 const THEME_CYCLE = ["auto", "midnight", "dim", "daylight", "contrast"];
 function ThemeToggle() {
   const [theme, setTheme] = useState("auto");
@@ -577,15 +578,25 @@ function Brief({ go, onAsk }: { go: (s: Screen) => () => void; onAsk: () => void
     : [["focus", "Urgent", needs.length], ["all", "Inbox", inbox?.count ?? 0], ["queued", "Agent Answered", queued.length]];
   const tabBtn = (k: typeof tab, label: string, n: number) => {
     const on = tab === k;
-    return <button key={k} onClick={() => setTab(k)} style={{ cursor: "pointer", padding: "8px 16px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans, background: on ? C.gold : "transparent", color: on ? "#081627" : C.text3, border: `1px solid ${on ? C.gold : "rgba(var(--ink),.14)"}` }}>{label}{n > 0 ? ` ${n}` : ""}</button>;
+    return <button key={k} onClick={() => setTab(k)} style={{ cursor: "pointer", padding: "8px 16px", borderRadius: 9, fontSize: 12, fontWeight: 800, letterSpacing: ".04em", textTransform: "uppercase", fontFamily: P_SANS, background: on ? "linear-gradient(135deg,#D97706,#B45309)" : "var(--c-card, #fff)", color: on ? "#fff" : C.text2, border: `1.5px solid ${on ? "transparent" : "var(--c-cardbd)"}` }}>{label}{n > 0 ? ` ${n}` : ""}</button>;
   };
 
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1040 }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, flexWrap: "wrap", marginBottom: 18 }}>
         <div>
-          <div style={{ fontFamily: FONT.serif, fontSize: 34, fontWeight: 500, color: C.text, letterSpacing: "-.015em", lineHeight: 1 }}>Emails</div>
-          <div style={{ marginTop: 9, fontSize: 14.5, color: C.text3 }}>{isPrivate ? `${(inbox?.count ?? 0).toLocaleString()} in this private inbox · walled from the public record` : `${needs.length} need you · ${(inbox?.count ?? 0).toLocaleString()} in the inbox · ${queued.length} queued.`}</div>
+          <div style={{ fontFamily: P_SANS, fontSize: 26, fontWeight: 800, color: C.text, letterSpacing: "-.01em", lineHeight: 1 }}>Emails</div>
+          <div style={{ marginTop: 9, display: "flex", gap: 7, flexWrap: "wrap", alignItems: "center" }}>
+            {isPrivate ? (
+              <span style={{ fontFamily: P_SANS, fontSize: 12.5, color: C.text3 }}>{(inbox?.count ?? 0).toLocaleString()} in this private inbox · walled from the public record</span>
+            ) : (
+              <>
+                <span style={{ fontFamily: P_SANS, fontSize: 11, fontWeight: 800, padding: "4px 11px", borderRadius: 99, background: "#B91C1C", color: "#fff" }}>{needs.length} need you</span>
+                <span style={{ fontFamily: P_SANS, fontSize: 11, fontWeight: 800, padding: "4px 11px", borderRadius: 99, background: "#5B8C5A", color: "#fff" }}>{(inbox?.count ?? 0).toLocaleString()} in the inbox</span>
+                <span style={{ fontFamily: P_SANS, fontSize: 11, fontWeight: 800, padding: "4px 11px", borderRadius: 99, background: "#A8A29A", color: "#fff" }}>{queued.length} queued</span>
+              </>
+            )}
+          </div>
         </div>
         <button onClick={onAsk} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: 12, background: "rgba(var(--ink),.05)", border: "1px solid rgba(var(--ink),.1)", color: C.muted, fontSize: 13.5, fontFamily: FONT.sans }}>
           <Ico d={ICON.search} w={16} sw={2} stroke={C.muted} /> Search every email…
@@ -1008,7 +1019,7 @@ function Track({ filter, setFilter }: { filter: Filter; setFilter: (f: Filter) =
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 980 }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 20, flexWrap: "wrap", marginBottom: 18 }}>
         <div>
-          <div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Calendar</div>
+          <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 26, fontWeight: 800, color: C.text, lineHeight: 1 }}>Calendar</div>
           <div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>Your whole day — Government (Outlook) + Business (Gmail), consolidated.</div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
@@ -1116,7 +1127,7 @@ function Memory({ initial }: { initial?: string | null }) {
 
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
-      <div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1, marginBottom: 18 }}>History</div>
+      <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 26, fontWeight: 800, color: C.text, lineHeight: 1, marginBottom: 18 }}>History</div>
       <div style={{ display: "flex", gap: 26, alignItems: "flex-start" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ ...eyebrow(C.dim), fontSize: 10.5, marginBottom: 10 }}>Resolved entities · {filtered.length}</div>
@@ -1189,7 +1200,7 @@ function Memory({ initial }: { initial?: string | null }) {
 function MemoryEmptyLive() {
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
-      <div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1, marginBottom: 18 }}>History</div>
+      <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 26, fontWeight: 800, color: C.text, lineHeight: 1, marginBottom: 18 }}>History</div>
       <div style={{ ...card, padding: 24 }}>
         <div style={{ fontFamily: FONT.serif, fontSize: 22, color: C.text, lineHeight: 1.35 }}>No entities resolved yet.</div>
         <div style={{ fontSize: 13.5, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>Entities appear as mail is ingested and identities are resolved.</div>
@@ -1202,7 +1213,7 @@ function MemoryEmptyLive() {
 function MemoryRepresentative() {
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
-      <div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1, marginBottom: 18 }}>History</div>
+      <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 26, fontWeight: 800, color: C.text, lineHeight: 1, marginBottom: 18 }}>History</div>
       <div style={{ display: "flex", gap: 26, alignItems: "flex-start" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(var(--ink),.05)", border: "1px solid rgba(var(--ink),.1)", borderRadius: 13, padding: "11px 14px", marginBottom: 16 }}>
@@ -1267,7 +1278,7 @@ function Sources() {
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, marginBottom: 18, flexWrap: "wrap" }}>
-        <div><div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Sources</div><div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>An answer is only as complete as what&apos;s connected.</div></div>
+        <div><div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 26, fontWeight: 800, color: C.text, lineHeight: 1 }}>Sources</div><div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>An answer is only as complete as what&apos;s connected.</div></div>
         <button onClick={() => setUploadOpen(true)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", borderRadius: 11, border: "1px solid rgba(231,181,60,.4)", background: "rgba(231,181,60,.08)", color: C.gold, fontSize: 13.5, fontWeight: 700, fontFamily: FONT.sans, cursor: "pointer" }}>
           <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg> Upload source — agent ingest
         </button>
@@ -1347,7 +1358,7 @@ function DesktopIngested({ records }: { records: IngestedRecord[] }) {
 function SourcesEmptyLive() {
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
-      <div style={{ marginBottom: 18 }}><div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Sources</div><div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>An answer is only as complete as what&apos;s connected.</div></div>
+      <div style={{ marginBottom: 18 }}><div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 26, fontWeight: 800, color: C.text, lineHeight: 1 }}>Sources</div><div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>An answer is only as complete as what&apos;s connected.</div></div>
       <div style={{ ...card, padding: 24 }}>
         <div style={{ fontFamily: FONT.serif, fontSize: 22, color: C.text, lineHeight: 1.35 }}>No connectors reporting yet.</div>
         <div style={{ fontSize: 13.5, color: C.muted, marginTop: 8, lineHeight: 1.5 }}>Connected mailboxes appear here after the first sync.</div>
@@ -1360,7 +1371,7 @@ function SourcesEmptyLive() {
 function SourcesRepresentative() {
   return (
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
-      <div style={{ marginBottom: 18 }}><div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Sources</div><div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>An answer is only as complete as what&apos;s connected.</div></div>
+      <div style={{ marginBottom: 18 }}><div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 26, fontWeight: 800, color: C.text, lineHeight: 1 }}>Sources</div><div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>An answer is only as complete as what&apos;s connected.</div></div>
       <div style={{ background: "linear-gradient(120deg,rgba(52,201,139,.1),rgba(103,173,255,.06))", border: "1px solid rgba(var(--ink),.1)", borderRadius: 18, padding: "20px 24px", display: "flex", alignItems: "center", gap: 30, marginBottom: 24 }}>
         <div><div style={{ fontFamily: FONT.serif, fontSize: 34, color: C.text, lineHeight: 1 }}>70,431</div><div style={{ fontSize: 12.5, color: C.text3, marginTop: 4 }}>messages in the canonical store</div></div>
         <div style={{ width: 1, height: 46, background: "rgba(var(--ink),.1)" }} />
@@ -1417,7 +1428,7 @@ function Approvals() {
     <div className="fu" style={{ padding: "30px 36px 48px", maxWidth: 1240 }}>
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ fontFamily: FONT.serif, fontSize: 32, fontWeight: 500, color: C.text, lineHeight: 1 }}>Approvals</div>
+          <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 26, fontWeight: 800, color: C.text, lineHeight: 1 }}>Approvals</div>
           {data?.sendLive && <SendLivePill />}
         </div>
         <div style={{ fontSize: 14, color: C.text3, marginTop: 5 }}>Staff Agents draft. You decide.</div>

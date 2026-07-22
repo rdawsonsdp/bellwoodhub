@@ -300,3 +300,11 @@ a {
 }
 .navTip:hover::after, .navTip:focus-visible::after { opacity: 1; transform: translateY(-50%) scale(1); }
 .navTip:hover::before, .navTip:focus-visible::before { opacity: 1; transform: translateY(-50%) rotate(45deg) scale(1); }
+
+
+/* ── the ONE card surface (RD 2026-07-22): white in light themes, tinted in
+   dark — every ...card usage app-wide reads this. ── */
+:root, [data-theme="midnight"] { --c-card: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.018)); }
+[data-theme="dim"] { --c-card: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03)); }
+[data-theme="contrast"] { --c-card: rgba(255,255,255,.06); }
+[data-theme="daylight"], [data-theme="am"], [data-theme="midday"] { --c-card: #FFFFFF; }

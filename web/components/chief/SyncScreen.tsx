@@ -104,7 +104,7 @@ function Section({ title, sub, children }: { title: string; sub?: string; childr
   return (
     <div style={{ ...card, padding: "16px 18px", marginTop: 12 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-        <span style={{ fontFamily: FONT.serif, fontSize: 17, fontWeight: 600, color: C.text }}>{title}</span>
+        <span style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 17, fontWeight: 800, color: C.text }}>{title}</span>
         {sub && <span style={{ fontSize: 12, color: C.text3 }}>{sub}</span>}
       </div>
       {children}
@@ -173,7 +173,7 @@ export default function SyncScreen() {
   return (
     <div className="fu" style={{ padding: "24px 20px 56px", maxWidth: 980, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ fontFamily: FONT.serif, fontSize: 28, fontWeight: 500, color: C.text }}>Sync</div>
+        <div style={{ fontFamily: "'Public Sans','Inter',system-ui,sans-serif", fontSize: 26, fontWeight: 800, color: C.text }}>Sync</div>
         <span style={{ fontSize: 12.5, color: C.text3 }}>Every mirror process, live — what&apos;s syncing, how far along, what&apos;s left.</span>
         {s && !s.live && <span style={{ ...pill(C.text2, "rgba(var(--ink),.08)"), fontSize: 11 }}>Demo data</span>}
       </div>

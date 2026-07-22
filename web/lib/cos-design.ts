@@ -45,7 +45,7 @@ export const APP_BG = "var(--c-appbg)";
 
 /** A glassy card surface — overlay inverts via --ink on light themes. */
 export const card: CSSProperties = {
-  background: "linear-gradient(180deg,rgba(var(--ink),.05),rgba(var(--ink),.018))",
+  background: "var(--c-card, linear-gradient(180deg,rgba(var(--ink),.05),rgba(var(--ink),.018)))",
   border: `1px solid ${C.cardBd}`,
   borderRadius: 16,
 };

@@ -38,7 +38,7 @@ export const FONT = {
   serif: "'Newsreader',serif",
   mono: "'JetBrains Mono',monospace",
   /** blackletter nameplate — the Tribune-style masthead (The Morning Brief) */
-  masthead: "'Pirata One','Newsreader',serif",
+  masthead: "'Chomsky','Pirata One','Newsreader',serif",
 } as const;
 
 export const APP_BG = "var(--c-appbg)";

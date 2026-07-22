@@ -256,6 +256,18 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
         {item("needsyou", "Needs You", <Ico d={ICON.warn} />)}
         {item("queue", "Queue", <Ico d={ICON.approvals} />)}
         {item("ask", "Ask", <Star w={19} c="currentColor" />)}
+        {/* Agents live in the main menu (RD 2026-07-21) — the folded Hub peek
+            is the glance; this is the destination. */}
+        {item("agents", "Agents", <Star w={18} c="currentColor" />)}
+        {screen === "agents" && goAgentSection && (
+          <div style={{ display: "flex", flexDirection: "column", margin: "0 0 4px 40px" }}>
+            {[["agents", "Agents"], ["capabilities", "Capabilities"], ["connectors", "Connectors"]].map(([id, l]) => (
+              <button key={id} onClick={() => goAgentSection(id)} style={{ textAlign: "left", background: "none", border: 0, cursor: "pointer", padding: "5px 10px", borderRadius: 8, color: agentSection === id ? C.gold : C.text3, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans }}>
+                {l}
+              </button>
+            ))}
+          </div>
+        )}
         {operator && (
           <>
             <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".16em", padding: "14px 10px 8px" }}>Operator</div>
@@ -266,16 +278,6 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
             {item("sync", "Sync", <Ico d={["M21 12a9 9 0 1 1-2.6-6.3", "M21 3v6h-6"]} />)}
             {item("activity", "Activity", <Ico d={["M12 7v5l3.5 2", "M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z"]} />)}
             {item("settings", "Approvals", <Ico d={ICON.approvals} />)}
-            {item("agents", "Staff Agents", <Star w={18} c="currentColor" />)}
-            {screen === "agents" && goAgentSection && (
-              <div style={{ display: "flex", flexDirection: "column", margin: "0 0 4px 40px" }}>
-                {[["agents", "Agents"], ["capabilities", "Capabilities"], ["connectors", "Connectors"]].map(([id, l]) => (
-                  <button key={id} onClick={() => goAgentSection(id)} style={{ textAlign: "left", background: "none", border: 0, cursor: "pointer", padding: "5px 10px", borderRadius: 8, color: agentSection === id ? C.gold : C.text3, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans }}>
-                    {l}
-                  </button>
-                ))}
-              </div>
-            )}
             {item("admin", "Admin", <Ico d={ICON.admin} />)}
           </>
         )}
@@ -293,7 +295,7 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
               <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Operator mode</span>
             </button>
             <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5, marginTop: 7 }}>
-              Reveals Emails, Calendar, History, Sources, Staff Agents, Approvals, and Admin. The Mayor&apos;s view is Hub · Queue · Ask.
+              Reveals Emails, Calendar, History, Sources, Approvals, and Admin. The Mayor&apos;s view is Hub · Needs You · Queue · Ask · Agents.
             </div>
             {process.env.NEXT_PUBLIC_AUTH_ENABLED === "1" && (
               <button onClick={() => { window.location.href = "/api/auth/signout"; }} style={{ display: "block", width: "100%", marginTop: 11, padding: "9px 12px", borderRadius: 10, cursor: "pointer", background: "rgba(var(--ink),.05)", border: `1px solid ${C.line}`, color: C.text2, fontWeight: 700, fontSize: 12.5, fontFamily: FONT.sans }}>Sign out</button>

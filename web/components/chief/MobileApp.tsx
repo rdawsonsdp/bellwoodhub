@@ -90,7 +90,7 @@ function Svg({ d, w = 22, sw = 1.9, fill = "none" }: { d: string; w?: number; sw
 
 type Screen = "today" | "needsyou" | "queue" | "ask" | "emails" | "events" | "history" | "agents" | "sources" | "sync" | "activity" | "admin";
 /** Mayor mode = exactly these three destinations (Phase 4 nav collapse). */
-const MAYOR_SCREENS: Screen[] = ["today", "queue", "ask"];
+const MAYOR_SCREENS: Screen[] = ["today", "needsyou", "queue", "ask", "agents"];
 const THEME_CYCLE = ["auto", "midnight", "dim", "daylight", "contrast"];
 
 const streamColor: Record<string, string> = {
@@ -297,7 +297,7 @@ const NAV_ITEMS: [Screen, string, string][] = [
   ["emails", I.emails, "Emails"],
   ["events", I.events, "Calendar"],
   ["history", I.history, "History"],
-  ["agents", NAV_STAR, "Staff Agents"],
+  ["agents", NAV_STAR, "Agents"],
   ["sources", I.sources, "Sources"],
   ["sync", "M21 12a9 9 0 1 1-2.6-6.3M21 3v6h-6", "Sync"],
   ["activity", I.history, "Activity"],

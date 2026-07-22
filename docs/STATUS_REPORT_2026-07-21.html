@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bellwood Hub — Status Report · July 21, 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font: 14px/1.55 Georgia, 'Times New Roman', serif; color: #1a2233; background: #fff; max-width: 780px; margin: 0 auto; padding: 40px 36px; }
+  header { border-bottom: 3px double #b8963e; padding-bottom: 14px; margin-bottom: 22px; }
+  .kicker { font: 700 10px/1 'Helvetica Neue', Arial, sans-serif; letter-spacing: .18em; text-transform: uppercase; color: #8a6a1f; }
+  h1 { font-size: 26px; margin-top: 6px; color: #14335c; }
+  .meta { font: 12px 'Helvetica Neue', Arial, sans-serif; color: #667; margin-top: 4px; }
+  h2 { font-size: 15px; color: #14335c; border-bottom: 1px solid #d8d2c0; padding-bottom: 4px; margin: 22px 0 10px; }
+  p, li { font-size: 13.5px; }
+  ul { margin: 6px 0 6px 20px; }
+  li { margin-bottom: 5px; }
+  b { color: #14335c; }
+  .status { font: 700 10px/1 'Helvetica Neue', Arial, sans-serif; letter-spacing: .06em; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; }
+  .live   { background: #e3f2e7; color: #1e6b3a; }
+  .prog   { background: #fdf3d7; color: #8a6a1f; }
+  .open   { background: #fbe9e5; color: #a33d2a; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+  td, th { padding: 6px 8px; border-bottom: 1px solid #e6e0d0; text-align: left; vertical-align: top; }
+  th { font: 700 10.5px 'Helvetica Neue', Arial, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #667; }
+  .sum { background: #faf6ea; border: 1px solid #e2d7b8; border-radius: 8px; padding: 14px 16px; margin-bottom: 4px; }
+  footer { margin-top: 26px; padding-top: 10px; border-top: 1px solid #d8d2c0; font: 11px 'Helvetica Neue', Arial, sans-serif; color: #889; }
+  @media print { body { padding: 0; } .sum { break-inside: avoid; } h2 { break-after: avoid; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">Bellwood Hub · AI Chief of Staff</div>
+  <h1>Status Report</h1>
+  <div class="meta">Tuesday, July 21, 2026 · Prepared for R. Dawson, Strategic Data Products · Live: bellwood-mayor.vercel.app (build 7059869)</div>
+</header>
+
+<h2>Executive summary</h2>
+<div class="sum">
+  <p>Over the July 19–21 sprint the Hub went from a status page to an <b>intelligence product</b>, and the Mayor's
+  live dashboard was brought to <b>full parity</b> with development. The app now opens on a Chief-of-Staff
+  briefing — <b>"Needs to Know"</b> — that reads the whole record (ranked email issues, actions awaiting
+  approval, upcoming events) and speaks it in a configurable voice. Agent reports read like news briefs with
+  headlines and story updates. Every email reference in the app opens the real message. Mobile is
+  demo-ready after a full readiness audit. All of it is deployed to the Mayor's live site.</p>
+</div>
+
+<h2>Shipped and live on the Mayor's dashboard</h2>
+<table>
+  <tr><th>Area</th><th>What shipped</th><th>Status</th></tr>
+  <tr><td><b>Needs to Know</b></td><td>The CoS briefing leads the Hub: model-voiced narrative (tunable persona), ranked top email issues, actions required, upcoming events. Combines the former "Needs you" + "Needs you now." Tested against the real mailbox — all links resolve.</td><td><span class="status live">Live</span></td></tr>
+  <tr><td><b>News-brief agent reports</b></td><td>Each agent digest is filed like a wire story: mini-headline, key facts, and a NEW / UPDATE tag (UPDATE = advances a story the agent's memory already tracks).</td><td><span class="status live">Live</span></td></tr>
+  <tr><td><b>Triage ("Needs You")</b></td><td>Mail sorted into needs-reply / awaiting / FYI, ranked by named, explainable rules; reasons templated (FOIA-defensible); mayor-editable important-senders list; corrections apply instantly.</td><td><span class="status live">Live</span></td></tr>
+  <tr><td><b>Every email opens</b></td><td>Fixed two link-breaking bugs (id mismatch; hallucinated citations laundered through agent memory). Verified 36/36 citations resolve. Every email view has an action bar (Reply / Open in Gmail).</td><td><span class="status live">Live</span></td></tr>
+  <tr><td><b>Ask, consolidated</b></td><td>One Ask box, everywhere; landing shows recent questions; reset inside the box. Ask is the hero control: raised gold orb (desktop), centered gold FAB in the nav (mobile).</td><td><span class="status live">Live</span></td></tr>
+  <tr><td><b>Mobile readiness</b></td><td>Full audit + fixes: pop-ups no longer trapped off-screen, safe-area insets activated (notch/home bar), no sideways scroll, sheets layered correctly.</td><td><span class="status live">Live</span></td></tr>
+  <tr><td><b>Sync self-healing</b></td><td>A network blip no longer strands the mail mirror for hours — it retries automatically and only asks for a reconnect on true credential failure; errors now record their real cause.</td><td><span class="status live">Live</span></td></tr>
+  <tr><td><b>Outlook sign-in</b></td><td>Mirrors the Google flow; a tenant-admin can approve for the Village inline ("consent on behalf of your organization"); graceful "one approval needed" screen replaces the raw Microsoft error.</td><td><span class="status live">Live</span></td></tr>
+  <tr><td><b>Database parity</b></td><td>Migrations 014–017 applied to the Mayor's Supabase (81k messages untouched); security posture verified (no table anonymously readable).</td><td><span class="status live">Live</span></td></tr>
+</table>
+
+<h2>In progress</h2>
+<ul>
+  <li><b>Voice notes for walk-ins</b> <span class="status prog">Started</span> — "Remember to cut the tree on Forrest Street": press, speak, done; the note lands as an open follow-up in the morning briefing. Schema written; capture UI + briefing integration next. Designed for a mayor who doesn't type. Two-way voice conversation is the follow-on phase.</li>
+  <li><b>CoS personality for Mayor Harvey</b> <span class="status prog">Ready to tune</span> — no code needed: Admin → Chief of Staff → tone preset + Instructions box feeds the briefing prompt directly.</li>
+</ul>
+
+<h2>Open items (blockers &amp; keys held elsewhere)</h2>
+<ul>
+  <li><b>Google Calendar API disabled</b> <span class="status open">1-click fix</span> — calendar pulls return 403 because the API is off in the Google Cloud project (not a permissions problem). Enable it in the console and "Coming up" populates on the next sync.</li>
+  <li><b>Mayor's Outlook admin consent</b> <span class="status open">One-time</span> — Village M365 policy requires a single admin approval before his mailbox can connect. If his account holds an admin role he can now self-approve at sign-in; otherwise IT clicks once (email template ready in docs/OAUTH_SETUP.md).</li>
+  <li><b>Local auth is off</b> — development laptop only, for phone testing on the LAN. Flip back before demoing sign-in.</li>
+  <li><b>Housekeeping</b> — delete the throwaway test database (DEP-4, $10/mo); rotate chat-transited credentials (TASK-15); verify RETRIEVAL_BACKEND on the mayor deployment (TASK-13, affects Ask only).</li>
+</ul>
+
+<h2>Data & deployment map</h2>
+<table>
+  <tr><th>Where</th><th>Code</th><th>Data</th></tr>
+  <tr><td>Local (laptop / phone on LAN)</td><td>branch = main (identical)</td><td>RD's Gmail, test database (~16k msgs, backfilling)</td></tr>
+  <tr><td>bellwood-mayor.vercel.app</td><td>main · auto-deploys on push</td><td>RD's Gmail snapshot (81k msgs) — the Mayor's own mailboxes connect after consent</td></tr>
+</table>
+
+<footer>Bellwood Hub · Everything above verified against the live build before this report. PM source of truth: PROJECT.md · Live dashboard: project-status-ten.vercel.app</footer>
+</body>
+</html>

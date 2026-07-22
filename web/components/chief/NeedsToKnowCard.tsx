@@ -18,6 +18,15 @@ interface Note { id: string; title: string; body: string; status: string; stale:
 /** the edition tracks the clock */
 const editionTitle = () => { const h = new Date().getHours(); return h < 12 ? "The Morning Brief" : h < 17 ? "The Midday Brief" : "The Evening Brief"; };
 
+/** live date + time for the dateline (RD 2026-07-21) — ticks every 30s */
+function useNow(): Date {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => { const t = setInterval(() => setNow(new Date()), 30_000); return () => clearInterval(t); }, []);
+  return now;
+}
+const dateLine = (d: Date) => d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+const timeLine = (d: Date) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
 const TAG_C: Record<string, { fg: string; bg: string }> = {
   "draft ready": { fg: C.goldHi, bg: "rgba(231,181,60,.16)" },
   "needs reply": { fg: C.text2, bg: "rgba(var(--ink),.07)" },
@@ -68,6 +77,7 @@ export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onG
     }).catch(() => {});
   };
 
+  const now = useNow();
   const pressing = sum?.pressing ?? [];
   const events = sum?.calendar ?? [];
 
@@ -91,7 +101,7 @@ export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onG
               </div>
               {/* dateline bar between rules, like a real front page */}
               <div style={{ display: "flex", alignItems: "baseline", gap: 8, borderBottom: `1px solid ${C.line2}`, padding: "4px 0 5px", marginBottom: 13, fontFamily: FONT.mono, fontSize: 9.5, letterSpacing: ".09em", textTransform: "uppercase", color: C.dim }}>
-                <span>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</span>
+                <span>{dateLine(now)} · {timeLine(now)}</span>
                 <span style={{ flex: 1 }} />
                 <span>By your Chief of Staff{sum.live ? "" : " · draft"}</span>
               </div>
@@ -256,7 +266,7 @@ function StoryMode({ sum, notes, onClose, onOpenEmail, onOpenAgent }: {
             <div style={{ fontFamily: FONT.masthead, fontSize: 34, lineHeight: 1.05 }}>{editionTitle()}</div>
           </div>
           <div style={{ textAlign: "center", fontFamily: FONT.mono, fontSize: 9.5, letterSpacing: ".1em", textTransform: "uppercase", color: C.dim, marginBottom: 22 }}>
-            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · by your Chief of Staff
+            {dateLine(new Date())} · {timeLine(new Date())} · by your Chief of Staff
           </div>
           <div className="nkLede" style={{ fontFamily: FONT.serif, fontSize: 20, lineHeight: 1.6, color: C.text }}>{sum.narrative}</div>
           {counter(0)}

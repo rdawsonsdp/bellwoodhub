@@ -131,11 +131,19 @@ export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onG
             as a quiet deck beneath. Each story opens the real email. */}
         {pressing.map((p, i) => {
           const tag = TAG_C[p.tag] ?? TAG_C["needs reply"];
-          const clickable = !!(p.messageId && onOpenEmail);
+          // An agent STORY is the desk's analysis — its headline opens the
+          // AGENT'S REPORT (RD 2026-07-21), with the source email demoted to an
+          // explicit chip. A Mail Triage row IS an email action — it opens the
+          // email directly.
+          const isStory = (p.tag === "update" || p.tag === "new") && !!p.agentKey && !!onOpenAgent;
+          const open = isStory
+            ? () => onOpenAgent!(p.agentKey!)
+            : p.messageId && onOpenEmail ? () => onOpenEmail(p.messageId!) : undefined;
+          const clickable = !!open;
           return (
             <div key={i} role={clickable ? "button" : undefined} tabIndex={clickable ? 0 : undefined}
-              onClick={clickable ? () => onOpenEmail!(p.messageId!) : undefined}
-              onKeyDown={clickable ? (e) => e.key === "Enter" && onOpenEmail!(p.messageId!) : undefined}
+              onClick={open}
+              onKeyDown={clickable ? (e) => e.key === "Enter" && open!() : undefined}
               style={{ display: "flex", gap: 12, width: "100%", textAlign: "left", padding: mobile ? "13px 15px 14px" : "15px 18px 16px", borderTop: `1px solid ${C.line2}`, cursor: clickable ? "pointer" : "default", fontFamily: FONT.sans, alignItems: "flex-start" }}>
               <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: C.dim, fontWeight: 700, flexShrink: 0, marginTop: 3 }}>{i + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -162,8 +170,15 @@ export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onG
                 </div>
                 {/* deck — the detail in subtext */}
                 {p.why && <div style={{ fontSize: mobile ? 12.5 : 13, color: C.text3, marginTop: 5, lineHeight: 1.5, overflowWrap: "anywhere" }}>{p.why}</div>}
+                {/* the source email — explicit, secondary, never the headline's job */}
+                {isStory && p.messageId && onOpenEmail && (
+                  <button onClick={(e) => { e.stopPropagation(); onOpenEmail(p.messageId!); }}
+                    style={{ marginTop: 7, cursor: "pointer", background: "rgba(var(--ink),.05)", border: `1px solid ${C.line2}`, borderRadius: 7, padding: "3px 9px", fontFamily: FONT.mono, fontSize: 9.5, letterSpacing: ".05em", color: C.text3 }}>
+                    source email ↗
+                  </button>
+                )}
               </div>
-              {clickable && <span style={{ color: C.gold, fontSize: 14, fontWeight: 800, flexShrink: 0, alignSelf: "center" }}>→</span>}
+              {clickable && <span style={{ color: C.gold, fontSize: 14, fontWeight: 800, flexShrink: 0, alignSelf: "center" }}>{isStory ? "report →" : "→"}</span>}
             </div>
           );
         })}
@@ -286,14 +301,23 @@ function StoryMode({ sum, notes, onClose, onOpenEmail, onOpenAgent }: {
                 )}
                 <span style={{ fontFamily: FONT.mono, fontSize: 10.5, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", color: tag.fg, background: tag.bg, padding: "3px 9px", borderRadius: 7 }}>{p.tag}</span>
               </span>
-              <div style={{ fontFamily: FONT.serif, fontSize: 27, fontWeight: 700, lineHeight: 1.18, letterSpacing: "-.012em", overflowWrap: "anywhere" }}>{p.title}</div>
+              <div onClick={(p.tag === "update" || p.tag === "new") && p.agentKey && onOpenAgent ? () => { onClose(); onOpenAgent(p.agentKey!); } : undefined}
+                style={{ fontFamily: FONT.serif, fontSize: 27, fontWeight: 700, lineHeight: 1.18, letterSpacing: "-.012em", overflowWrap: "anywhere", cursor: (p.tag === "update" || p.tag === "new") && p.agentKey && onOpenAgent ? "pointer" : undefined }}>{p.title}</div>
               {p.why && <div style={{ fontSize: 16, color: C.text2, lineHeight: 1.62, marginTop: 14, overflowWrap: "anywhere" }}>{p.why}</div>}
-              {p.messageId && onOpenEmail && (
-                <button onClick={() => { onClose(); onOpenEmail(p.messageId!); }}
-                  style={{ alignSelf: "flex-start", marginTop: 20, cursor: "pointer", border: 0, borderRadius: 12, padding: "13px 20px", fontWeight: 800, fontSize: 14.5, fontFamily: FONT.sans, background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322" }}>
-                  Open the email →
-                </button>
-              )}
+              <div style={{ display: "flex", gap: 9, marginTop: 20, flexWrap: "wrap" }}>
+                {(p.tag === "update" || p.tag === "new") && p.agentKey && onOpenAgent && (
+                  <button onClick={() => { onClose(); onOpenAgent(p.agentKey!); }}
+                    style={{ cursor: "pointer", border: 0, borderRadius: 12, padding: "13px 20px", fontWeight: 800, fontSize: 14.5, fontFamily: FONT.sans, background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322" }}>
+                    Open the report →
+                  </button>
+                )}
+                {p.messageId && onOpenEmail && (
+                  <button onClick={() => { onClose(); onOpenEmail(p.messageId!); }}
+                    style={{ cursor: "pointer", borderRadius: 12, padding: "13px 18px", fontWeight: 700, fontSize: 13.5, fontFamily: FONT.sans, border: `1px solid ${C.line}`, background: (p.tag === "update" || p.tag === "new") ? "rgba(var(--ink),.05)" : "linear-gradient(135deg,#F4CB63,#D7991C)", color: (p.tag === "update" || p.tag === "new") ? C.text2 : "#0a1322" }}>
+                    {(p.tag === "update" || p.tag === "new") ? "source email ↗" : "Open the email →"}
+                  </button>
+                )}
+              </div>
               {counter(i + 1)}
             </div>
           );

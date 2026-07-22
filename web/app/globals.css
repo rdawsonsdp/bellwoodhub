@@ -308,3 +308,17 @@ a {
 [data-theme="dim"] { --c-card: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03)); }
 [data-theme="contrast"] { --c-card: rgba(255,255,255,.06); }
 [data-theme="daylight"], [data-theme="am"], [data-theme="midday"] { --c-card: #FFFFFF; }
+
+/* Agents-at-work animation (RD 2026-07-22): data dots streaming through the
+   pipeline, pulsing rings on working desks. Decorative motion only — the
+   status text beside it is always real. */
+@keyframes dashFlowDot {
+  0% { transform: translateX(0); opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translateX(64px); opacity: 0; }
+}
+@keyframes dashPulseRing {
+  0% { box-shadow: 0 0 0 0 rgba(217,119,6,.5); }
+  100% { box-shadow: 0 0 0 11px rgba(217,119,6,0); }
+}

@@ -62,11 +62,46 @@ export function WHead({ title, onMore }: { title: string; onMore?: () => void })
 export const btnSolid: React.CSSProperties = { cursor: "pointer", border: 0, borderRadius: 9, padding: "9px 15px", fontFamily: SANS, fontWeight: 800, fontSize: 12, letterSpacing: ".04em", textTransform: "uppercase", background: `linear-gradient(135deg, ${P.amber}, ${P.amberDeep})`, color: "#fff" };
 export const btnOutline: React.CSSProperties = { cursor: "pointer", borderRadius: 9, padding: "8px 14px", fontFamily: SANS, fontWeight: 800, fontSize: 12, letterSpacing: ".04em", textTransform: "uppercase", background: "#fff", border: `1.5px solid ${P.border}`, color: P.text2 };
 
+/* ── the working theater: data collection + agents at work (RD 2026-07-22).
+      Pipeline: the record → the desks → the brief; dots stream, working desks
+      pulse. The caption and per-desk states are always REAL. ─────────────── */
+export function WorkingTheater({ agentKeys, caption }: { agentKeys: string[]; caption: string }) {
+  const dots = (delayBase: number) => (
+    <span style={{ position: "relative", width: 64, height: 8, flexShrink: 0, display: "inline-block" }}>
+      {[0, 1, 2].map((i) => (
+        <span key={i} style={{ position: "absolute", left: 0, top: 1, width: 6, height: 6, borderRadius: 99, background: P.amber, animation: `dashFlowDot 1.6s linear ${delayBase + i * 0.5}s infinite` }} />
+      ))}
+    </span>
+  );
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 18px", flexWrap: "wrap" }}>
+      {/* the record */}
+      <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={P.text2} strokeWidth={1.8} strokeLinecap="round"><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" /></svg>
+      {dots(0)}
+      {/* the desks, pulsing */}
+      <span style={{ display: "inline-flex" }}>
+        {agentKeys.slice(0, 6).map((k, i) => (
+          <span key={k} style={{ marginLeft: i ? -6 : 0, borderRadius: 99, animation: `dashPulseRing 1.4s ease-out ${i * 0.25}s infinite` }}>
+            <AgentAvatar agentKey={k} size={26} />
+          </span>
+        ))}
+      </span>
+      {dots(0.8)}
+      {/* the brief */}
+      <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={P.text2} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M9 13h6M9 17h6" /></svg>
+      <span style={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: P.text2, flexBasis: "100%" }}>{caption}</span>
+    </div>
+  );
+}
+
 /* ── 1. Critical Security Alerts (priority card, 2 columns) ─────────────── */
-export function SecurityAlertsCard({ alerts, onOpenEmail, onOpenAgent }: {
+export function SecurityAlertsCard({ alerts, onOpenEmail, onOpenAgent, composing, theaterKeys = [] }: {
   alerts: PressingItem[];
   onOpenEmail?: (mid: string) => void;
   onOpenAgent?: (agentKey: string) => void;
+  /** true while the briefing is still being composed (animation shows) */
+  composing?: boolean;
+  theaterKeys?: string[];
 }) {
   // TOP ISSUES from ALL desks (RD 2026-07-22) — ranked by the Brief agent on
   // urgency · relevance · risk (rationale shown per item, decision tracked in
@@ -80,19 +115,21 @@ export function SecurityAlertsCard({ alerts, onOpenEmail, onOpenAgent }: {
   return (
     <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 3px rgba(30,30,30,.06)", minWidth: 0, display: "flex", flexDirection: "column" }}>
       {/* high-contrast banner */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", background: `linear-gradient(120deg, ${P.rust}, #A93F10)`, color: "#fff" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", background: `linear-gradient(120deg, ${P.rust}, #A93F10)`, color: "#fff", flexWrap: "wrap" }}>
         <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#F6C563" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" />
         </svg>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.85 }}>Top issues · all desks</div>
-          <div style={{ fontFamily: SANS, fontSize: 17, fontWeight: 800 }}>{alerts.length ? `${alerts.length} ranked by your Chief of Staff${critical ? ` · ${critical} critical` : ""}` : "All clear"}</div>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 800, letterSpacing: ".14em", textTransform: "uppercase", opacity: 0.85, whiteSpace: "nowrap" }}>Top issues · all desks</div>
+          <div style={{ fontFamily: SANS, fontSize: 16.5, fontWeight: 800, lineHeight: 1.25 }}>{composing ? "Composing the brief…" : alerts.length ? `${alerts.length} ranked by your Chief of Staff${critical ? ` · ${critical} critical` : ""}` : "All clear"}</div>
         </div>
-        <span style={{ fontFamily: SANS, fontSize: 9, fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", opacity: 0.75, textAlign: "right" }}>urgency · relevance · risk<br />ranking tracked</span>
+        <span style={{ fontFamily: SANS, fontSize: 9, fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", opacity: 0.75, textAlign: "right", flexShrink: 0 }}>urgency · relevance · risk<br />ranking tracked</span>
       </div>
-      {alerts.length === 0 && (
+      {composing ? (
+        <WorkingTheater agentKeys={theaterKeys} caption="Collecting the record — your desks are filing and the Chief of Staff is ranking…" />
+      ) : alerts.length === 0 ? (
         <div style={{ padding: "18px", fontFamily: SANS, fontSize: 13.5, color: P.text2 }}>Nothing ranked as a top issue right now.</div>
-      )}
+      ) : null}
       {/* THE INDEX (RD 2026-07-22): every identified issue in one glance —
           built for many; each row jumps to its item below. */}
       {alerts.length > 1 && (
@@ -389,7 +426,7 @@ export default function DashboardHub({ wall, onOpenEmail, onOpenAgent, onGoAppro
         </div>
         <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14, alignItems: "start" }}>
           {/* top row under the summary: alerts lead, approvals + events stack right */}
-          <SecurityAlertsCard alerts={alerts} onOpenEmail={onOpenEmail} onOpenAgent={onOpenAgent} />
+          <SecurityAlertsCard alerts={alerts} onOpenEmail={onOpenEmail} onOpenAgent={onOpenAgent} composing={sum === null} theaterKeys={(wall?.cabinet ?? []).map((c) => c.agentKey)} />
           <div style={{ display: "grid", gap: 14 }}>
             <MetricCard title="Pending approvals" n={String(waiting)} sub={waiting > 0 ? `${waiting} drafted repl${waiting === 1 ? "y" : "ies"} waiting on your sign-off.` : "Queue is clear — nothing waiting on you."} cta="Approvals" onGo={onGoApprovals} />
             <EventsWidget events={sum?.calendar ?? []} onGo={onGoCalendar} />

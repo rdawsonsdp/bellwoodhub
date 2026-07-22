@@ -7,7 +7,8 @@
  */
 import { useEffect, useState } from "react";
 import VoiceSkillCard from "./VoiceSkillCard";
-import { P, SANS } from "./DashboardHub";
+import { P, SANS, WorkingTheater } from "./DashboardHub";
+import { AgentAvatar } from "./AgentBadge";
 import { C, FONT, card, eyebrow, pill } from "@/lib/cos-design";
 import { COS_AGENTS, AUTONOMY_LABEL, agentByKey, type CosAgent } from "@/lib/cos-agents";
 import { DOMAIN_AGENTS, domainAgentByKey } from "@/lib/domain-agents";
@@ -127,10 +128,32 @@ function EnableSwitch({ on, onFlip }: { on: boolean; onFlip: () => void }) {
  *  narrow screen; flips every card's badge to Running via onRunning. */
 function RunAgentsButton({ running, onRunning }: { running: boolean; onRunning: (r: boolean) => void }) {
   const [state, setState] = useState<"idle" | "err" | "done">("idle");
+  // the working theater (RD 2026-07-22): while the fleet runs, show data
+  // collection + each desk's REAL completion (its run timestamp advancing).
+  const [roster, setRoster] = useState<{ key: string; name: string }[]>([]);
+  const [filed, setFiled] = useState<Set<string>>(new Set());
+  const pollRef = useState<{ t?: number }>({})[0];
+  async function pollProgress(startedAt: number) {
+    try {
+      const r = await fetch(`/api/wall?hour=${new Date().getHours()}`);
+      if (!r.ok) return;
+      const w = (await r.json()) as { cabinet?: { agentKey: string; name: string }[]; runs?: Record<string, { ranAt: string }> };
+      if (!roster.length && w.cabinet?.length) setRoster(w.cabinet.map((c) => ({ key: c.agentKey, name: c.name.replace(/ Agent$/, "") })));
+      const done = new Set<string>();
+      for (const [k, run] of Object.entries(w.runs ?? {})) {
+        if (new Date(run.ranAt).getTime() > startedAt) done.add(k);
+      }
+      setFiled(done);
+    } catch { /* keep last */ }
+  }
   async function run() {
     if (running) return;
     setState("idle");
     onRunning(true);
+    const startedAt = Date.now();
+    setFiled(new Set());
+    void pollProgress(startedAt);
+    pollRef.t = window.setInterval(() => void pollProgress(startedAt), 5000);
     try {
       const r = await fetch("/api/agents/run-now", { method: "POST" });
       const d = await r.json().catch(() => ({}));
@@ -142,13 +165,39 @@ function RunAgentsButton({ running, onRunning }: { running: boolean; onRunning: 
       onRunning(false);
       setState("err");
       window.setTimeout(() => setState("idle"), 3000);
+    } finally {
+      if (pollRef.t) window.clearInterval(pollRef.t);
     }
   }
   return (
+    <>
     <button onClick={run} title="Run every active agent once, right now"
       style={{ display: "block", width: "100%", maxWidth: 420, marginTop: 12, cursor: "pointer", padding: "12px 18px", borderRadius: 13, fontWeight: 800, fontSize: 13.5, fontFamily: FONT.sans, border: `1px solid ${state === "err" ? C.red : C.gold}`, background: running ? "rgba(var(--ink),.05)" : "linear-gradient(135deg,#F4CB63,#D7991C)", color: running ? C.text2 : "#081627" }}>
       {running ? "Running agents… (takes a minute)" : state === "done" ? "Done — refreshing" : state === "err" ? "Run failed — see console" : "▶ Run agents now"}
     </button>
+    {running && (
+      <div style={{ ...dashCard, marginTop: 10, maxWidth: 560, overflow: "hidden" }}>
+        <WorkingTheater agentKeys={roster.map((r) => r.key)} caption="Collecting new mail and the record — each desk files its report as it finishes." />
+        <div style={{ padding: "0 18px 14px", display: "grid", gap: 7 }}>
+          {roster.map((a) => {
+            const done = filed.has(a.key);
+            return (
+              <div key={a.key} style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                <span style={{ borderRadius: 99, animation: done ? undefined : "dashPulseRing 1.4s ease-out infinite" }}>
+                  <AgentAvatar agentKey={a.key} size={19} />
+                </span>
+                <span style={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: P.text, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name}</span>
+                <span style={{ fontFamily: SANS, fontSize: 11, fontWeight: 800, color: done ? "#1E7B45" : P.text3 }}>
+                  {done ? "✓ filed" : "working…"}
+                </span>
+              </div>
+            );
+          })}
+          {roster.length === 0 && <span style={{ fontFamily: SANS, fontSize: 12, color: P.text3 }}>Waking the desks…</span>}
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

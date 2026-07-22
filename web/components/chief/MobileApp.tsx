@@ -474,6 +474,23 @@ function Row({ k, v }: { k: string; v: string | null }) {
   );
 }
 
+/* live date + time in the header (RD 2026-07-21) — ticks every 30s */
+function HeaderClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => { const t = setInterval(() => setNow(new Date()), 30_000); return () => clearInterval(t); }, []);
+  return (
+    <>
+      <div style={{ fontFamily: FONT.serif, fontSize: 14.5, fontWeight: 600, lineHeight: 1, whiteSpace: "nowrap" }}>
+        {now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+      </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 7, whiteSpace: "nowrap", overflow: "hidden" }}>
+        <span style={{ fontFamily: FONT.mono, fontSize: 8.5, letterSpacing: ".1em", color: C.dim }}>{now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span>
+        <ReleaseTag size={7.5} />
+      </div>
+    </>
+  );
+}
+
 /* ── header ── */
 function Header({ operator, onMenu, onProfile }: { operator: boolean; onMenu: () => void; onProfile: () => void }) {
   const [theme, setTheme] = useState("auto");
@@ -494,12 +511,9 @@ function Header({ operator, onMenu, onProfile }: { operator: boolean; onMenu: ()
       <div style={{ width: 25, height: 25, borderRadius: 8, background: "linear-gradient(135deg,var(--c-goldhi),var(--c-goldlo))", display: "flex", alignItems: "center", justifyContent: "center", color: "#0a1322", flexShrink: 0 }}>
         <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z" /></svg>
       </div>
+      {/* the top shows the DAY, not the app's name (RD 2026-07-21) */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: FONT.serif, fontSize: 14.5, fontWeight: 600, lineHeight: 1, whiteSpace: "nowrap" }}>Chief of Staff</div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 7, whiteSpace: "nowrap", overflow: "hidden" }}>
-          <span style={{ fontFamily: FONT.mono, fontSize: 7.5, letterSpacing: ".1em", color: C.dim }}>INSTITUTIONAL MEMORY</span>
-          <ReleaseTag size={7.5} />
-        </div>
+        <HeaderClock />
       </div>
       {/* the pencil — leave the CoS a note (RD 2026-07-21) */}
       <NoteButton variant="mobile" />

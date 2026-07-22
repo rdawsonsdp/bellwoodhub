@@ -94,6 +94,16 @@ export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onG
           )}
         </div>
 
+        {/* the section band — this is AGENT WORK, not an email summary (RD
+            2026-07-21): every article below was filed, judged, and ranked by a
+            desk. Named so the reader can't mistake it for an inbox digest. */}
+        {pressing.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: mobile ? "9px 15px" : "10px 18px", borderTop: `1px solid ${C.line2}`, background: "rgba(var(--ink),.03)" }}>
+            <span style={{ fontFamily: FONT.mono, fontSize: 9.5, fontWeight: 800, letterSpacing: ".16em", textTransform: "uppercase", color: C.text2 }}>Agent Analysis &amp; Updates</span>
+            <span style={{ flex: 1, borderTop: `1px solid ${C.line2}` }} />
+            <span style={{ fontFamily: FONT.mono, fontSize: 9, letterSpacing: ".06em", textTransform: "uppercase", color: C.dim }}>filed &amp; ranked by your desks</span>
+          </div>
+        )}
         {/* top email issues + actions required — set like a front page (RD
             2026-07-21, Tribune reference): a small kicker, then a heavy serif
             headline that WRAPS (never ellipsized to one line), then the reason

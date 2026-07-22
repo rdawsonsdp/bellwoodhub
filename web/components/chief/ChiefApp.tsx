@@ -394,7 +394,7 @@ function Topbar({ onAsk, onReset, asked }: { onAsk?: (q: string) => void; onRese
     } catch { setRec("idle"); }
   }
   return (
-    <div style={{ flexShrink: 0, height: 76, display: "flex", alignItems: "center", gap: 10, padding: "0 22px", borderBottom: `1px solid ${C.line2}`, background: "rgba(var(--ink),.035)", backdropFilter: "blur(14px)" }}>
+    <div style={{ position: "relative", zIndex: 50, flexShrink: 0, height: 76, display: "flex", alignItems: "center", gap: 10, padding: "0 22px", borderBottom: `1px solid ${C.line2}`, background: "rgba(var(--ink),.035)", backdropFilter: "blur(14px)" }}>
       <div /* The primary way into the record, on every screen (RD 2026-07-18) — the
            Ask screen's box, promoted into the header rather than a cramped pill. */
         style={{ position: "relative", flex: 1, maxWidth: 720, margin: "0 auto", display: "flex", alignItems: "center", gap: 9, background: "var(--c-sidebar, rgba(var(--ink),.04))", border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 6px 6px 18px", boxShadow: "0 6px 22px rgba(20,20,10,.07)" }}>

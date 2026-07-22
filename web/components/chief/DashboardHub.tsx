@@ -299,25 +299,39 @@ export default function DashboardHub({ wall, onOpenEmail, onOpenAgent, onGoAppro
 
   return (
     <div style={{ background: P.bg, borderRadius: 20, padding: 16, marginTop: 18 }}>
-      {/* compact CoS line — the narrative in one scannable sans-serif breath */}
+      {/* the CoS briefing line — a bordered card at the top (RD 2026-07-22),
+          same chrome as the widgets; full text, never clipped mid-sentence */}
       {sum?.narrative && (
-        <div style={{ fontFamily: SANS, fontSize: 13, color: P.text2, lineHeight: 1.55, padding: "2px 4px 14px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-          <b style={{ color: P.text }}>Chief of Staff:</b> {sum.narrative}
+        <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 14, boxShadow: "0 1px 3px rgba(30,30,30,.05)", padding: "13px 16px", marginBottom: 14, display: "flex", gap: 11, alignItems: "flex-start" }}>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={P.amber} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
+            <path d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z" />
+          </svg>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: SANS, fontSize: 10, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: P.text3, marginBottom: 3 }}>Chief of Staff</div>
+            <div style={{ fontFamily: SANS, fontSize: 13.5, color: P.text2, lineHeight: 1.6, overflowWrap: "anywhere" }}>{sum.narrative}</div>
+          </div>
         </div>
       )}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 14 }}>
-        <SecurityAlertsCard alerts={alerts} onOpenEmail={onOpenEmail} onOpenAgent={onOpenAgent} />
-        <MetricCard title="Pending approvals" n={String(waiting)} sub={waiting > 0 ? `${waiting} drafted repl${waiting === 1 ? "y" : "ies"} waiting on your sign-off.` : "Queue is clear — nothing waiting on you."} cta="Approvals" onGo={onGoApprovals} />
-        <SyncChartWidget onGo={onGoSync} />
-        <EventsWidget events={sum?.calendar ?? []} onGo={onGoCalendar} />
-        <MatrixWidget counts={{ needsReply: triage.needsReply, waiting, awaiting: triage.awaiting, fyi: triage.fyi }} onGo={onGoNeedsYou} />
-        <ListMetricsCard title="Recent email actions" onGo={onGoNeedsYou}
-          rows={[
-            { label: "Need your reply", n: triage.needsReply },
-            { label: "Handled by agents", n: handled },
-            { label: "Your open notes", n: notes },
-          ]} />
-        <ActiveAgentsCard wall={wall} onOpenAgent={onOpenAgent} onGo={onGoAgents} />
+      {/* main grid + a right side panel for the calendar (RD 2026-07-22) —
+          the rail is also where the FEAT-37 calendar slot grows when the
+          calendar application connects */}
+      <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+        <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}>
+          <SecurityAlertsCard alerts={alerts} onOpenEmail={onOpenEmail} onOpenAgent={onOpenAgent} />
+          <MetricCard title="Pending approvals" n={String(waiting)} sub={waiting > 0 ? `${waiting} drafted repl${waiting === 1 ? "y" : "ies"} waiting on your sign-off.` : "Queue is clear — nothing waiting on you."} cta="Approvals" onGo={onGoApprovals} />
+          <SyncChartWidget onGo={onGoSync} />
+          <MatrixWidget counts={{ needsReply: triage.needsReply, waiting, awaiting: triage.awaiting, fyi: triage.fyi }} onGo={onGoNeedsYou} />
+          <ListMetricsCard title="Recent email actions" onGo={onGoNeedsYou}
+            rows={[
+              { label: "Need your reply", n: triage.needsReply },
+              { label: "Handled by agents", n: handled },
+              { label: "Your open notes", n: notes },
+            ]} />
+          <ActiveAgentsCard wall={wall} onOpenAgent={onOpenAgent} onGo={onGoAgents} />
+        </div>
+        <div style={{ width: 272, flexShrink: 0, position: "sticky", top: 14 }}>
+          <EventsWidget events={sum?.calendar ?? []} onGo={onGoCalendar} />
+        </div>
       </div>
     </div>
   );

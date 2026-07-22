@@ -34,6 +34,20 @@ export interface CompleteOpts {
  * retrieved set rides in the user turn. Returns the concatenated text.
  */
 export async function complete(opts: CompleteOpts): Promise<string> {
+  return (await completeMeta(opts)).text;
+}
+
+export interface CompletionMeta {
+  text: string;
+  model: string;
+  /** token usage as billed — part of the run's "show the work" record */
+  inputTokens: number;
+  outputTokens: number;
+}
+
+/** Same call as complete(), but returns the execution metadata alongside the
+ *  text — the agent runner records it as run diagnostics (019). */
+export async function completeMeta(opts: CompleteOpts): Promise<CompletionMeta> {
   const model = pickModel(opts.task ?? "synthesize");
   const r = await anthropic().messages.create({
     model,
@@ -42,9 +56,10 @@ export async function complete(opts: CompleteOpts): Promise<string> {
     system: [{ type: "text", text: opts.system, cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: opts.user }],
   });
-  return r.content
+  const text = r.content
     .filter((b): b is Anthropic.TextBlock => b.type === "text")
     .map((b) => b.text)
     .join("")
     .trim();
+  return { text, model: r.model ?? model, inputTokens: r.usage?.input_tokens ?? 0, outputTokens: r.usage?.output_tokens ?? 0 };
 }

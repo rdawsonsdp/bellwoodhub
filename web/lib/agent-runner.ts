@@ -28,7 +28,7 @@ import { query } from "./db";
 import { fetchFocusSlice, fetchFocusSlicePlanned, type FocusHit } from "./agent-focus";
 import { effectiveFocusQuery, type AgentOverrides } from "./agent-instruction";
 import { allAgents, getCustomAgent, overridesOf } from "./agent-registry";
-import { complete } from "./agents/claude";
+import { completeMeta } from "./agents/claude";
 import { VOICE } from "./agents/voice";
 import type { Task } from "./agents/constants";
 
@@ -293,9 +293,9 @@ async function fetchAgentMemory(agentKey: string): Promise<AgentMemoryItem[]> {
   }));
 }
 
-async function persistRun(agentKey: string, output: AgentRunOutput): Promise<void> {
-  await query(`INSERT INTO canonical.agent_runs (agent_key, output) VALUES ($1, $2::jsonb)`, [
-    agentKey, JSON.stringify(output),
+async function persistRun(agentKey: string, output: AgentRunOutput, diagnostics?: unknown): Promise<void> {
+  await query(`INSERT INTO canonical.agent_runs (agent_key, output, diagnostics) VALUES ($1, $2::jsonb, $3::jsonb)`, [
+    agentKey, JSON.stringify(output), diagnostics ? JSON.stringify(diagnostics) : null,
   ]);
   for (const op of output.memoryOps) {
     if (op.op === "upsert") {
@@ -498,12 +498,15 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
       hits: focusHits,
     });
     const task = (process.env.AGENT_RUN_TASK as Task) || "draft"; // Sonnet; flagship gated by eval evidence
+    const startedAt = new Date().toISOString();
+    const t0 = Date.now();
     // 4096, not 2048: a desk with a lot to report writes a long digest, and the
     // whole run is one JSON object — truncation doesn't cost the last point, it
     // costs the entire run with "Unterminated string in JSON". Found the moment
     // an agent created in the app had real volume to summarize (2026-07-18);
     // the built-in desks hid it by being quiet.
-    const raw = await complete({ task, system, user, maxTokens: 4096 });
+    const meta = await completeMeta({ task, system, user, maxTokens: 4096 });
+    const raw = meta.text;
     let parsed: { digest?: { sourceMessageIds?: unknown[] }[] };
     try {
       parsed = parseRunOutput(raw) as { digest?: { sourceMessageIds?: unknown[] }[] };
@@ -595,7 +598,33 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
         );
       }
     }
-    await persistRun(agent.key, output);
+    // ── SHOW THE WORK (019): the run records its own execution — model,
+    // timing, tokens, what it read, the full prompt + raw response, and what
+    // validation dropped. The digest sheet renders this as the eval panel.
+    const diagnostics = {
+      v: 1,
+      model: meta.model,
+      task,
+      startedAt,
+      ms: Date.now() - t0,
+      tokens: { input: meta.inputTokens, output: meta.outputTokens },
+      read: {
+        slice: slice.length,
+        focusQuery,
+        focusHits: focusHits.length,
+        related: related.length,
+        memory: memory.length,
+        skills: skills.length,
+      },
+      validation: {
+        digestKept: output.digest.length,
+        citationsDropped: invented.length,
+        droppedIds: invented.slice(0, 12),
+      },
+      prompt: { system, user },
+      response: raw,
+    };
+    await persistRun(agent.key, output, diagnostics);
     return { agentKey: agent.key, ok: true, slice: slice.length, digest: output.digest.length, actItems: output.actItems.length };
   } catch (err) {
     return { agentKey: agent.key, ok: false, error: err instanceof Error ? err.message : String(err) };

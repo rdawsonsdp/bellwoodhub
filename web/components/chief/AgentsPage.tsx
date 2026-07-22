@@ -403,9 +403,19 @@ function AgentDetail({ a, activity, onBack, onOpenAgent }: { a: CosAgent; activi
   return (
     <div className="fu" style={{ padding: "24px 20px 56px", maxWidth: 760, margin: "0 auto" }}>
       <button onClick={onBack} style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(var(--ink),.05)", border: "1px solid var(--c-cardbd)", borderRadius: 99, padding: "7px 14px", cursor: "pointer", color: C.text2, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans, marginBottom: 18 }}>← All agents</button>
-      <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 11, flexWrap: "wrap" }}>
         <span style={{ fontFamily: FONT.serif, fontSize: 26, fontWeight: 500, color: C.text }}>{a.name}</span>
         <StateBadge a={a} />
+        {/* see the agent → EDIT the agent (RD 2026-07-21): the editor lives
+            further down this page; this is the obvious door to it. */}
+        {IS_LIVE_BUILD && (
+          <button
+            onClick={() => { document.getElementById("agent-edit")?.scrollIntoView({ behavior: "smooth", block: "start" }); setTimeout(() => document.querySelector<HTMLTextAreaElement>("#agent-edit textarea")?.focus(), 450); }}
+            style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer", border: 0, borderRadius: 10, padding: "9px 16px", fontWeight: 800, fontSize: 13, fontFamily: FONT.sans, background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322" }}
+          >
+            ✎ Edit instructions
+          </button>
+        )}
       </div>
       <div style={{ fontSize: 14, color: C.text2, marginTop: 7, lineHeight: 1.55 }}>{a.role}</div>
 
@@ -430,7 +440,7 @@ function AgentDetail({ a, activity, onBack, onOpenAgent }: { a: CosAgent; activi
         </div>
       </div>
 
-      {IS_LIVE_BUILD && <InstructionsSection agentKey={a.key} onOpenAgent={onOpenAgent} />}
+      {IS_LIVE_BUILD && <div id="agent-edit"><InstructionsSection agentKey={a.key} onOpenAgent={onOpenAgent} /></div>}
       {IS_LIVE_BUILD && <SkillsSection agentKey={a.key} />}
 
       <div style={panelStyle(HUE.activity)}>

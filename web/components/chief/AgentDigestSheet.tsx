@@ -37,6 +37,20 @@ const URGENCY_C: Record<string, string> = { red: C.red, yellow: C.orange, clear:
 export default function AgentDigestSheet({ run, card: c, schedule, variant, onClose, onOpenMessage, onGoApprovals, onRefresh, onOpenAgentDetail }: Props) {
   const mobile = variant === "mobile";
   const [refreshing, setRefreshing] = useState(false);
+  // SHOW THE WORK (RD 2026-07-21): the run's recorded execution — model,
+  // timing, tokens, what it read, prompt, response, what validation dropped.
+  // The eval/trace surface; fetched on first open.
+  const [workOpen, setWorkOpen] = useState(false);
+  const [diag, setDiag] = useState<Diagnostics | null>(null);
+  const toggleWork = () => {
+    setWorkOpen((o) => !o);
+    if (!diag) {
+      fetch(`/api/agents/diagnostics?agent=${encodeURIComponent(c.agentKey)}`)
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((d: Diagnostics) => setDiag(d))
+        .catch(() => setDiag({ error: true } as Diagnostics));
+    }
+  };
   // Sent groups collapse by date (RD 2026-07-05): only Today starts open —
   // older days are a header + count until tapped.
   const [openDays, setOpenDays] = useState<Set<string>>(
@@ -90,6 +104,12 @@ export default function AgentDigestSheet({ run, card: c, schedule, variant, onCl
         </div>
 
         <div style={{ fontFamily: FONT.serif, fontSize: 19, fontWeight: 600, lineHeight: 1.25, margin: "14px 0 4px" }}>{run.headline}</div>
+
+        {/* the trace link — transparency beats trust-me */}
+        <button onClick={toggleWork} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: 0, padding: "2px 0", cursor: "pointer", fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".06em", color: workOpen ? C.gold : C.dim }}>
+          {workOpen ? "▾" : "▸"} SHOW THE WORK — model · prompt · timing · validation
+        </button>
+        {workOpen && <WorkPanel diag={diag} />}
 
         {/* waiting on you FIRST (RD: dashboard) — the number lives here, the
             deciding lives in the Queue */}
@@ -270,3 +290,79 @@ const privatePill: CSSProperties = {
   fontFamily: FONT.mono, textTransform: "uppercase", color: C.purpleText,
   background: "rgba(157,139,255,.14)", border: "1px solid rgba(157,139,255,.3)", flexShrink: 0,
 };
+
+
+/* ── SHOW THE WORK — the run's recorded execution (migration 019) ─────────── */
+interface Diagnostics {
+  error?: boolean;
+  kind?: string; lane?: string; sources?: string[];
+  instruction?: string; focusQuery?: string | null; autonomy?: string;
+  lastRun?: {
+    ranAt: string;
+    work: null | {
+      model?: string; task?: string; startedAt?: string; ms?: number;
+      tokens?: { input?: number; output?: number };
+      read?: { slice?: number; focusQuery?: string | null; focusHits?: number; related?: number; memory?: number; skills?: number };
+      validation?: { digestKept?: number; citationsDropped?: number; droppedIds?: string[] };
+      prompt?: { system?: string; user?: string };
+      response?: string;
+    };
+  } | null;
+}
+
+function WorkPanel({ diag }: { diag: Diagnostics | null }) {
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [showResponse, setShowResponse] = useState(false);
+  if (!diag) return <div style={{ margin: "8px 0 0", fontSize: 12, color: C.dim }}>Reading the run record…</div>;
+  if (diag.error) return <div style={{ margin: "8px 0 0", fontSize: 12, color: C.redText }}>Couldn&rsquo;t read the run record.</div>;
+  const w = diag.lastRun?.work ?? null;
+  const row = (k: string, v: string) => (
+    <div style={{ display: "flex", gap: 10, padding: "2.5px 0" }}>
+      <span style={{ flex: "0 0 92px", fontFamily: FONT.mono, fontSize: 9.5, letterSpacing: ".06em", textTransform: "uppercase", color: C.dim, paddingTop: 2 }}>{k}</span>
+      <span style={{ flex: 1, fontSize: 12.5, color: C.text2, lineHeight: 1.5, overflowWrap: "anywhere" }}>{v}</span>
+    </div>
+  );
+  const mono: CSSProperties = { margin: "6px 0 0", padding: "10px 12px", borderRadius: 10, background: "rgba(var(--ink),.05)", border: `1px solid ${C.line2}`, fontFamily: FONT.mono, fontSize: 10.5, lineHeight: 1.55, color: C.text2, whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: 260, overflowY: "auto" };
+  return (
+    <div style={{ margin: "9px 0 4px", padding: "12px 14px", borderRadius: 12, border: `1px solid ${C.line}`, background: "rgba(var(--ink),.025)" }}>
+      {/* execution */}
+      {w ? (
+        <>
+          {row("Model", `${w.model ?? "—"}${w.task ? ` · task ${w.task}` : ""}`)}
+          {row("Executed", `${w.startedAt ? new Date(w.startedAt).toLocaleString() : "—"} · ${w.ms != null ? `${(w.ms / 1000).toFixed(1)}s` : "—"}${w.tokens ? ` · ${w.tokens.input ?? 0} in / ${w.tokens.output ?? 0} out tokens` : ""}`)}
+          {w.read && row("It read", `${w.read.slice ?? 0} new messages · ${w.read.focusHits ?? 0} focus matches${w.read.focusQuery ? ` for “${w.read.focusQuery}”` : ""} · ${w.read.related ?? 0} related · ${w.read.memory ?? 0} memory items`)}
+          {w.validation && row("Validation", `${w.validation.digestKept ?? 0} stories kept · ${w.validation.citationsDropped ?? 0} citation(s) dropped${w.validation.droppedIds?.length ? ` (${w.validation.droppedIds.slice(0, 3).join(", ")}${w.validation.droppedIds.length > 3 ? "…" : ""})` : ""}`)}
+        </>
+      ) : (
+        <div style={{ fontSize: 12, color: C.dim, marginBottom: 4 }}>This run predates work-recording — the next run will carry its full trace.</div>
+      )}
+      {/* identity — how it retrieves */}
+      {diag.instruction && row("Instruction", diag.instruction.length > 240 ? `${diag.instruction.slice(0, 240)}…` : diag.instruction)}
+      {diag.focusQuery && row("Derived query", `“${diag.focusQuery}”`)}
+      {row("Reads", `${diag.lane === "biz" ? "Private walled lane" : "Government lane"}${diag.sources?.length ? ` · ${diag.sources.join(", ")}` : " · every source in its lane"} · autonomy ${diag.autonomy ?? "observe"}`)}
+      {/* the raw artifacts */}
+      {w?.prompt && (
+        <>
+          <button onClick={() => setShowPrompt((o) => !o)} style={{ marginTop: 8, background: "none", border: 0, padding: 0, cursor: "pointer", fontFamily: FONT.mono, fontSize: 10, letterSpacing: ".06em", color: showPrompt ? C.gold : C.dim }}>
+            {showPrompt ? "▾" : "▸"} FULL PROMPT ({((w.prompt.system?.length ?? 0) + (w.prompt.user?.length ?? 0)).toLocaleString()} chars)
+          </button>
+          {showPrompt && <pre style={mono}>{`— SYSTEM —
+${w.prompt.system ?? ""}
+
+— USER —
+${w.prompt.user ?? ""}`}</pre>}
+        </>
+      )}
+      {w?.response && (
+        <>
+          <div>
+            <button onClick={() => setShowResponse((o) => !o)} style={{ marginTop: 6, background: "none", border: 0, padding: 0, cursor: "pointer", fontFamily: FONT.mono, fontSize: 10, letterSpacing: ".06em", color: showResponse ? C.gold : C.dim }}>
+              {showResponse ? "▾" : "▸"} RAW RESPONSE ({w.response.length.toLocaleString()} chars)
+            </button>
+          </div>
+          {showResponse && <pre style={mono}>{w.response}</pre>}
+        </>
+      )}
+    </div>
+  );
+}

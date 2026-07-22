@@ -1,0 +1,642 @@
+{
+ "rows": [
+  {
+   "name": "Caribbean Spice Family Restaurant",
+   "address": "522 E 79th St",
+   "town": "Chatham, Chicago",
+   "phone": "(773) 846-1484",
+   "cuisine": "Caribbean / Jamaican (jerk chicken, oxtail, curry goat)",
+   "status": "NO_WEBSITE",
+   "url": "",
+   "notes": "Only Yelp and directory listings found; no own site and no Facebook/Instagram page surfaced (caribbeanspice.com is an unrelated Gainesville FL restaurant).",
+   "zone": "Chicago South Side (Chatham/Greater Grand Crossing/Auburn Gresham/Beverly)"
+  },
+  {
+   "name": "Birrieria Don Sosa",
+   "address": "1910 S Cicero Ave, Cicero, IL 60804",
+   "town": "Cicero",
+   "phone": "(708) 704-1974",
+   "cuisine": "Mexican (birria)",
+   "status": "NO_WEBSITE",
+   "url": "",
+   "notes": "Well-reviewed birria spot found only on directory/aggregator pages (Atly, Roadtrippers, Giftly, TripAdvisor); no official website or social page surfaced in searches.",
+   "zone": "Berwyn/Cicero/Riverside/Brookfield/La Grange"
+  },
+  {
+   "name": "Jalisco Express Restaurant",
+   "address": "3442 S Austin Blvd, Cicero, IL 60804",
+   "town": "Cicero",
+   "phone": "(708) 477-6561",
+   "cuisine": "Mexican taqueria / birrieria",
+   "status": "NO_WEBSITE",
+   "url": "",
+   "notes": "Open late daily per Yelp/TripAdvisor, but no website link and no social page appear anywhere in listings or search results.",
+   "zone": "Berwyn/Cicero/Riverside/Brookfield/La Grange"
+  },
+  {
+   "name": "Taqueria Los Altos de Jalisco",
+   "address": "1922 S Cicero Ave, Cicero, IL 60804",
+   "town": "Cicero",
+   "phone": "(708) 656-5130",
+   "cuisine": "Mexican taqueria",
+   "status": "NO_WEBSITE",
+   "url": "https://taquerialosaltosdejalisco.shop/",
+   "notes": "The .shop URL in listings 301-redirects to an unclaimed Grubbio aggregator page ('Claim your listing'); otherwise only Yelp/Nextdoor/Snapchat directory listings, no official site or social page found.",
+   "zone": "Berwyn/Cicero/Riverside/Brookfield/La Grange"
+  },
+  {
+   "name": "Johnnie's Beef",
+   "address": "7500 W North Ave, Elmwood Park, IL 60707",
+   "town": "Elmwood Park",
+   "phone": "(708) 452-6000",
+   "cuisine": "Italian beef / Chicago hot dog stand",
+   "status": "NO_WEBSITE",
+   "url": "",
+   "notes": "Only auto-generated template domains (johnnies-beef.weeblyte.com, johnniesbeef.shop \u2014 one carries a 'user-generated website' disclaimer) plus Yelp/TripAdvisor listings; no official site or verified social page.",
+   "zone": "Oak Park/Forest Park/River Forest/Elmwood Park"
+  },
+  {
+   "name": "Yadi's Grill",
+   "address": "9570 Grand Ave, Franklin Park, IL 60131",
+   "town": "Franklin Park",
+   "phone": "(847) 455-5050",
+   "cuisine": "Cafe/diner grill",
+   "status": "NO_WEBSITE",
+   "url": "",
+   "notes": "Appears only in the Village of Franklin Park restaurant guide, TripAdvisor, and MapQuest; no website or social page found.",
+   "zone": "Villa Park/Lombard/Addison/Franklin Park/Bensenville"
+  },
+  {
+   "name": "Marlon's Chicken and Fish",
+   "address": "602 E 75th St",
+   "town": "Greater Grand Crossing, Chicago",
+   "phone": "(773) 891-1619",
+   "cuisine": "Fried chicken and fish carryout (cash only)",
+   "status": "NO_WEBSITE",
+   "url": "",
+   "notes": "Cash-only carryout with only Yelp/TripAdvisor/EatOkra/FoodBoss listings; searches surface no own website or social page.",
+   "zone": "Chicago South Side (Chatham/Greater Grand Crossing/Auburn Gresham/Beverly)"
+  },
+  {
+   "name": "Pete's Red Hots",
+   "address": "6346 Roosevelt Rd, Oak Park, IL 60304",
+   "town": "Oak Park",
+   "phone": "(708) 383-6122",
+   "cuisine": "Hot dogs / sandwiches carryout",
+   "status": "NO_WEBSITE",
+   "url": "",
+   "notes": "Only Yelp/MapQuest directory listings and auto-generated template sites (petesredhots.shop, wheree.com); no official site or social page found for this location.",
+   "zone": "Oak Park/Forest Park/River Forest/Elmwood Park"
+  },
+  {
+   "name": "El Alegre Burrito",
+   "address": "2142 S Mannheim Rd, Westchester, IL 60154",
+   "town": "Westchester",
+   "phone": "(708) 531-0981",
+   "cuisine": "Mexican taqueria (family business since 1997)",
+   "status": "NO_WEBSITE",
+   "url": "",
+   "notes": "Only Yelp and TripAdvisor directory listings surfaced; no own website and no Facebook/Instagram page found (the elalegre site belongs to the unrelated Chicago Grand Ave location).",
+   "zone": "Hillside/Berkeley/Westchester/Broadview/Elmhurst"
+  },
+  {
+   "name": "Soul Shack Express",
+   "address": "8711 S Ashland Ave",
+   "town": "Auburn Gresham, Chicago",
+   "phone": "(773) 891-0126",
+   "cuisine": "Soul food / catering",
+   "status": "WEBSITE_UNAVAILABLE",
+   "url": "https://www.thesoul53.com",
+   "notes": "Directory listings cite thesoul53.com, but the URL returns a blank page with Cloudflare 'error code: 520' (origin down); orders run through ezCater/delivery apps.",
+   "zone": "Chicago South Side (Chatham/Greater Grand Crossing/Auburn Gresham/Beverly)"
+  },
+  {
+   "name": "Bronzeville Express Grill",
+   "address": "4300 S Michigan Ave, Chicago, IL 60653",
+   "town": "Bronzeville, Chicago",
+   "phone": "(773) 424-8223",
+   "cuisine": "Grill / comfort-food carryout",
+   "status": "WEBSITE_UNAVAILABLE",
+   "url": "https://chicagoexpressgrill.com",
+   "notes": "Listed site chicagoexpressgrill.com returns a Wix domain-connection error page instead of the restaurant's site.",
+   "zone": "Chicago central (West Loop/Bronzeville/Hyde Park)"
+  },
+  {
+   "name": "Dirty Tiff's Cafe",
+   "address": "E 47th St, Chicago, IL 60653",
+   "town": "Bronzeville, Chicago",
+   "phone": "(773) 966-3451",
+   "cuisine": "Soul food cafe / breakfast",
+   "status": "WEBSITE_UNAVAILABLE",
+   "url": "https://www.dirtytiffscafe.com",
+   "notes": "Listed site dirtytiffscafe.com loads only a SpotOn '404' template page; Facebook page is the sole live presence.",
+   "zone": "Chicago central (West Loop/Bronzeville/Hyde Park)"
+  },
+  {
+   "name": "Simply Soups and Salads",
+   "address": "635 E 47th St, Chicago, IL 60653",
+   "town": "Bronzeville, Chicago",
+   "phone": "(773) 373-3810",
+   "cuisine": "Soups, salads and sandwiches",
+   "status": "WEBSITE_UNAVAILABLE",
+   "url": "https://simplyssands.com",
+   "notes": "simplyssands.com returns a Wix 'ConnectYourDomain' error, i.e. the Wix site's domain is disconnected/lapsed.",
+   "zone": "Chicago central (West Loop/Bronzeville/Hyde Park)"
+  },
+  {
+   "name": "Trini's Tasty Pastries",
+   "address": "3811 W Maypole Ave",
+   "town": "East Garfield Park, Chicago",
+   "phone": "(773) 370-5118",
+   "cuisine": "Caribbean/Trinidadian bakery & pastries",
+   "status": "WEBSITE_UNAVAILABLE",
+   "url": "https://trinispastries.com/",
+   "notes": "Listed domain loads only an empty website-builder template with no address, menu, or business info; real presence is Facebook/Instagram.",
+   "zone": "Chicago West Side (Austin/Garfield Park/North Lawndale/Little Village/Pilsen)"
+  },
+  {
+   "name": "Golden Steer Steakhouse",
+   "address": "7635 Roosevelt Rd, Forest Park, IL 60130",
+   "town": "Forest Park",
+   "phone": "(708) 771-7798",
+   "cuisine": "Steakhouse / chophouse (since 1969)",
+   "status": "WEBSITE_UNAVAILABLE",
+   "url": "https://goldensteersteakhouse.com/",
+   "notes": "Domain referenced in listings 301-redirects to unrelated bdal.com; active presence is only Facebook and OpenTable.",
+   "zone": "Oak Park/Forest Park/River Forest/Elmwood Park"
+  },
+  {
+   "name": "Nina's Sports Bar & Restaurant (x Rasoi Fine Indian Cuisine)",
+   "address": "9743 Franklin Ave, Franklin Park, IL 60131",
+   "town": "Franklin Park",
+   "phone": "(847) 349-9106",
+   "cuisine": "Sports bar - American and Indian fusion",
+   "status": "WEBSITE_UNAVAILABLE",
+   "url": "https://ninasrestobar.com",
+   "notes": "Their listed domain ninasrestobar.com resolves to a Hostinger parked-domain page, so only Facebook/DoorDash remain live.",
+   "zone": "Villa Park/Lombard/Addison/Franklin Park/Bensenville"
+  },
+  {
+   "name": "Seafood Junction",
+   "address": "442 N Mannheim Rd, Hillside, IL 60162",
+   "town": "Hillside",
+   "phone": "(708) 632-4628",
+   "cuisine": "Seafood (fried/baked fish carryout)",
+   "status": "WEBSITE_UNAVAILABLE",
+   "url": "https://matieh282.wixsite.com/seafood-junction",
+   "notes": "Its only own URL is a bare Wix placeholder shell with no address, menu, or hours; other results are scraper directories (res-menu.net, mylocalkfc) and Grubhub/Seamless.",
+   "zone": "Hillside/Berkeley/Westchester/Broadview/Elmhurst"
+  },
+  {
+   "name": "Salonica Restaurant",
+   "address": "1440 E 57th St, Chicago, IL 60637",
+   "town": "Hyde Park, Chicago",
+   "phone": "(773) 752-3899",
+   "cuisine": "Greek-American diner (breakfast/lunch)",
+   "status": "WEBSITE_UNAVAILABLE",
+   "url": "http://www.salonica57.com",
+   "notes": "Its listed domain salonica57.com now serves an unrelated Japanese template page (expired/hijacked); only third-party menu-clone sites remain.",
+   "zone": "Chicago central (West Loop/Bronzeville/Hyde Park)"
+  },
+  {
+   "name": "Mario's Italian Lemonade",
+   "address": "1066 W Taylor St, Chicago, IL 60607",
+   "town": "Little Italy/Near West Side, Chicago",
+   "phone": "",
+   "cuisine": "Italian ice / lemonade stand (est. 1954, seasonal)",
+   "status": "WEBSITE_UNAVAILABLE",
+   "url": "http://www.eatmarios.com",
+   "notes": "Food Network and Yelp list eatmarios.com but the domain no longer connects (connection refused on both http and https); active Facebook page only.",
+   "zone": "Chicago central (West Loop/Bronzeville/Hyde Park)"
+  },
+  {
+   "name": "Tufano's Vernon Park Tap",
+   "address": "1073 W Vernon Park Pl, Chicago, IL 60607",
+   "town": "Little Italy/Near West Side, Chicago",
+   "phone": "(312) 733-3393",
+   "cuisine": "Italian (James Beard America's Classic, est. 1930)",
+   "status": "WEBSITE_UNAVAILABLE",
+   "url": "http://www.tufanosrestaurant.net",
+   "notes": "Listed site tufanosrestaurant.net returns a 404 error page; only a Facebook page and an old Google Sites page remain.",
+   "zone": "Chicago central (West Loop/Bronzeville/Hyde Park)"
+  },
+  {
+   "name": "The Meal of the Day Cafe",
+   "address": "1701 S 1st Ave Ste 410, Maywood, IL 60153",
+   "town": "Maywood",
+   "phone": "(708) 223-8153",
+   "cuisine": "Homestyle American / soul food cafeteria",
+   "status": "WEBSITE_UNAVAILABLE",
+   "url": "http://mealofthedaycafe.com",
+   "notes": "Directories list mealofthedaycafe.com but the domain no longer resolves (DNS ENOTFOUND on fetch).",
+   "zone": "Bellwood/Maywood/Melrose Park/Stone Park/Northlake"
+  },
+  {
+   "name": "Panaderia Nuevo Leon",
+   "address": "1634 W 18th St",
+   "town": "Pilsen, Chicago",
+   "phone": "(312) 243-5977",
+   "cuisine": "Mexican bakery (pan dulce, conchas, empanadas) since 1973",
+   "status": "WEBSITE_UNAVAILABLE",
+   "url": "http://panaderianuevoleonpilsen.com/",
+   "notes": "The website listed in search results returns HTTP 503 on both http and https; active presence is Instagram (@pnl.pilsen) and Facebook.",
+   "zone": "Chicago West Side (Austin/Garfield Park/North Lawndale/Little Village/Pilsen)"
+  },
+  {
+   "name": "Cutie Pie's Kitchen",
+   "address": "752 W 78th St",
+   "town": "Auburn Gresham, Chicago",
+   "phone": "(773) 897-9303",
+   "cuisine": "Soul food",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/",
+   "notes": "Yelp/Yahoo listings show only a Facebook page as its website; no own domain appears in search results.",
+   "zone": "Chicago South Side (Chatham/Greater Grand Crossing/Auburn Gresham/Beverly)"
+  },
+  {
+   "name": "Splyt N Half Kitchen",
+   "address": "5815 W Madison St",
+   "town": "Austin, Chicago",
+   "phone": "(773) 543-4000",
+   "cuisine": "Soul food / healthy soul food",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.instagram.com/splytnhalfkitchen/",
+   "notes": "Only Instagram and Facebook presence; no own website found, only Yelp/Zmenu/EatOkra directory listings.",
+   "zone": "Chicago West Side (Austin/Garfield Park/North Lawndale/Little Village/Pilsen)"
+  },
+  {
+   "name": "Elements Restaurant",
+   "address": "466 25th Ave, Bellwood, IL 60104",
+   "town": "Bellwood",
+   "phone": "(708) 593-3580",
+   "cuisine": "BBQ / soul food",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/p/Elements-Restaurant-61577354235802/",
+   "notes": "Search shows only Facebook, Instagram, Grubhub and directory listings; no official site found.",
+   "zone": "Bellwood/Maywood/Melrose Park/Stone Park/Northlake"
+  },
+  {
+   "name": "Taqueria Mi Jerez",
+   "address": "5003 St Charles Rd, Bellwood, IL 60104",
+   "town": "Bellwood",
+   "phone": "(708) 401-5424",
+   "cuisine": "Mexican / taqueria",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/p/Taqueria-mi-jerez-100069048782749/",
+   "notes": "Only a Facebook page plus Yelp/TripAdvisor/directory listings; no own website in search results.",
+   "zone": "Bellwood/Maywood/Melrose Park/Stone Park/Northlake"
+  },
+  {
+   "name": "La Poblanita Mexican Cuisine",
+   "address": "1075 S York Rd, Bensenville, IL 60106",
+   "town": "Bensenville",
+   "phone": "(630) 422-5128",
+   "cuisine": "Mexican",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/lapoblanitabensenville/",
+   "notes": "Bensenville location has only a Facebook page; poblanitamexicancuisine.com covers the Streamwood location and never mentions Bensenville.",
+   "zone": "Villa Park/Lombard/Addison/Franklin Park/Bensenville"
+  },
+  {
+   "name": "Tacos Puebla",
+   "address": "410 E Green St, Bensenville, IL 60106",
+   "town": "Bensenville",
+   "phone": "(630) 422-1536",
+   "cuisine": "Mexican taqueria (tacos, cemitas, burritos)",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/p/Tacos-Puebla-Bensenville-100070262340262/",
+   "notes": "Facebook page plus Uber Eats/DoorDash/Grubhub listings; no own website found in any listing.",
+   "zone": "Villa Park/Lombard/Addison/Franklin Park/Bensenville"
+  },
+  {
+   "name": "Taqueria El Toreo",
+   "address": "217 W Grand Ave, Bensenville, IL 60106",
+   "town": "Bensenville",
+   "phone": "(630) 860-0405",
+   "cuisine": "Mexican taqueria",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/p/Taqueria-El-Toreo-100069225095913/",
+   "notes": "Only a Facebook page and Yelp/directory listings surface; no official website found.",
+   "zone": "Villa Park/Lombard/Addison/Franklin Park/Bensenville"
+  },
+  {
+   "name": "Tacos y Salsa",
+   "address": "6346 W 26th St, Berwyn, IL 60402",
+   "town": "Berwyn",
+   "phone": "(708) 749-3581",
+   "cuisine": "Mexican taqueria (award-winning tacos/soups)",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/tacosysalsa26/",
+   "notes": "Only a Facebook page plus third-party menu/ordering pages (NetWaiter, res-menu.net, allmenus); no own domain found.",
+   "zone": "Berwyn/Cicero/Riverside/Brookfield/La Grange"
+  },
+  {
+   "name": "Top Notch Beefburgers",
+   "address": "2116 W 95th St",
+   "town": "Beverly, Chicago",
+   "phone": "(773) 445-7218",
+   "cuisine": "Burgers / diner (family-run since 1942)",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/topnotchbeverly/",
+   "notes": "No official site found, only a Facebook page plus third-party scraper/directory pages (Yelp, mybistro, menu-world).",
+   "zone": "Chicago South Side (Chatham/Greater Grand Crossing/Auburn Gresham/Beverly)"
+  },
+  {
+   "name": "Broadview Family Diner",
+   "address": "2417 W Roosevelt Rd, Broadview, IL 60155",
+   "town": "Broadview",
+   "phone": "(708) 345-8660",
+   "cuisine": "American diner / breakfast",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/BroadviewFamilyRestaurant/",
+   "notes": "Has a Facebook page and Grubhub/Seamless ordering but no official website; remaining results are aggregator clones (cafecityguide, wheree).",
+   "zone": "Hillside/Berkeley/Westchester/Broadview/Elmhurst"
+  },
+  {
+   "name": "Pete's 2 Red Hots",
+   "address": "1515 W Roosevelt Rd, Broadview, IL 60155",
+   "town": "Broadview",
+   "phone": "(708) 338-0277",
+   "cuisine": "Hot dogs / Chicago-style fast food",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.ubereats.com/store/petes-ii-red-hots/E2eHaW_mSfuQwIxpqeR6NQ",
+   "notes": "Present only on Uber Eats/Postmates and Yelp/TripAdvisor listings; no own website or domain found in searches.",
+   "zone": "Hillside/Berkeley/Westchester/Broadview/Elmhurst"
+  },
+  {
+   "name": "Ivory & K's Gourmet Popcorn, Smoothie Bar",
+   "address": "4700 S Prairie Ave, Chicago, IL 60615",
+   "town": "Bronzeville, Chicago",
+   "phone": "(708) 677-4615",
+   "cuisine": "Gourmet popcorn, smoothies and juice bar",
+   "status": "SOCIAL_ONLY",
+   "url": "",
+   "notes": "Only Facebook, Instagram and DoorDash ordering; no own website found in searches or listings.",
+   "zone": "Chicago central (West Loop/Bronzeville/Hyde Park)"
+  },
+  {
+   "name": "Jamaican Jerk King",
+   "address": "206 E 35th St, Chicago, IL 60616",
+   "town": "Bronzeville, Chicago",
+   "phone": "(312) 754-0480",
+   "cuisine": "Jamaican/Caribbean",
+   "status": "SOCIAL_ONLY",
+   "url": "",
+   "notes": "No own website found; presence is DoorDash, Grubhub/Seamless and directory listings only.",
+   "zone": "Chicago central (West Loop/Bronzeville/Hyde Park)"
+  },
+  {
+   "name": "Pookie Crack Cakes",
+   "address": "105 E 47th St, Chicago, IL 60615",
+   "town": "Bronzeville, Chicago",
+   "phone": "",
+   "cuisine": "Bakery / desserts (pound cakes)",
+   "status": "SOCIAL_ONLY",
+   "url": "",
+   "notes": "Black Chicago Eats directory lists only a Facebook page (pookiecrackcakes); no website or phone surfaced in search.",
+   "zone": "Chicago central (West Loop/Bronzeville/Hyde Park)"
+  },
+  {
+   "name": "Broadway Pancake House",
+   "address": "9215 Broadway Ave, Brookfield, IL 60513",
+   "town": "Brookfield",
+   "phone": "(708) 485-4609",
+   "cuisine": "Breakfast / pancake house",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/BPH2005/",
+   "notes": "No own domain; web presence is a Facebook page plus a Toast (toasttab.com) ordering link and directory listings.",
+   "zone": "Berwyn/Cicero/Riverside/Brookfield/La Grange"
+  },
+  {
+   "name": "Brasas Pancake House",
+   "address": "6033 W Roosevelt Rd, Cicero, IL 60804",
+   "town": "Cicero",
+   "phone": "(708) 683-6563",
+   "cuisine": "Breakfast / pancake house",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/brasas2/",
+   "notes": "Directories list Facebook as its website; presence limited to Facebook, Yelp, DoorDash/Grubhub and auto-generated menu sites.",
+   "zone": "Berwyn/Cicero/Riverside/Brookfield/La Grange"
+  },
+  {
+   "name": "Goldyburgers",
+   "address": "7316 Circle Ave, Forest Park, IL 60130",
+   "town": "Forest Park",
+   "phone": "(708) 366-0750",
+   "cuisine": "Burgers / pub food (est. 1926)",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/Goldyburgers/",
+   "notes": "No own site found in search \u2014 only a Facebook page, menu aggregators (allmenus, menupix), and auto-generated template domains.",
+   "zone": "Oak Park/Forest Park/River Forest/Elmwood Park"
+  },
+  {
+   "name": "Louie's Grill",
+   "address": "7422 Madison St, Forest Park, IL 60130",
+   "town": "Forest Park",
+   "phone": "(708) 488-8889",
+   "cuisine": "American diner / breakfast-lunch",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/832394603536096",
+   "notes": "No own site \u2014 only a Facebook page and an auto-generated 'louies-grill.website' template built from scraped reviews and Yelp/TripAdvisor links.",
+   "zone": "Oak Park/Forest Park/River Forest/Elmwood Park"
+  },
+  {
+   "name": "Parky's Hot Dogs",
+   "address": "329 Harlem Ave, Forest Park, IL 60130",
+   "town": "Forest Park",
+   "phone": "(708) 366-3090",
+   "cuisine": "Chicago-style hot dogs (since 1947)",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/parkyshotdogs/",
+   "notes": "Only a Facebook page plus directory listings and fake template sites (weeblyte, goto-where); no official website surfaced.",
+   "zone": "Oak Park/Forest Park/River Forest/Elmwood Park"
+  },
+  {
+   "name": "Saigon Pho & Cafe",
+   "address": "7237 Madison St, Forest Park, IL 60130",
+   "town": "Forest Park",
+   "phone": "(708) 689-0389",
+   "cuisine": "Vietnamese (pho, banh mi)",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/Newsaigonphocafe/",
+   "notes": "Mom-and-pop storefront with only a Facebook page and a generic chowbot ordering link listed on YellowPages; no own site.",
+   "zone": "Oak Park/Forest Park/River Forest/Elmwood Park"
+  },
+  {
+   "name": "Cafe Nuevo Leon",
+   "address": "1805 S Wolf Rd, Hillside, IL 60162",
+   "town": "Hillside",
+   "phone": "(708) 632-4148",
+   "cuisine": "Mexican (est. 1962, relocated to Hillside 2024)",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/p/Caf%C3%A9-Nuevo-Le%C3%B3n-61559973587477/",
+   "notes": "Only a Facebook page plus DoorDash/Postmates listings; the sites in search results (foodjoyy, menu-res) are third-party menu scrapers, no official site.",
+   "zone": "Hillside/Berkeley/Westchester/Broadview/Elmhurst"
+  },
+  {
+   "name": "La Chaparrita Grocery & Taqueria",
+   "address": "2500 S Whipple St",
+   "town": "Little Village, Chicago",
+   "phone": "(773) 254-0975",
+   "cuisine": "Mexican taqueria (tacos al pastor, lengua, tripa)",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/LaChaparritaGrocery.1/",
+   "notes": "Widely reviewed (Infatuation, Check Please, Time Out) but its only owned web presence is a Facebook page; third-party scraper menus fill the search results.",
+   "zone": "Chicago West Side (Austin/Garfield Park/North Lawndale/Little Village/Pilsen)"
+  },
+  {
+   "name": "Taqueria Tayahua",
+   "address": "2411 S Western Ave",
+   "town": "Little Village/Pilsen border, Chicago",
+   "phone": "(773) 247-3183",
+   "cuisine": "Mexican taqueria & breakfast",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.instagram.com/taqueriatayahua.chicago/",
+   "notes": "The taqueriatayahua.shop domain in search results 301-redirects to a localoria.com AI aggregator page, not an owned site; real presence is Instagram only.",
+   "zone": "Chicago West Side (Austin/Garfield Park/North Lawndale/Little Village/Pilsen)"
+  },
+  {
+   "name": "Lily's Cafe",
+   "address": "415 Crescent Blvd, Lombard, IL 60148",
+   "town": "Lombard",
+   "phone": "(630) 620-7755",
+   "cuisine": "Breakfast/brunch diner",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/lilyscafe15/",
+   "notes": "Only Facebook and directory/delivery listings found; lilyscafe.com loads an unrelated Lily's Cafe in Burbank, CA.",
+   "zone": "Villa Park/Lombard/Addison/Franklin Park/Bensenville"
+  },
+  {
+   "name": "Versatile Soulfood Cafe",
+   "address": "9 N 5th Ave, Maywood, IL 60153",
+   "town": "Maywood",
+   "phone": "(708) 223-8067",
+   "cuisine": "Soul food / Caribbean (jerk)",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/VersatileSoulfoodCafe/",
+   "notes": "Facebook page and Grubhub/Seamless ordering only; no dedicated website appears in listings.",
+   "zone": "Bellwood/Maywood/Melrose Park/Stone Park/Northlake"
+  },
+  {
+   "name": "Johnnie's Grill",
+   "address": "4401 W Lake St, Melrose Park, IL 60160",
+   "town": "Melrose Park",
+   "phone": "(708) 345-1314",
+   "cuisine": "24-hour diner / grill (steaks, gyros)",
+   "status": "SOCIAL_ONLY",
+   "url": "https://johnnie-s-grill.hub.biz/",
+   "notes": "Only Grubhub/order.online and directory pages (hub.biz is a directory, not an own site); no official website found.",
+   "zone": "Bellwood/Maywood/Melrose Park/Stone Park/Northlake"
+  },
+  {
+   "name": "Restaurant Nuevo Amanecer",
+   "address": "1016 W Lake St, Melrose Park, IL 60160",
+   "town": "Melrose Park",
+   "phone": "(708) 345-1514",
+   "cuisine": "Mexican (Guerrero-style, handmade tortillas)",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/restaurantenuevoamanecer/",
+   "notes": "Only Facebook plus DoorDash/Postmates ordering pages; no official website found in search.",
+   "zone": "Bellwood/Maywood/Melrose Park/Stone Park/Northlake"
+  },
+  {
+   "name": "Dave's Red Hots",
+   "address": "3422 W Roosevelt Rd",
+   "town": "North Lawndale, Chicago",
+   "phone": "(773) 722-9935",
+   "cuisine": "Hot dogs / Chicago-style fast food (since 1938)",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/DaveRedHot/",
+   "notes": "No official website; only a Facebook page plus Yelp, TripAdvisor, and Vienna Beef directory listings.",
+   "zone": "Chicago West Side (Austin/Garfield Park/North Lawndale/Little Village/Pilsen)"
+  },
+  {
+   "name": "Bravo Restaurant (Bravo Mexican Restaurant)",
+   "address": "240 E North Ave, Northlake, IL 60164",
+   "town": "Northlake",
+   "phone": "(708) 409-3000",
+   "cuisine": "Mexican",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/p/Bravo-Mexican-Restaurant-100056910831665/",
+   "notes": "Directory-listed URL bravoitalian.com resolves to the unrelated BRAVO! Italian Kitchen chain; only a Facebook page and delivery listings are its own.",
+   "zone": "Bellwood/Maywood/Melrose Park/Stone Park/Northlake"
+  },
+  {
+   "name": "Cafe Jumping Bean",
+   "address": "1439 W 18th St",
+   "town": "Pilsen, Chicago",
+   "phone": "(312) 455-0019",
+   "cuisine": "Cafe / coffeehouse with Mexican-inspired sandwiches and pastries",
+   "status": "SOCIAL_ONLY",
+   "url": "https://cafejumpingbean.wordpress.com/",
+   "notes": "Its only own site is a WordPress blog last updated September 2011; active presence is Facebook/Instagram despite the busy 30-year-old cafe opening a third location.",
+   "zone": "Chicago West Side (Austin/Garfield Park/North Lawndale/Little Village/Pilsen)"
+  },
+  {
+   "name": "Catrina Tequila Bar",
+   "address": "7 Longcommon Rd, Riverside, IL 60546",
+   "town": "Riverside",
+   "phone": "(708) 853-7192",
+   "cuisine": "Mexican bar with appetizer menu",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/CatrinaTequilaBar",
+   "notes": "Waze/directories list only its Facebook page as the website; similarly-named domains (catrinasmexicankitchen.com, catrinastacosandtequilas.com) belong to different businesses.",
+   "zone": "Berwyn/Cicero/Riverside/Brookfield/La Grange"
+  },
+  {
+   "name": "Taco Villa",
+   "address": "47 S Villa Ave, Villa Park, IL 60181",
+   "town": "Villa Park",
+   "phone": "(630) 501-0685",
+   "cuisine": "Mexican (handmade tamales, tacos)",
+   "status": "SOCIAL_ONLY",
+   "url": "https://www.facebook.com/p/TACO-VILLA-100070907118211/",
+   "notes": "Active Facebook page plus Grubhub/DoorDash listings, but no official website appears anywhere in search results.",
+   "zone": "Villa Park/Lombard/Addison/Franklin Park/Bensenville"
+  }
+ ],
+ "checked": 191,
+ "has_site": 137,
+ "zones": [
+  {
+   "zone": "Bellwood/Maywood/Melrose Park/Stone Park/Northlake",
+   "checked": 22,
+   "flagged": 7
+  },
+  {
+   "zone": "Oak Park/Forest Park/River Forest/Elmwood Park",
+   "checked": 24,
+   "flagged": 7
+  },
+  {
+   "zone": "Berwyn/Cicero/Riverside/Brookfield/La Grange",
+   "checked": 24,
+   "flagged": 7
+  },
+  {
+   "zone": "Hillside/Berkeley/Westchester/Broadview/Elmhurst",
+   "checked": 24,
+   "flagged": 5
+  },
+  {
+   "zone": "Villa Park/Lombard/Addison/Franklin Park/Bensenville",
+   "checked": 33,
+   "flagged": 7
+  },
+  {
+   "zone": "Chicago West Side (Austin/Garfield Park/North Lawndale/Little Village/Pilsen)",
+   "checked": 17,
+   "flagged": 7
+  },
+  {
+   "zone": "Chicago central (West Loop/Bronzeville/Hyde Park)",
+   "checked": 25,
+   "flagged": 9
+  },
+  {
+   "zone": "Chicago South Side (Chatham/Greater Grand Crossing/Auburn Gresham/Beverly)",
+   "checked": 22,
+   "flagged": 5
+  }
+ ]
+}

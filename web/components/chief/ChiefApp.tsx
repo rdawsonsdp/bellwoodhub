@@ -342,8 +342,26 @@ function Topbar({ onAsk, onReset, asked }: { onAsk?: (q: string) => void; onRese
   // Enter or the mic's transcript routes straight to the Ask screen.
   const [v, setV] = useState("");
   const [rec, setRec] = useState<"idle" | "rec" | "busy">("idle");
+  // the one smart button (FEAT-36): voice routes note-vs-question, confirm-first
+  const [pendingNote, setPendingNote] = useState<{ title: string; body: string; transcript: string } | null>(null);
+  const [savedNote, setSavedNote] = useState<string | null>(null);
   const mrRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  async function routeVoice(text: string) {
+    setSavedNote(null);
+    try {
+      const r = await fetch("/api/cos-notes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ transcript: text }) });
+      const p = (await r.json().catch(() => null)) as { kind?: string; title?: string; body?: string } | null;
+      if (r.ok && p?.kind === "note" && p.body) { setPendingNote({ title: p.title || p.body, body: p.body, transcript: text }); return; }
+    } catch { /* fall through to Ask */ }
+    onAsk?.(text);
+  }
+  async function keepNote() {
+    const n = pendingNote; if (!n) return;
+    setPendingNote(null);
+    const r = await fetch("/api/cos-notes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ title: n.title, body: n.body, source: "voice" }) }).catch(() => null);
+    if (r?.ok) { setSavedNote(n.title); setTimeout(() => setSavedNote(null), 6000); }
+  }
   async function mic() {
     if (rec === "rec") { mrRef.current?.stop(); return; }
     if (rec !== "idle") return;
@@ -362,9 +380,9 @@ function Topbar({ onAsk, onReset, asked }: { onAsk?: (q: string) => void; onRese
           fd.append("audio", blob, type.includes("mp4") ? "ask.m4a" : "ask.webm");
           const r = await fetch("/api/transcribe", { method: "POST", body: fd });
           const d = await r.json().catch(() => ({}));
-          // voice submits immediately — leaving the transcript in the box would
-          // put a second, stale question on screen beside the answer
-          if (d.text) { onAsk?.(d.text); setV(""); }
+          // voice routes through the note-vs-question classifier (FEAT-36);
+          // questions submit immediately, notes wait for the Keep tap
+          if (d.text) { setV(""); void routeVoice(d.text); }
         } finally { setRec("idle"); }
       };
       mr.start();
@@ -376,7 +394,7 @@ function Topbar({ onAsk, onReset, asked }: { onAsk?: (q: string) => void; onRese
     <div style={{ flexShrink: 0, height: 76, display: "flex", alignItems: "center", gap: 10, padding: "0 22px", borderBottom: `1px solid ${C.line2}`, background: "rgba(var(--ink),.035)", backdropFilter: "blur(14px)" }}>
       <div /* The primary way into the record, on every screen (RD 2026-07-18) — the
            Ask screen's box, promoted into the header rather than a cramped pill. */
-        style={{ flex: 1, maxWidth: 720, margin: "0 auto", display: "flex", alignItems: "center", gap: 9, background: "var(--c-sidebar, rgba(var(--ink),.04))", border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 6px 6px 18px", boxShadow: "0 6px 22px rgba(20,20,10,.07)" }}>
+        style={{ position: "relative", flex: 1, maxWidth: 720, margin: "0 auto", display: "flex", alignItems: "center", gap: 9, background: "var(--c-sidebar, rgba(var(--ink),.04))", border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 6px 6px 18px", boxShadow: "0 6px 22px rgba(20,20,10,.07)" }}>
         <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth={2} strokeLinecap="round"><path d="M11 11m-7 0a7 7 0 1 0 14 0a7 7 0 1 0-14 0M21 21l-4.3-4.3" /></svg>
         <input
           value={v}
@@ -429,6 +447,24 @@ function Topbar({ onAsk, onReset, asked }: { onAsk?: (q: string) => void; onRese
             ? <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" style={{ animation: "cosSpin .8s linear infinite" }}><path d="M21 12a9 9 0 0 0-9-9" /></svg>
             : <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M9 2h6v12a3 3 0 0 1-6 0zM5 11a7 7 0 0 0 14 0M12 18v3" /></svg>}
         </button>
+        {/* confirm-first note card (FEAT-36) — drops below the box; nothing saves until Keep */}
+        {pendingNote && (
+          <div style={{ position: "absolute", top: "calc(100% + 8px)", left: 12, right: 12, zIndex: 80, background: "var(--c-appbg)", border: "1px solid rgba(231,181,60,.5)", borderRadius: 14, padding: "13px 15px", boxShadow: "0 14px 34px rgba(10,15,30,.25)" }}>
+            <div style={{ fontFamily: FONT.mono, fontSize: 9.5, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: C.gold, marginBottom: 5 }}>📝 Heard as a note</div>
+            <div style={{ fontFamily: FONT.serif, fontSize: 15.5, fontWeight: 700, lineHeight: 1.25, color: C.text }}>{pendingNote.title}</div>
+            {pendingNote.body !== pendingNote.title && <div style={{ fontSize: 13, color: C.text2, lineHeight: 1.5, marginTop: 3 }}>{pendingNote.body}</div>}
+            <div style={{ display: "flex", gap: 8, marginTop: 11 }}>
+              <button onClick={() => void keepNote()} style={{ cursor: "pointer", border: 0, borderRadius: 9, padding: "9px 16px", fontWeight: 800, fontSize: 13, fontFamily: FONT.sans, background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322" }}>✓ Keep it</button>
+              <button onClick={() => { const n = pendingNote; setPendingNote(null); if (n) onAsk?.(n.transcript); }} style={{ cursor: "pointer", borderRadius: 9, padding: "9px 14px", fontWeight: 700, fontSize: 12.5, fontFamily: FONT.sans, border: `1px solid ${C.line}`, background: "rgba(var(--ink),.05)", color: C.text2 }}>Ask instead</button>
+              <button onClick={() => setPendingNote(null)} style={{ cursor: "pointer", borderRadius: 9, padding: "9px 12px", fontWeight: 700, fontSize: 12.5, fontFamily: FONT.sans, border: `1px solid ${C.line}`, background: "transparent", color: C.muted }}>✕</button>
+            </div>
+          </div>
+        )}
+        {savedNote && (
+          <div style={{ position: "absolute", top: "calc(100% + 8px)", left: 12, right: 12, zIndex: 80, display: "flex", alignItems: "center", gap: 8, background: "var(--c-appbg)", border: "1px solid rgba(52,201,139,.4)", borderRadius: 12, padding: "10px 14px", color: C.greenText, fontSize: 12.5, fontWeight: 600, boxShadow: "0 10px 26px rgba(10,15,30,.2)" }}>
+            ✓ Noted — &ldquo;{savedNote}&rdquo; will be in your briefing.
+          </div>
+        )}
       </div>
       <SyncButton />
       <ThemeToggle />

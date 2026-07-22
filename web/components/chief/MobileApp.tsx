@@ -966,8 +966,36 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
   const [loading, setLoading] = useState(false);
   const [rec, setRec] = useState<"idle" | "rec" | "busy">("idle");
   const [err, setErr] = useState<string | null>(null);
+  // the one smart button (FEAT-36): a spoken utterance routes to note-vs-question.
+  // pendingNote = the confirm-first card; savedNote = the "it's in the briefing" chip.
+  const [routing, setRouting] = useState(false);
+  const [pendingNote, setPendingNote] = useState<{ title: string; body: string; transcript: string } | null>(null);
+  const [savedNote, setSavedNote] = useState<string | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
+
+  /** Voice transcripts pass through the classifier; notes wait for Keep. A
+   *  classifier failure falls straight through to Ask — never a dead end. */
+  async function route(text: string) {
+    setSavedNote(null); setRouting(true);
+    try {
+      const p = await postJson<{ kind: "note" | "question"; title: string; body: string }>("/api/cos-notes", { transcript: text });
+      if (p?.kind === "note") { setPendingNote({ title: p.title, body: p.body, transcript: text }); setQ(""); return; }
+    } catch { /* fall through to Ask */ }
+    finally { setRouting(false); }
+    run(text);
+  }
+  async function keepNote() {
+    const n = pendingNote; if (!n) return;
+    setPendingNote(null);
+    const r = await postJson<{ ok?: boolean }>("/api/cos-notes", { title: n.title, body: n.body, source: "voice" });
+    setSavedNote(r?.ok ? n.title : null);
+    if (!r?.ok) setErr("Couldn't save the note — try again.");
+  }
+  function askInstead() {
+    const n = pendingNote; if (!n) return;
+    setPendingNote(null); setQ(n.transcript); run(n.transcript);
+  }
 
   async function run(question?: string) {
     const Q = (question ?? q).trim(); if (!Q) return;
@@ -998,7 +1026,7 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
           fd.append("audio", blob, `speech.${audioExt(type)}`);
           const r = await fetch("/api/transcribe", { method: "POST", body: fd });
           const d = await r.json().catch(() => ({} as { text?: string; error?: string; empty?: boolean }));
-          if (r.ok && d.text) { setRec("idle"); setQ(d.text); run(d.text); return; }
+          if (r.ok && d.text) { setRec("idle"); setQ(d.text); void route(d.text); return; }
           setErr(d.empty ? "Didn't catch any speech — speak clearly, then tap the mic to stop." : d.error || "Couldn't hear that — try again.");
         } catch { setErr("Voice search failed — check your connection."); }
         finally { setRec((s) => (s === "busy" ? "idle" : s)); }
@@ -1007,7 +1035,7 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
     } catch { setErr("Microphone access was blocked."); setRec("idle"); }
   }
   const recent = getRecentSearches();
-  const status = rec === "rec" ? "Listening… release to search" : rec === "busy" ? "Transcribing your voice…" : loading ? "Searching the record…" : null;
+  const status = rec === "rec" ? "Listening… release to search" : rec === "busy" ? "Transcribing your voice…" : routing ? "One moment…" : loading ? "Searching the record…" : null;
 
   // hold-to-talk: press starts recording, release stops → transcribe → search
   // mic-tab behavior (RD): arriving in voice mode starts listening at once;
@@ -1077,6 +1105,25 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
           </div>
         )}
         {err && <div style={{ marginTop: 12, padding: "11px 14px", borderRadius: 11, background: "rgba(255,107,94,.1)", border: "1px solid rgba(255,107,94,.35)", color: C.red, fontSize: 13, fontWeight: 600 }}>{err}</div>}
+
+        {/* confirm-first note card — nothing is saved until Keep */}
+        {pendingNote && (
+          <div style={{ marginTop: 14, ...cardS, padding: 15, border: "1px solid rgba(231,181,60,.5)" }}>
+            <div style={{ fontFamily: FONT.mono, fontSize: 9.5, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: C.gold, marginBottom: 6 }}>📝 Heard as a note</div>
+            <div style={{ fontFamily: FONT.serif, fontSize: 16.5, fontWeight: 700, lineHeight: 1.25 }}>{pendingNote.title}</div>
+            {pendingNote.body !== pendingNote.title && <div style={{ fontSize: 13.5, color: C.text2, lineHeight: 1.5, marginTop: 4 }}>{pendingNote.body}</div>}
+            <div style={{ display: "flex", gap: 8, marginTop: 13 }}>
+              <button onClick={() => void keepNote()} style={{ flex: 1.6, cursor: "pointer", border: 0, borderRadius: 11, padding: "13px 14px", fontWeight: 800, fontSize: 14.5, fontFamily: FONT.sans, background: "linear-gradient(135deg,#F4CB63,#D7991C)", color: "#0a1322" }}>✓ Keep it</button>
+              <button onClick={askInstead} style={{ flex: 1, cursor: "pointer", borderRadius: 11, padding: "13px 12px", fontWeight: 700, fontSize: 13, fontFamily: FONT.sans, border: "1px solid var(--c-cardbd)", background: "rgba(var(--ink),.05)", color: C.text2 }}>Ask instead</button>
+              <button onClick={() => setPendingNote(null)} aria-label="Discard" style={{ cursor: "pointer", borderRadius: 11, padding: "13px 14px", fontWeight: 700, fontSize: 13, fontFamily: FONT.sans, border: "1px solid var(--c-cardbd)", background: "transparent", color: C.muted }}>✕</button>
+            </div>
+          </div>
+        )}
+        {savedNote && (
+          <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 9, padding: "11px 14px", borderRadius: 11, background: "rgba(52,201,139,.1)", border: "1px solid rgba(52,201,139,.3)", color: C.greenText, fontSize: 13, fontWeight: 600 }}>
+            ✓ Noted — &ldquo;{savedNote}&rdquo; will be in your briefing.
+          </div>
+        )}
 
         {loading && <div style={{ padding: "0 16px", marginTop: 18 }}><Searching size={15} /></div>}
         {!res && !loading && (

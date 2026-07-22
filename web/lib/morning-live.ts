@@ -15,6 +15,7 @@
  */
 import { query } from "./db";
 import { readTriage } from "./triage/read";
+import { listNotes, type CosNote } from "./cos-notes";
 import {
   fillGreeting, COS_TONE_PRESETS,
   type CosPersona, type CosTone, type MorningSummary, type PressingItem,
@@ -109,7 +110,11 @@ export async function liveMorningSummary(persona: CosPersona, hour?: number): Pr
     .slice(0, 5)
     .map((r) => ({ name: prettyKey(r.agent_key), note: r.output!.headline! }));
 
-  const needYou = actionItems.length + (view?.needsReply?.length ?? 0);
+  // ── the Mayor's own notes (walk-ins, FEAT-36) — spoken follow-ups the
+  // narrative weaves in; ones open past NUDGE_DAYS get called out as still open.
+  const notes: CosNote[] = await listNotes("open", 8).catch(() => []);
+
+  const needYou = actionItems.length + (view?.needsReply?.length ?? 0) + notes.length;
   const counts = { needYou, eventsToday };
 
   const part = hour == null ? "morning" : hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
@@ -129,6 +134,7 @@ export async function liveMorningSummary(persona: CosPersona, hour?: number): Pr
         `Use ONLY the facts below; never invent items or numbers. Plain text, no markdown.`;
       const ctx = [
         `Most pressing (${pressing.length}): ${pressing.map((p) => `${p.title} [${p.tag}]`).join("; ") || "nothing urgent"}.`,
+        `The mayor's own notes (${notes.length}): ${notes.map((n) => n.title + (n.stale ? " (still open for days)" : "")).join("; ") || "none"}. Mention his notes naturally — they're promises he made in person. Nudge ONLY the ones marked "still open for days"; never invent how long anything has been open.`,
         `Upcoming events (${calendar.length}): ${calendar.map((c) => c.title + (c.when ? ` (${c.when})` : "")).join("; ") || "nothing scheduled"}.`,
         `Agent activity: ${agents.map((a) => `${a.name} — ${a.note}`).join("; ") || "quiet"}.`,
         `${needYou} item(s) need your attention.`,

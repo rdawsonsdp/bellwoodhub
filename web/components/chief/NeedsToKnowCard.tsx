@@ -12,6 +12,8 @@ import { useEffect, useState } from "react";
 import { C, FONT } from "@/lib/cos-design";
 import { getCosPersona, type MorningSummary } from "@/lib/morning";
 
+interface Note { id: string; title: string; body: string; status: string; stale: boolean }
+
 const TAG_C: Record<string, { fg: string; bg: string }> = {
   "draft ready": { fg: C.goldHi, bg: "rgba(231,181,60,.16)" },
   "needs reply": { fg: C.text2, bg: "rgba(var(--ink),.07)" },
@@ -27,6 +29,7 @@ export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onG
 }) {
   const [sum, setSum] = useState<MorningSummary | null>(null);
   const [failed, setFailed] = useState(false);
+  const [notes, setNotes] = useState<Note[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -38,8 +41,21 @@ export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onG
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d: MorningSummary) => alive && setSum(d))
       .catch(() => alive && setFailed(true));
+    fetch("/api/cos-notes")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d: { notes?: Note[] }) => alive && setNotes(d.notes ?? []))
+      .catch(() => { /* notes are optional garnish */ });
     return () => { alive = false; };
   }, []);
+
+  // check off a note — optimistic: it leaves the list at once, PATCH follows
+  const doneNote = (id: string) => {
+    setNotes((n) => n.filter((x) => x.id !== id));
+    void fetch("/api/cos-notes", {
+      method: "PATCH", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id, status: "done" }),
+    }).catch(() => {});
+  };
 
   const pressing = sum?.pressing ?? [];
   const events = sum?.calendar ?? [];
@@ -61,25 +77,59 @@ export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onG
           )}
         </div>
 
-        {/* top email issues + actions required — the ranked list, each opens the email */}
+        {/* top email issues + actions required — set like a front page (RD
+            2026-07-21, Tribune reference): a small kicker, then a heavy serif
+            headline that WRAPS (never ellipsized to one line), then the reason
+            as a quiet deck beneath. Each story opens the real email. */}
         {pressing.map((p, i) => {
           const tag = TAG_C[p.tag] ?? TAG_C["needs reply"];
           const clickable = !!(p.messageId && onOpenEmail);
           return (
             <button key={i} onClick={clickable ? () => onOpenEmail!(p.messageId!) : undefined} disabled={!clickable}
-              style={{ display: "flex", gap: 11, width: "100%", textAlign: "left", background: "none", border: 0, padding: mobile ? "11px 15px" : "12px 18px", borderTop: `1px solid ${C.line2}`, cursor: clickable ? "pointer" : "default", fontFamily: FONT.sans, alignItems: "flex-start" }}>
-              <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: C.dim, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>{i + 1}</span>
+              style={{ display: "flex", gap: 12, width: "100%", textAlign: "left", background: "none", border: 0, padding: mobile ? "13px 15px 14px" : "15px 18px 16px", borderTop: `1px solid ${C.line2}`, cursor: clickable ? "pointer" : "default", fontFamily: FONT.sans, alignItems: "flex-start" }}>
+              <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: C.dim, fontWeight: 700, flexShrink: 0, marginTop: 3 }}>{i + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: mobile ? 14 : 14.5, fontWeight: 700, color: C.text, lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: 1, minWidth: 0 }}>{p.title}</span>
-                  <span style={{ flexShrink: 0, fontFamily: FONT.mono, fontSize: 9.5, fontWeight: 800, letterSpacing: ".04em", textTransform: "uppercase", color: tag.fg, background: tag.bg, padding: "2px 7px", borderRadius: 6 }}>{p.tag}</span>
+                {/* kicker */}
+                <span style={{ fontFamily: FONT.mono, fontSize: 9.5, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: tag.fg }}>{p.tag}</span>
+                {/* headline — bold serif, wraps like newsprint */}
+                <div style={{ fontFamily: FONT.serif, fontSize: mobile ? 17 : 19, fontWeight: 700, color: C.text, lineHeight: 1.22, letterSpacing: "-.01em", marginTop: 3, overflowWrap: "anywhere" }}>
+                  {p.title}
                 </div>
-                {p.why && <div style={{ fontSize: 12.5, color: C.text3, marginTop: 3, lineHeight: 1.45, overflowWrap: "anywhere" }}>{p.why}</div>}
+                {/* deck — the detail in subtext */}
+                {p.why && <div style={{ fontSize: mobile ? 12.5 : 13, color: C.text3, marginTop: 5, lineHeight: 1.5, overflowWrap: "anywhere" }}>{p.why}</div>}
               </div>
-              {clickable && <span style={{ color: C.gold, fontSize: 13, fontWeight: 800, flexShrink: 0, alignSelf: "center" }}>→</span>}
+              {clickable && <span style={{ color: C.gold, fontSize: 14, fontWeight: 800, flexShrink: 0, alignSelf: "center" }}>→</span>}
             </button>
           );
         })}
+
+        {/* the Mayor's own notes (walk-ins) — spoken via the Ask button, checked
+            off here. The empty state teaches the gesture. */}
+        {(notes.length > 0 || sum) && (
+          <div style={{ borderTop: `1px solid ${C.line2}`, padding: mobile ? "10px 15px 12px" : "11px 18px 13px" }}>
+            <div style={{ fontFamily: FONT.mono, fontSize: 9.5, letterSpacing: ".1em", textTransform: "uppercase", color: C.dim, marginBottom: notes.length ? 8 : 5 }}>Your notes</div>
+            {notes.length === 0 && (
+              <div style={{ fontSize: 12.5, color: C.text3, lineHeight: 1.5 }}>
+                Hold <b style={{ color: C.gold }}>Ask</b> and just tell me — <i>&ldquo;Remember to&hellip;&rdquo;</i>
+              </div>
+            )}
+            {notes.map((n) => (
+              <div key={n.id} style={{ display: "flex", gap: 11, alignItems: "flex-start", padding: "5px 0" }}>
+                <button onClick={() => doneNote(n.id)} aria-label="Mark done" title="Mark done"
+                  style={{ width: 21, height: 21, borderRadius: 99, border: `1.6px solid ${C.gold}`, background: "transparent", cursor: "pointer", flexShrink: 0, marginTop: 1, color: "transparent", fontSize: 12, lineHeight: 1 }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = C.gold; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "transparent"; }}>
+                  ✓
+                </button>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: mobile ? 13.5 : 14, fontWeight: 700, color: C.text }}>{n.title}</span>
+                  {n.stale && <span style={{ marginLeft: 8, fontFamily: FONT.mono, fontSize: 9, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: "#E06C5F", background: "rgba(224,108,95,.12)", padding: "2px 6px", borderRadius: 5 }}>still open</span>}
+                  {n.body && n.body !== n.title && <div style={{ fontSize: 12.5, color: C.text3, lineHeight: 1.45, marginTop: 2, overflowWrap: "anywhere" }}>{n.body}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* upcoming events */}
         {events.length > 0 && (

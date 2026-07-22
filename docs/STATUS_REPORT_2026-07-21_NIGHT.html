@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bellwood Hub — Status Report · July 21, 2026 (night)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font: 14px/1.55 Georgia, 'Times New Roman', serif; color: #1a2233; background: #fff; max-width: 780px; margin: 0 auto; padding: 40px 36px; }
+  header { border-bottom: 3px double #b8963e; padding-bottom: 14px; margin-bottom: 22px; }
+  .kicker { font: 700 10px/1 'Helvetica Neue', Arial, sans-serif; letter-spacing: .18em; text-transform: uppercase; color: #8a6a1f; }
+  h1 { font-size: 26px; margin-top: 6px; color: #14335c; }
+  .meta { font: 12px 'Helvetica Neue', Arial, sans-serif; color: #667; margin-top: 4px; }
+  h2 { font-size: 15px; color: #14335c; border-bottom: 1px solid #d8d2c0; padding-bottom: 4px; margin: 22px 0 10px; }
+  p, li { font-size: 13.5px; }
+  ul { margin: 6px 0 6px 20px; }
+  li { margin-bottom: 5px; }
+  b { color: #14335c; }
+  .status { font: 700 10px/1 'Helvetica Neue', Arial, sans-serif; letter-spacing: .06em; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; }
+  .live   { background: #e3f2e7; color: #1e6b3a; }
+  .prog   { background: #fdf3d7; color: #8a6a1f; }
+  .open   { background: #fbe9e5; color: #a33d2a; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+  td, th { padding: 6px 8px; border-bottom: 1px solid #e6e0d0; text-align: left; vertical-align: top; }
+  th { font: 700 10.5px 'Helvetica Neue', Arial, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #667; }
+  .sum { background: #faf6ea; border: 1px solid #e2d7b8; border-radius: 8px; padding: 14px 16px; margin-bottom: 4px; }
+  footer { margin-top: 26px; padding-top: 10px; border-top: 1px solid #d8d2c0; font: 11px 'Helvetica Neue', Arial, sans-serif; color: #889; }
+  @media print { body { padding: 0; } .sum { break-inside: avoid; } h2 { break-after: avoid; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">Bellwood Hub · AI Chief of Staff</div>
+  <h1>Status Report — Night Session</h1>
+  <div class="meta">Tuesday, July 21, 2026 · Prepared for R. Dawson, Strategic Data Products</div>
+</header>
+
+<h2>Executive summary</h2>
+<div class="sum">
+  <p>Tonight the developer application moved to the cloud — <b>bellwood-dev.vercel.app</b>, always on,
+  sharing one codebase with the Mayor's app while keeping data fully separate — and the Hub's briefing
+  matured into a genuine product: <b>The Morning/Midday/Evening Brief</b>, a Tribune-styled front page
+  where every agent files stories, the Chief of Staff ranks them by importance to the Mayor, every
+  article carries its author's byline, and every report can <b>show its work</b> — model, timing, tokens,
+  the full prompt and response, and what validation dropped. Voice notes for walk-ins shipped end-to-end,
+  built for a mayor who doesn't type: hold the button, say "remember to cut the tree on Forrest Street," done.</p>
+</div>
+
+<h2>Shipped tonight (live on bellwood-dev)</h2>
+<table>
+  <tr><th>Feature</th><th>What it does</th><th>Status</th></tr>
+  <tr><td><b>Cloud dev deployment</b></td><td>bellwood-dev.vercel.app — RD's data, sign-in wall on, fresh secrets, crons run around the clock (sync, triage, agents) with the laptop closed.</td><td><span class="status live">Live</span></td></tr>
+  <tr><td><b>The Brief (front page)</b></td><td>Blackletter nameplate in the true Tribune face; the edition follows the clock; live date &amp; time; drop-cap lede; kicker → headline → deck articles under an "Agent Analysis &amp; Updates" band.</td><td><span class="status live">Live</span></td></tr>
+  <tr><td><b>Agents file the Brief</b></td><td>Every desk forwards its stories; the Chief of Staff ranks the page by importance to the Mayor (safety → commitments → money → follow-ups). Bylines on every article; story headlines open the agent's report, the source email is one chip away.</td><td><span class="status live">Live</span></td></tr>
+  <tr><td><b>Show the work</b></td><td>Every run records its own execution — model, duration, token usage, what it read, the full prompt and raw response, what validation dropped. A brain-icon button on each report opens the trace. Transparency is the anti-anxiety feature.</td><td><span class="status live">Live</span></td></tr>
+  <tr><td><b>Voice notes (walk-ins)</b></td><td>Hold Ask and talk — a classifier routes question vs. note, cleans speech into a staff item, confirms with one tap, folds into the briefing, nudges when stale. Plus a pencil button for explicit notes. Zero typing required.</td><td><span class="status live">Live</span></td></tr>
+  <tr><td><b>Swipe the Brief</b></td><td>Story mode on mobile: full-screen cards, swipe right-to-left like Instagram, one story per screen with its actions.</td><td><span class="status live">Live</span></td></tr>
+  <tr><td><b>Cleaner Hub &amp; naming</b></td><td>Agents fold to a peek row (grid one tap away) and join the main menu; "Needs You" renamed <b>Email Actions</b> (auto-replies will land there); the header shows the day and time, not the app's name.</td><td><span class="status live">Live</span></td></tr>
+</table>
+
+<h2>Deployment map</h2>
+<table>
+  <tr><th>Site</th><th>Code</th><th>Data</th><th>State</th></tr>
+  <tr><td><b>bellwood-dev.vercel.app</b></td><td>tonight's full run</td><td>RD's Gmail (test DB, migrations through 019)</td><td>current</td></tr>
+  <tr><td>bellwood-mayor.vercel.app</td><td>July 21 morning build</td><td>RD's Gmail snapshot (81k; mayor's own mail pending consent)</td><td>~14 commits behind</td></tr>
+  <tr><td>Local (laptop / LAN)</td><td>tonight's full run</td><td>RD's Gmail (test DB)</td><td>auth off for phone testing</td></tr>
+</table>
+
+<h2>Open before the next session</h2>
+<ul>
+  <li><b>Mayor push</b> <span class="status open">Ordered</span> — apply migrations 018 + 019 to the mayor's Supabase <i>first</i>, then fast-forward <code>main</code>. One word to execute.</li>
+  <li><b>Calendar</b> <span class="status open">1-click</span> — enable the Google Calendar API in the OAuth project; then "Coming up" populates and the reserved calendar slot at the top of the Brief (FEAT-37) gets built.</li>
+  <li><b>Local auth</b> — <code>AUTH_ENABLED=0</code> on the laptop for LAN phone testing; restore before demoing sign-in locally.</li>
+  <li><b>Mayor's Outlook consent</b> — unchanged; one-time admin approval, self-serve if his account holds an M365 admin role.</li>
+  <li><b>Housekeeping</b> — credential rotation (TASK-15); delete throwaway test DB when retired (DEP-4).</li>
+</ul>
+
+<footer>Bellwood Hub · All features verified against the live build before this report · PM source of truth: PROJECT.md · Dashboard: project-status-ten.vercel.app</footer>
+</body>
+</html>

@@ -253,7 +253,7 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
             every count the Mayor sees traces to getWall() (invariant 9). */}
         <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".16em", padding: "4px 10px 8px" }}>Workspace</div>
         {item("today", "Hub", <Ico d={ICON.today} />, <Star w={13} c={C.gold} />)}
-        {item("needsyou", "Needs You", <Ico d={ICON.warn} />)}
+        {item("needsyou", "Email Actions", <Ico d={ICON.mail} />)}
         {item("queue", "Queue", <Ico d={ICON.approvals} />)}
         {item("ask", "Ask", <Star w={19} c="currentColor" />)}
         {/* Agents live in the main menu (RD 2026-07-21) — the folded Hub peek

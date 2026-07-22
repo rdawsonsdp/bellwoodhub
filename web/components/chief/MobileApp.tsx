@@ -233,7 +233,7 @@ function TabBar({ current, go }: { current: Screen; go: (s: Screen) => void }) {
       {/* left group */}
       <div style={{ flex: 1, display: "flex" }}>
         <Tab s="today" d={I.today} label="Hub" />
-        <Tab s="needsyou" d={I.warn} label="Needs You" />
+        <Tab s="needsyou" d={I.emails} label="Email Actions" />
       </div>
       {/* center gap the raised Ask FAB sits over — keeps the flex halves even
           so the button lands dead-center */}
@@ -291,7 +291,7 @@ const NAV_STAR = "M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z";
 // Operator-mode menu — everything that existed before, relocated (never deleted).
 const NAV_ITEMS: [Screen, string, string][] = [
   ["today", I.today, "Hub"],
-  ["needsyou", I.warn, "Needs You"],
+  ["needsyou", I.emails, "Email Actions"],
   ["queue", I.approvals, "Queue"],
   ["ask", I.search, "Ask"],
   ["emails", I.emails, "Emails"],

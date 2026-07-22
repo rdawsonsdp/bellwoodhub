@@ -58,7 +58,7 @@ export default function NeedsYouScreen({ variant, onOpenEmail }: { variant: "des
   return (
     <div className="fu" style={{ padding: mobile ? "22px 16px 40px" : "30px 36px 48px", maxWidth: 1100 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 4 }}>
-        <div style={{ fontFamily: FONT.serif, fontSize: mobile ? 27 : 34, fontWeight: 500, color: C.text, letterSpacing: "-.015em", lineHeight: 1 }}>Needs you</div>
+        <div style={{ fontFamily: FONT.serif, fontSize: mobile ? 27 : 34, fontWeight: 500, color: C.text, letterSpacing: "-.015em", lineHeight: 1 }}>Email Actions</div>
         {view && <span style={{ fontSize: 13, color: C.text3 }}>{list.length} waiting on your reply{view.classifiedAt ? ` · sorted ${ago(view.classifiedAt)}` : ""}</span>}
       </div>
       <div style={{ fontSize: 12.5, color: C.text3, marginBottom: 18, lineHeight: 1.5 }}>

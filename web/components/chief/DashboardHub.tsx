@@ -23,10 +23,10 @@ import { AgentAvatar } from "./AgentBadge";
 
 /* ── palette (spec) ─────────────────────────────────────────────────────── */
 const P = {
-  bg: "#F7F5EE",
+  bg: "#FFFFFF",
   card: "#FFFFFF",
-  cardAlt: "#F0ECE1",
-  border: "#E5E0D8",
+  cardAlt: "#FFFFFF",
+  border: "rgba(20,51,92,.20)", // Bellwood navy
   text: "#1E1E1E",
   text2: "#4A463E",
   text3: "#8A8578",

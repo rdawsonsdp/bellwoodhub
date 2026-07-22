@@ -111,7 +111,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
           wordmark and only the bell emblem shows). Fixed palette, like real
           letterhead, so it reads in all four themes; dated by the SAME clock
           as the content below it (invariant 9). ── */}
-      <div style={{ position: "relative", overflow: "hidden", borderRadius: 20, marginTop: mobile ? 8 : 0, padding: mobile ? "12px 15px 11px" : "30px 28px 26px", background: "linear-gradient(120deg,#FDFAF1 0%,#FAF3E2 55%,#F3E7CB 100%)", border: "1px solid rgba(180,140,60,.28)", boxShadow: "0 14px 36px rgba(20,40,80,.16)" }}>
+      <div style={{ position: "relative", overflow: "hidden", borderRadius: 20, marginTop: mobile ? 8 : 0, padding: mobile ? "12px 15px 11px" : "30px 28px 26px", background: "#FFFFFF", border: "1.5px solid rgba(20,51,92,.30)", boxShadow: "0 14px 36px rgba(20,40,80,.16)" }}>
         {(() => {
           const h = mobile ? 130 : 285; // logo is 400×170; bell ≈ left 37.5%
           const w = h * (400 / 170);

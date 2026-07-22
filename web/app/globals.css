@@ -39,13 +39,13 @@
 [data-theme="daylight"] {
   --ink: 32, 30, 22;
   --c-bgbody: #f5f1e6;
-  --c-appbg: radial-gradient(130% 100% at 18% -8%, #fffdf6 0%, #f6f2e6 45%, #efe9d8 100%);
+  --c-appbg: radial-gradient(130% 100% at 18% -8%, #ffffff 0%, #fdfdfc 45%, #f7f8fa 100%); /* white; brand borders carry the identity (RD 2026-07-22) */
   --c-text: #201d14; --c-text2: #3c3a2e; --c-text3: #55523f; --c-muted: #6f6b57; --c-dim: #8b8670; --c-dim2: #a49f88;
   --c-gold: #a9750c; --c-goldhi: #8c6107; --c-goldlo: #c19a2e;
   --c-blue: #1f6ed6; --c-green: #0c9760; --c-greentext: #0a8453;
   --c-orange: #b96f14; --c-orangetext: #9c5f15; --c-red: #d23a2d; --c-redtext: #b83228;
-  --c-purple: #5d46d8; --c-purpletext: #4d3ac0; --c-cardbd: rgba(88, 74, 38, 0.16);
-  --c-sidebar: rgba(255, 253, 246, 0.8);
+  --c-purple: #5d46d8; --c-purpletext: #4d3ac0; --c-cardbd: rgba(20, 51, 92, 0.18); /* Bellwood navy */
+  --c-sidebar: rgba(255, 255, 255, 0.86);
 }
 
 /* High contrast — maximum legibility (near-AAA). */
@@ -68,13 +68,13 @@
 [data-theme="am"] {
   --ink: 64, 38, 16;
   --c-bgbody: #fff7ee;
-  --c-appbg: radial-gradient(135% 115% at 10% -15%, #fffdf9 0%, #ffeed4 34%, #ffdcbb 66%, #ffc9a4 100%);
+  --c-appbg: radial-gradient(135% 115% at 10% -15%, #ffffff 0%, #fefdfb 40%, #f8f9fb 100%); /* white (RD 2026-07-22) */
   --c-text: #3a2410; --c-text2: #6b4828; --c-text3: #845d39; --c-muted: #9c7651; --c-dim: #b6926d; --c-dim2: #cda884;
   --c-gold: #c2790a; --c-goldhi: #a76705; --c-goldlo: #e2a526;
   --c-blue: #1666d6; --c-green: #0a9d5e; --c-greentext: #088a50;
   --c-orange: #d4761a; --c-orangetext: #b8631a; --c-red: #e23a2a; --c-redtext: #c8362a;
-  --c-purple: #6b4fd8; --c-purpletext: #563fc0; --c-cardbd: rgba(64, 38, 16, 0.12);
-  --c-sidebar: rgba(255, 245, 231, 0.82);
+  --c-purple: #6b4fd8; --c-purpletext: #563fc0; --c-cardbd: rgba(20, 51, 92, 0.18); /* Bellwood navy */
+  --c-sidebar: rgba(255, 255, 255, 0.86);
 }
 
 /* Midday — clean, cool, productive "working" light. */
@@ -268,3 +268,35 @@ a {
   font-style: normal;
   font-display: swap;
 }
+
+/* Icon-rail bubble tooltips (RD 2026-07-22): the label pops out beside the
+   icon on hover — springy scale-in, arrow nub, riding above everything. */
+.navTip { position: relative; }
+.navTip::before {
+  content: "";
+  position: absolute; left: calc(100% + 6px); top: 50%;
+  width: 10px; height: 10px;
+  background: var(--c-appbg);
+  border-left: 1px solid var(--c-cardbd); border-bottom: 1px solid var(--c-cardbd);
+  transform: translateY(-50%) rotate(45deg) scale(.6);
+  opacity: 0; pointer-events: none;
+  transition: opacity .1s ease, transform .18s cubic-bezier(.34,1.56,.64,1);
+  z-index: 101;
+}
+.navTip::after {
+  content: attr(data-tip);
+  position: absolute; left: calc(100% + 11px); top: 50%;
+  transform: translateY(-50%) scale(.82);
+  transform-origin: left center;
+  background: var(--c-appbg); color: var(--c-text, #e8e4d8);
+  border: 1px solid var(--c-cardbd);
+  padding: 8px 14px; border-radius: 12px;
+  font: 700 12.5px/1 'Public Sans', system-ui, sans-serif;
+  white-space: nowrap; letter-spacing: .01em;
+  box-shadow: 0 10px 28px rgba(0,0,0,.3);
+  opacity: 0; pointer-events: none;
+  transition: opacity .1s ease, transform .18s cubic-bezier(.34,1.56,.64,1);
+  z-index: 100;
+}
+.navTip:hover::after, .navTip:focus-visible::after { opacity: 1; transform: translateY(-50%) scale(1); }
+.navTip:hover::before, .navTip:focus-visible::before { opacity: 1; transform: translateY(-50%) rotate(45deg) scale(1); }

@@ -230,7 +230,7 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
   const item = (s: Screen, label: string, icon: ReactNode, badge?: ReactNode) => {
     const on = screen === s;
     return (
-      <button onClick={go(s)} title={collapsed ? label : undefined} aria-label={label} style={{
+      <button onClick={go(s)} className={collapsed ? "navTip" : undefined} data-tip={collapsed ? label : undefined} aria-label={label} style={{
         textAlign: "left", cursor: "pointer", border: 0, borderRadius: 11, padding: collapsed ? "11px 0" : "10px 12px",
         display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : undefined, gap: 12, fontFamily: FONT.sans, fontSize: 14, fontWeight: 600,
         background: on ? "rgba(231,181,60,.12)" : "transparent", color: on ? C.gold : C.text3,
@@ -244,7 +244,7 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
   return (
     <div style={{ width: collapsed ? 64 : 268, flexShrink: 0, display: "flex", flexDirection: "column", background: "var(--c-sidebar, rgba(6,13,24,.66))", borderRight: `1px solid ${C.line}`, backdropFilter: "blur(12px)", transition: "width .15s ease" }}>
       <div style={{ padding: collapsed ? "18px 0 14px" : "22px 22px 18px", display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : undefined, gap: 12, borderBottom: `1px solid ${C.line2}` }}>
-        <button onClick={toggleCollapsed} title={collapsed ? "Expand menu" : "Collapse menu"} aria-label={collapsed ? "Expand menu" : "Collapse menu"}
+        <button onClick={toggleCollapsed} className={collapsed ? "navTip" : undefined} data-tip={collapsed ? "Expand menu" : undefined} aria-label={collapsed ? "Expand menu" : "Collapse menu"}
           style={{ width: 42, height: 42, borderRadius: 13, border: 0, cursor: "pointer", background: "linear-gradient(150deg,#F4CB63,#D7991C)", boxShadow: "0 6px 18px rgba(231,181,60,.35),inset 0 1.5px 0 rgba(var(--ink),.5)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="#0a1322"><path d="M12 1.5l2 6.5 6.5 2-6.5 2-2 6.5-2-6.5L3.5 10l6.5-2z" /></svg>
         </button>
@@ -257,7 +257,7 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
         )}
       </div>
 
-      <div className="scrl" style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 3 }}>
+      <div className={collapsed ? undefined : "scrl"} style={{ flex: 1, overflowY: collapsed ? "visible" : "auto", padding: collapsed ? "16px 8px" : "16px 14px", display: "flex", flexDirection: "column", gap: 3 }}>
         {/* Mayor mode: exactly three destinations. No hardcoded nav badges —
             every count the Mayor sees traces to getWall() (invariant 9). */}
         {!collapsed && <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".16em", padding: "4px 10px 8px" }}>Workspace</div>}
@@ -311,7 +311,7 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
             )}
           </div>
         )}
-        <button onClick={() => setMenu((m) => !m)} title="Workspace mode" style={{ display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : undefined, gap: 11, width: "100%", cursor: "pointer", background: "none", border: 0, padding: 0, textAlign: "left" }}>
+        <button onClick={() => setMenu((m) => !m)} className={collapsed ? "navTip" : undefined} data-tip={collapsed ? "Workspace mode" : undefined} style={{ display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : undefined, gap: 11, width: "100%", cursor: "pointer", background: "none", border: 0, padding: 0, textAlign: "left" }}>
           <span style={{ width: 38, height: 38, borderRadius: 99, border: `2px solid ${C.gold}`, background: "linear-gradient(135deg,#1d3f6b,#0e2440)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 16, color: C.gold, flexShrink: 0 }}>M</span>
           {!collapsed && (
           <span style={{ flex: 1, lineHeight: 1.2 }}>

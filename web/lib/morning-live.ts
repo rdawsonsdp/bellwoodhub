@@ -62,14 +62,15 @@ export async function liveMorningSummary(persona: CosPersona, hour?: number): Pr
   const tone: CosTone = persona.tone === "formal" || persona.tone === "brisk" ? persona.tone : "warm";
 
   // ── 2. ACTIONS REQUIRED — pending drafts (a reply is written, awaiting sign-off)
-  const drafts = await query<{ subject: string | null; to_message_id: string | null }>(
-    `SELECT subject, to_message_id FROM app.drafts WHERE status = 'pending' ORDER BY created_at DESC LIMIT 5`,
-  ).catch(() => [] as { subject: string | null; to_message_id: string | null }[]);
+  const drafts = await query<{ subject: string | null; to_message_id: string | null; agent: string }>(
+    `SELECT subject, to_message_id, agent FROM app.drafts WHERE status = 'pending' ORDER BY created_at DESC LIMIT 5`,
+  ).catch(() => [] as { subject: string | null; to_message_id: string | null; agent: string }[]);
   const actionItems: PressingItem[] = drafts.map((d) => ({
     title: d.subject || "(draft reply)",
     why: "A reply is drafted — needs your approval.",
     tag: "draft ready",
     messageId: d.to_message_id ?? undefined,
+    agentKey: d.agent, agentName: prettyKey(d.agent),
   }));
 
   // ── 1. TOP EMAIL ISSUES — triage needs_reply, already ranked
@@ -79,6 +80,8 @@ export async function liveMorningSummary(persona: CosPersona, hour?: number): Pr
     why: it.reason || it.fromName || it.fromEmail || "",
     tag: "needs reply",
     messageId: it.sourceRef,
+    // the triage pass reads the mailbox through the mail desk — that's the byline
+    agentKey: "email-gmail", agentName: "Mail Triage",
   }));
 
   // ── every agent forwards its stories to the Brief agent (RD 2026-07-21).
@@ -99,8 +102,9 @@ export async function liveMorningSummary(persona: CosPersona, hour?: number): Pr
       .map((d, i) => ({
         title: d.title || (d.point ?? "").slice(0, 90),
         why: d.point ?? "",
-        tag: prettyKey(r.agent_key),
+        tag: d.kind === "update" ? "update" : "new",
         messageId: d.sourceMessageIds?.[0],
+        agentKey: r.agent_key, agentName: prettyKey(r.agent_key),
         score: base - i * 5 + (d.kind === "update" ? 3 : 0),
       }));
   });
@@ -118,7 +122,7 @@ export async function liveMorningSummary(persona: CosPersona, hour?: number): Pr
     const key = it.messageId || it.title.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    pressing.push({ title: it.title, why: it.why, tag: it.tag, messageId: it.messageId });
+    pressing.push({ title: it.title, why: it.why, tag: it.tag, messageId: it.messageId, agentKey: it.agentKey, agentName: it.agentName });
     if (pressing.length >= 7) break;
   }
 

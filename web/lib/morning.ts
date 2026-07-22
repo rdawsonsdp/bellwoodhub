@@ -58,6 +58,8 @@ export function fillGreeting(p: CosPersona, hour?: number): string {
 // ── the briefing payload the Today hero renders ──
 export interface PressingItem {
   title: string; why: string; tag: string; messageId?: string;
+  /** the desk that filed this article — byline on the Brief (RD 2026-07-21) */
+  agentKey?: string; agentName?: string;
 }
 export interface BriefCalendarItem {
   id: string; title: string; when: string; source?: "gov" | "gmail";

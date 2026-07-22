@@ -11,12 +11,15 @@
 import { useEffect, useState } from "react";
 import { C, FONT } from "@/lib/cos-design";
 import { getCosPersona, type MorningSummary } from "@/lib/morning";
+import { AgentAvatar } from "./AgentBadge";
 
 interface Note { id: string; title: string; body: string; status: string; stale: boolean }
 
 const TAG_C: Record<string, { fg: string; bg: string }> = {
   "draft ready": { fg: C.goldHi, bg: "rgba(231,181,60,.16)" },
   "needs reply": { fg: C.text2, bg: "rgba(var(--ink),.07)" },
+  update: { fg: C.goldHi, bg: "rgba(231,181,60,.16)" },
+  new: { fg: C.greenText, bg: "rgba(52,201,139,.13)" },
   sensitive: { fg: "#E06C5F", bg: "rgba(224,108,95,.14)" },
   "open issue": { fg: C.text2, bg: "rgba(var(--ink),.07)" },
 };
@@ -101,8 +104,12 @@ export default function NeedsToKnowCard({ mobile, onOpenEmail, onGoNeedsYou, onG
               style={{ display: "flex", gap: 12, width: "100%", textAlign: "left", background: "none", border: 0, padding: mobile ? "13px 15px 14px" : "15px 18px 16px", borderTop: `1px solid ${C.line2}`, cursor: clickable ? "pointer" : "default", fontFamily: FONT.sans, alignItems: "flex-start" }}>
               <span style={{ fontFamily: FONT.mono, fontSize: 11.5, color: C.dim, fontWeight: 700, flexShrink: 0, marginTop: 3 }}>{i + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                {/* kicker */}
-                <span style={{ fontFamily: FONT.mono, fontSize: 9.5, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: tag.fg }}>{p.tag}</span>
+                {/* kicker — the byline: WHICH desk filed this article, then the tag */}
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  {p.agentKey && <AgentAvatar agentKey={p.agentKey} size={15} />}
+                  {p.agentName && <span style={{ fontFamily: FONT.mono, fontSize: 9.5, fontWeight: 800, letterSpacing: ".1em", textTransform: "uppercase", color: C.text2 }}>{p.agentName}</span>}
+                  <span style={{ fontFamily: FONT.mono, fontSize: 9.5, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: tag.fg }}>{p.agentName ? `· ${p.tag}` : p.tag}</span>
+                </span>
                 {/* headline — bold serif, wraps like newsprint */}
                 <div style={{ fontFamily: FONT.serif, fontSize: mobile ? 17 : 19, fontWeight: 700, color: C.text, lineHeight: 1.22, letterSpacing: "-.01em", marginTop: 3, overflowWrap: "anywhere" }}>
                   {p.title}

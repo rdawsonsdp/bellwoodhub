@@ -231,14 +231,17 @@ function StoryMode({ sum, notes, onClose, onOpenEmail, onOpenAgent }: {
   onOpenAgent?: (agentKey: string) => void;
 }) {
   const total = sum.pressing.length + 2;
+  // horizontal deck (RD): stories advance right-to-left like Instagram —
+  // each card is one viewport wide; long cards scroll vertically inside.
   const cardBase = {
-    minHeight: "100dvh", scrollSnapAlign: "start" as const, display: "flex", flexDirection: "column" as const,
-    justifyContent: "center", padding: "calc(env(safe-area-inset-top) + 54px) 22px calc(env(safe-area-inset-bottom) + 46px)",
-    position: "relative" as const,
+    width: "100vw", minWidth: "100vw", height: "100dvh", scrollSnapAlign: "start" as const,
+    display: "flex", flexDirection: "column" as const, justifyContent: "center",
+    padding: "calc(env(safe-area-inset-top) + 54px) 22px calc(env(safe-area-inset-bottom) + 46px)",
+    position: "relative" as const, overflowY: "auto" as const,
   };
   const counter = (i: number) => (
     <span style={{ position: "absolute", bottom: "calc(env(safe-area-inset-bottom) + 16px)", left: 0, right: 0, textAlign: "center", fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".14em", color: C.dim }}>
-      {i + 1} / {total} · swipe ↑
+      {i + 1} / {total} · swipe ←
     </span>
   );
   return (
@@ -246,7 +249,7 @@ function StoryMode({ sum, notes, onClose, onOpenEmail, onOpenAgent }: {
       <button onClick={onClose} aria-label="Close"
         style={{ position: "fixed", top: "calc(env(safe-area-inset-top) + 12px)", right: 14, zIndex: 97, width: 36, height: 36, borderRadius: 99, border: `1px solid ${C.line}`, background: "rgba(var(--ink),.07)", color: C.text2, cursor: "pointer", fontSize: 15, backdropFilter: "blur(8px)" }}>✕</button>
 
-      <div className="scrl" style={{ height: "100dvh", overflowY: "auto", scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch" as never }}>
+      <div className="scrl" style={{ height: "100dvh", display: "flex", flexDirection: "row", overflowX: "auto", overflowY: "hidden", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" as never }}>
         {/* card 0 — the lede */}
         <div style={cardBase}>
           <div style={{ textAlign: "center", borderBottom: `2.5px solid ${C.text}`, paddingBottom: 9, marginBottom: 7 }}>

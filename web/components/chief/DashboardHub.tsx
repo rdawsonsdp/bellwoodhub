@@ -68,7 +68,7 @@ export function SecurityAlertsCard({ alerts, onOpenEmail, onOpenAgent }: {
   onOpenAgent?: (agentKey: string) => void;
 }) {
   return (
-    <div style={{ gridColumn: "span 2", background: P.card, border: `1px solid ${P.border}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 3px rgba(30,30,30,.06)", minWidth: 0 }}>
+    <div style={{ background: P.card, border: `1px solid ${P.border}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 3px rgba(30,30,30,.06)", minWidth: 0 }}>
       {/* high-contrast banner */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", background: `linear-gradient(120deg, ${P.rust}, #A93F10)`, color: "#fff" }}>
         <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#F6C563" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -312,13 +312,11 @@ export default function DashboardHub({ wall, onOpenEmail, onOpenAgent, onGoAppro
           </div>
         </div>
       )}
-      {/* main grid + a right side panel for the calendar (RD 2026-07-22) —
-          the rail is also where the FEAT-37 calendar slot grows when the
-          calendar application connects */}
+      {/* three columns (RD 2026-07-22): STATUS rail on the left (beside the
+          menu), the ACTION center (alerts + approvals), the CALENDAR rail on
+          the right — where the FEAT-37 calendar view grows when it connects. */}
       <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-        <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}>
-          <SecurityAlertsCard alerts={alerts} onOpenEmail={onOpenEmail} onOpenAgent={onOpenAgent} />
-          <MetricCard title="Pending approvals" n={String(waiting)} sub={waiting > 0 ? `${waiting} drafted repl${waiting === 1 ? "y" : "ies"} waiting on your sign-off.` : "Queue is clear — nothing waiting on you."} cta="Approvals" onGo={onGoApprovals} />
+        <div style={{ width: 258, flexShrink: 0, display: "grid", gap: 14 }}>
           <SyncChartWidget onGo={onGoSync} />
           <MatrixWidget counts={{ needsReply: triage.needsReply, waiting, awaiting: triage.awaiting, fyi: triage.fyi }} onGo={onGoNeedsYou} />
           <ListMetricsCard title="Recent email actions" onGo={onGoNeedsYou}
@@ -329,8 +327,13 @@ export default function DashboardHub({ wall, onOpenEmail, onOpenAgent, onGoAppro
             ]} />
           <ActiveAgentsCard wall={wall} onOpenAgent={onOpenAgent} onGo={onGoAgents} />
         </div>
-        <div style={{ width: 272, flexShrink: 0, position: "sticky", top: 14 }}>
-          <EventsWidget events={sum?.calendar ?? []} onGo={onGoCalendar} />
+        <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14, alignItems: "start" }}>
+          {/* top row under the summary: alerts lead, approvals + events stack right */}
+          <SecurityAlertsCard alerts={alerts} onOpenEmail={onOpenEmail} onOpenAgent={onOpenAgent} />
+          <div style={{ display: "grid", gap: 14 }}>
+            <MetricCard title="Pending approvals" n={String(waiting)} sub={waiting > 0 ? `${waiting} drafted repl${waiting === 1 ? "y" : "ies"} waiting on your sign-off.` : "Queue is clear — nothing waiting on you."} cta="Approvals" onGo={onGoApprovals} />
+            <EventsWidget events={sum?.calendar ?? []} onGo={onGoCalendar} />
+          </div>
         </div>
       </div>
     </div>

@@ -221,45 +221,54 @@ export default function ChiefApp() {
 /* ════════════════════════ SIDEBAR ════════════════════════ */
 function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agentSection }: { screen: Screen; go: (s: Screen) => () => void; operator: boolean; onToggleOperator: (on: boolean) => void; goAgentSection?: (sec: string) => void; agentSection?: string | null }) {
   const [menu, setMenu] = useState(false);
+  // The old wide text menu is retired (RD 2026-07-22): the nav collapses to an
+  // icon rail by default — the dashboard's status column takes its place.
+  // Expand persists per device for anyone who wants the labels back.
+  const [collapsed, setCollapsed] = useState(true);
+  useEffect(() => { try { setCollapsed(localStorage.getItem("bw-nav-collapsed") !== "0"); } catch { /* default rail */ } }, []);
+  const toggleCollapsed = () => setCollapsed((c) => { try { localStorage.setItem("bw-nav-collapsed", c ? "0" : "1"); } catch { /* */ } return !c; });
   const item = (s: Screen, label: string, icon: ReactNode, badge?: ReactNode) => {
     const on = screen === s;
     return (
-      <button onClick={go(s)} style={{
-        textAlign: "left", cursor: "pointer", border: 0, borderRadius: 11, padding: "10px 12px",
-        display: "flex", alignItems: "center", gap: 12, fontFamily: FONT.sans, fontSize: 14, fontWeight: 600,
+      <button onClick={go(s)} title={collapsed ? label : undefined} aria-label={label} style={{
+        textAlign: "left", cursor: "pointer", border: 0, borderRadius: 11, padding: collapsed ? "11px 0" : "10px 12px",
+        display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : undefined, gap: 12, fontFamily: FONT.sans, fontSize: 14, fontWeight: 600,
         background: on ? "rgba(231,181,60,.12)" : "transparent", color: on ? C.gold : C.text3,
       }}>
         {icon}
-        <span style={{ flex: 1 }}>{label}</span>
-        {badge}
+        {!collapsed && <span style={{ flex: 1 }}>{label}</span>}
+        {!collapsed && badge}
       </button>
     );
   };
   return (
-    <div style={{ width: 268, flexShrink: 0, display: "flex", flexDirection: "column", background: "var(--c-sidebar, rgba(6,13,24,.66))", borderRight: `1px solid ${C.line}`, backdropFilter: "blur(12px)" }}>
-      <div style={{ padding: "22px 22px 18px", display: "flex", alignItems: "center", gap: 12, borderBottom: `1px solid ${C.line2}` }}>
-        <span style={{ width: 42, height: 42, borderRadius: 13, background: "linear-gradient(150deg,#F4CB63,#D7991C)", boxShadow: "0 6px 18px rgba(231,181,60,.35),inset 0 1.5px 0 rgba(var(--ink),.5)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+    <div style={{ width: collapsed ? 64 : 268, flexShrink: 0, display: "flex", flexDirection: "column", background: "var(--c-sidebar, rgba(6,13,24,.66))", borderRight: `1px solid ${C.line}`, backdropFilter: "blur(12px)", transition: "width .15s ease" }}>
+      <div style={{ padding: collapsed ? "18px 0 14px" : "22px 22px 18px", display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : undefined, gap: 12, borderBottom: `1px solid ${C.line2}` }}>
+        <button onClick={toggleCollapsed} title={collapsed ? "Expand menu" : "Collapse menu"} aria-label={collapsed ? "Expand menu" : "Collapse menu"}
+          style={{ width: 42, height: 42, borderRadius: 13, border: 0, cursor: "pointer", background: "linear-gradient(150deg,#F4CB63,#D7991C)", boxShadow: "0 6px 18px rgba(231,181,60,.35),inset 0 1.5px 0 rgba(var(--ink),.5)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="#0a1322"><path d="M12 1.5l2 6.5 6.5 2-6.5 2-2 6.5-2-6.5L3.5 10l6.5-2z" /></svg>
-        </span>
+        </button>
+        {!collapsed && (
         <div style={{ lineHeight: 1.15 }}>
           <div style={{ fontFamily: FONT.serif, fontSize: 18, fontWeight: 600, color: C.text }}>{tenant.appName}</div>
           <div style={{ ...eyebrow(C.dim), fontSize: 9.5, letterSpacing: ".06em", marginTop: 1 }}>Institutional Memory</div>
           <ReleaseTag />
         </div>
+        )}
       </div>
 
       <div className="scrl" style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 3 }}>
         {/* Mayor mode: exactly three destinations. No hardcoded nav badges —
             every count the Mayor sees traces to getWall() (invariant 9). */}
-        <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".16em", padding: "4px 10px 8px" }}>Workspace</div>
-        {item("today", "Hub", <Ico d={ICON.today} />, <Star w={13} c={C.gold} />)}
+        {!collapsed && <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".16em", padding: "4px 10px 8px" }}>Workspace</div>}
+        {item("today", "Dashboard", <Ico d={ICON.today} />, <Star w={13} c={C.gold} />)}
         {item("needsyou", "Email Actions", <Ico d={ICON.mail} />)}
         {item("queue", "Queue", <Ico d={ICON.approvals} />)}
         {item("ask", "Ask", <Star w={19} c="currentColor" />)}
         {/* Agents live in the main menu (RD 2026-07-21) — the folded Hub peek
             is the glance; this is the destination. */}
         {item("agents", "Agents", <Star w={18} c="currentColor" />)}
-        {screen === "agents" && goAgentSection && (
+        {!collapsed && screen === "agents" && goAgentSection && (
           <div style={{ display: "flex", flexDirection: "column", margin: "0 0 4px 40px" }}>
             {[["agents", "Agents"], ["capabilities", "Capabilities"], ["connectors", "Connectors"]].map(([id, l]) => (
               <button key={id} onClick={() => goAgentSection(id)} style={{ textAlign: "left", background: "none", border: 0, cursor: "pointer", padding: "5px 10px", borderRadius: 8, color: agentSection === id ? C.gold : C.text3, fontSize: 12.5, fontWeight: 600, fontFamily: FONT.sans }}>
@@ -270,7 +279,7 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
         )}
         {operator && (
           <>
-            <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".16em", padding: "14px 10px 8px" }}>Operator</div>
+            {!collapsed && <div style={{ ...eyebrow(C.dim2), fontSize: 9.5, letterSpacing: ".16em", padding: "14px 10px 8px" }}>Operator</div>}
             {item("brief", "Emails", <Ico d={ICON.mail} />)}
             {item("track", "Calendar", <Ico d={ICON.events ?? ICON.track} />)}
             {item("memory", "History", <Ico d={ICON.memory} />)}
@@ -302,13 +311,15 @@ function Sidebar({ screen, go, operator, onToggleOperator, goAgentSection, agent
             )}
           </div>
         )}
-        <button onClick={() => setMenu((m) => !m)} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", cursor: "pointer", background: "none", border: 0, padding: 0, textAlign: "left" }}>
+        <button onClick={() => setMenu((m) => !m)} title="Workspace mode" style={{ display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : undefined, gap: 11, width: "100%", cursor: "pointer", background: "none", border: 0, padding: 0, textAlign: "left" }}>
           <span style={{ width: 38, height: 38, borderRadius: 99, border: `2px solid ${C.gold}`, background: "linear-gradient(135deg,#1d3f6b,#0e2440)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT.serif, fontSize: 16, color: C.gold, flexShrink: 0 }}>M</span>
+          {!collapsed && (
           <span style={{ flex: 1, lineHeight: 1.2 }}>
             <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: C.text }}>{operator ? "Operator view" : "Mayor's view"}</span>
             <span style={{ display: "block", fontSize: 10.5, color: C.muted }}>Village of Bellwood</span>
           </span>
-          <span style={{ color: C.dim, fontSize: 15, letterSpacing: "1px" }}>⋯</span>
+          )}
+          {!collapsed && <span style={{ color: C.dim, fontSize: 15, letterSpacing: "1px" }}>⋯</span>}
         </button>
       </div>
     </div>

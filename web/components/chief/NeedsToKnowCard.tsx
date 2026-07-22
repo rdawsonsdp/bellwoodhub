@@ -342,7 +342,7 @@ function StoryMode({ sum, notes, onClose, onOpenEmail, onOpenAgent }: {
             </>
           )}
           <button onClick={onClose} style={{ alignSelf: "center", marginTop: 30, cursor: "pointer", border: `1px solid ${C.line}`, borderRadius: 12, padding: "13px 26px", fontWeight: 800, fontSize: 14.5, fontFamily: FONT.sans, background: "rgba(var(--ink),.05)", color: C.text }}>
-            Done — back to the Hub
+            Done — back to the Dashboard
           </button>
           {counter(total - 1)}
         </div>

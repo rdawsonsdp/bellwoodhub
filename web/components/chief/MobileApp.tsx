@@ -232,7 +232,7 @@ function TabBar({ current, go }: { current: Screen; go: (s: Screen) => void }) {
     <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 40, display: "flex", alignItems: "flex-end", background: "var(--c-sidebar, rgba(255,253,246,.88))", backdropFilter: "blur(16px)", borderTop: "1px solid var(--c-cardbd)", paddingBottom: "env(safe-area-inset-bottom)" }}>
       {/* left group */}
       <div style={{ flex: 1, display: "flex" }}>
-        <Tab s="today" d={I.today} label="Hub" />
+        <Tab s="today" d={I.today} label="Dashboard" />
         <Tab s="needsyou" d={I.emails} label="Email Actions" />
       </div>
       {/* center gap the raised Ask FAB sits over — keeps the flex halves even
@@ -290,7 +290,7 @@ function ProfileSheet({ operator, onToggle, onClose }: { operator: boolean; onTo
 const NAV_STAR = "M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z";
 // Operator-mode menu — everything that existed before, relocated (never deleted).
 const NAV_ITEMS: [Screen, string, string][] = [
-  ["today", I.today, "Hub"],
+  ["today", I.today, "Dashboard"],
   ["needsyou", I.emails, "Email Actions"],
   ["queue", I.approvals, "Queue"],
   ["ask", I.search, "Ask"],

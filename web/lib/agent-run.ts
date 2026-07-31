@@ -1,3 +1,36 @@
+/** The honest-empty headline a desk files when it ran and found nothing.
+ *  Says "Checked" on purpose: an operator must be able to tell a quiet desk
+ *  apart from one that never ran. Exported so read surfaces can collapse the
+ *  repetition without losing that signal (RD 2026-07-30). */
+export const QUIET_HEADLINE = "Checked — nothing new since the last run.";
+
+/** The cabinet's scheduled window, in UTC hours (runs at :00 each hour,
+ *  inclusive of both ends). MUST stay in sync with the "/api/cron/agent-runs"
+ *  entry in vercel.json — currently "0 12-22 * * *". */
+export const AGENT_RUN_UTC_HOURS = { first: 12, last: 22 } as const;
+
+/** The next scheduled cabinet pass strictly after `from`. Pure + UTC-based so
+ *  it is testable and renders correctly in any viewer's timezone. */
+export function nextAgentRun(from: Date): Date {
+  const { first, last } = AGENT_RUN_UTC_HOURS;
+  const h = from.getUTCHours();
+  const onTheHour = from.getUTCMinutes() === 0 && from.getUTCSeconds() === 0 && from.getUTCMilliseconds() === 0;
+  const next = new Date(from);
+  next.setUTCMinutes(0, 0, 0);
+  if (h < first) {
+    next.setUTCHours(first);
+  } else if (h < last || (h === last && !onTheHour)) {
+    // inside the window: the next top-of-hour, rolling to tomorrow past `last`
+    if (h >= last) { next.setUTCDate(next.getUTCDate() + 1); next.setUTCHours(first); }
+    else next.setUTCHours(h + 1);
+  } else {
+    next.setUTCDate(next.getUTCDate() + 1);
+    next.setUTCHours(first);
+  }
+  return next;
+}
+
+
 /*
  * agent-run.ts — the one run contract every domain agent shares.
  *

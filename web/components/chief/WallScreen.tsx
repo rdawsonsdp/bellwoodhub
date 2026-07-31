@@ -138,9 +138,7 @@ export default function WallScreen({ variant, onOpenEmail, onGoApprovals, onOpen
         <NeedsToKnowCard mobile={mobile} onOpenEmail={onOpenEmail} onGoNeedsYou={onGoNeedsYou} onGoApprovals={onGoApprovals}
           onOpenAgent={(k) => { if (wall?.runs[k]) openDigest(k); else onOpenAgent?.(k); }} />
       ) : (
-        <DashboardHub wall={wall} onOpenEmail={onOpenEmail} onGoApprovals={onGoApprovals} onGoNeedsYou={onGoNeedsYou}
-          onGoCalendar={onGoCalendar} onGoSync={onGoSync} onGoAgents={onGoAgents} onGoActivity={onGoActivity}
-          onOpenAgent={(k) => { if (wall?.runs[k]) openDigest(k); else onOpenAgent?.(k); }} />
+        <DashboardHub onOpenEmail={onOpenEmail} onGoApprovals={onGoApprovals} onGoCalendar={onGoCalendar} />
       )}
 
       {/* ── THE CABINET — folded to a peek for a clean first screen; tap to

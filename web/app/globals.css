@@ -322,3 +322,9 @@ a {
   0% { box-shadow: 0 0 0 0 rgba(217,119,6,.5); }
   100% { box-shadow: 0 0 0 11px rgba(217,119,6,0); }
 }
+
+/* Dashboard panel loading skeleton (RD 2026-07-30) */
+@keyframes dashSkeleton {
+  0%, 100% { opacity: .45; }
+  50%      { opacity: .9; }
+}

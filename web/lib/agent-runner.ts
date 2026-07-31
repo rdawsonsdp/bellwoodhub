@@ -22,7 +22,7 @@
 import { DOMAIN_AGENTS, type DomainAgent } from "./domain-agents";
 import { deriveDomains } from "./topics";
 import {
-  validateRunOutput, type AgentMemoryItem, type AgentRunOutput, type AgentSliceMessage, type MemoryKind,
+  QUIET_HEADLINE, validateRunOutput, type AgentMemoryItem, type AgentRunOutput, type AgentSliceMessage, type MemoryKind,
 } from "./agent-run";
 import { query } from "./db";
 import { fetchFocusSlice, fetchFocusSlicePlanned, type FocusHit } from "./agent-focus";
@@ -340,7 +340,7 @@ const quietRun = (): AgentRunOutput => ({
   // Say it CHECKED. "Quiet desk" reads as absence; an operator can't tell it
   // apart from an agent that never ran, and that ambiguity is what makes them
   // stop trusting the roster.
-  headline: "Checked — nothing new since the last run.",
+  headline: QUIET_HEADLINE,
   urgency: "clear",
   digest: [],
   actItems: [],

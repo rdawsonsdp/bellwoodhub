@@ -18,6 +18,9 @@
 import { useEffect, useState } from "react";
 import { FONT } from "@/lib/cos-design";
 import { getCosPersona, type MorningSummary, type PressingItem } from "@/lib/morning";
+import type { QueueItem } from "@/lib/queue";
+import type { DemoEvent } from "@/lib/demo";
+import { BriefPanel, UpcomingPanel, UrgentEmailPanel, WaitingOnYouPanel } from "./dashboard/panels";
 import type { WallPayload } from "@/lib/wall";
 import { AgentAvatar } from "./AgentBadge";
 
@@ -343,21 +346,21 @@ export function ActiveAgentsCard({ wall, onOpenAgent, onGo }: { wall: WallPayloa
   );
 }
 
-/* ── the grid ───────────────────────────────────────────────────────────── */
-export default function DashboardHub({ wall, onOpenEmail, onOpenAgent, onGoApprovals, onGoNeedsYou, onGoCalendar, onGoSync, onGoAgents, onGoActivity }: {
-  wall: WallPayload | null;
+/* ── the Dashboard ──────────────────────────────────────────────────────────
+   Three panels, in the order the questions get asked: what's coming up, what
+   mail is urgent, what needs my sign-off. The Ask bar lives in the shell above.
+   The widget grid (sync chart, priority matrix, recent actions, active agents,
+   the working theater) was removed 2026-07-30 — the machinery behind the
+   answers is implementation detail; this screen is for the data.
+   ─────────────────────────────────────────────────────────────────────────── */
+export default function DashboardHub({ onOpenEmail, onGoApprovals, onGoCalendar }: {
   onOpenEmail?: (mid: string) => void;
-  onOpenAgent?: (agentKey: string) => void;
   onGoApprovals: () => void;
-  onGoNeedsYou?: () => void;
   onGoCalendar?: () => void;
-  onGoSync?: () => void;
-  onGoAgents?: () => void;
-  onGoActivity?: () => void;
 }) {
   const [sum, setSum] = useState<MorningSummary | null>(null);
-  const [triage, setTriage] = useState<{ needsReply: number; awaiting: number; fyi: number }>({ needsReply: 0, awaiting: 0, fyi: 0 });
-  const [notes, setNotes] = useState<{ id: string; title: string; stale: boolean }[]>([]);
+  const [events, setEvents] = useState<DemoEvent[] | null>(null);
+  const [queue, setQueue] = useState<QueueItem[] | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -365,74 +368,23 @@ export default function DashboardHub({ wall, onOpenEmail, onOpenAgent, onGoAppro
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ persona: getCosPersona(), hour: new Date().getHours() }),
     }).then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: MorningSummary) => live && setSum(d)).catch(() => {});
-    fetch("/api/triage").then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: { needsReply?: unknown[]; awaitingOthers?: unknown[]; fyi?: unknown[] }) =>
-        live && setTriage({ needsReply: d.needsReply?.length ?? 0, awaiting: d.awaitingOthers?.length ?? 0, fyi: d.fyi?.length ?? 0 }))
-      .catch(() => {});
-    fetch("/api/cos-notes").then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: { notes?: { id: string; title: string; stale: boolean }[] }) => live && setNotes(d.notes ?? [])).catch(() => {});
+      .then((d: MorningSummary) => live && setSum(d))
+      .catch(() => live && setSum({ pressing: [] } as unknown as MorningSummary));
+    fetch("/api/events").then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d: { events?: DemoEvent[] }) => live && setEvents(d.events ?? []))
+      .catch(() => live && setEvents([]));
+    fetch("/api/queue").then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d: { items?: QueueItem[] }) => live && setQueue(d.items ?? []))
+      .catch(() => live && setQueue([]));
     return () => { live = false; };
   }, []);
 
-  const pressing = sum?.pressing ?? [];
-  // the Top Issues panel carries the WHOLE ranked page — every desk's stories
-  // plus mail signals, in the Brief agent's tracked order (RD 2026-07-22)
-  const alerts = pressing;
-  const waiting = wall?.footer.waiting ?? 0;
-  const handled = wall?.footer.handled ?? 0;
-
   return (
-    <div style={{ background: P.bg, borderRadius: 20, padding: 16, marginTop: 18 }}>
-      {/* the CoS briefing line — a bordered card at the top (RD 2026-07-22),
-          same chrome as the widgets; full text, never clipped mid-sentence */}
-      {sum?.narrative && (
-        <div style={{ position: "sticky", top: 6, zIndex: 40, background: P.card, border: `1px solid ${P.border}`, borderRadius: 14, boxShadow: "0 6px 18px rgba(30,30,30,.10)", padding: "13px 16px", marginBottom: 14, display: "flex", gap: 11, alignItems: "flex-start" }}>
-          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={P.amber} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
-            <path d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z" />
-          </svg>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontFamily: SANS, fontSize: 10, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: P.text3, marginBottom: 3 }}>Chief of Staff</div>
-            <div style={{ fontFamily: SANS, fontSize: 13.5, color: P.text2, lineHeight: 1.6, overflowWrap: "anywhere" }}>{sum.narrative}</div>
-          </div>
-        </div>
-      )}
-      {/* three columns (RD 2026-07-22): STATUS rail on the left (beside the
-          menu), the ACTION center (alerts + approvals), the CALENDAR rail on
-          the right — where the FEAT-37 calendar view grows when it connects. */}
-      <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-        <div style={{ width: 258, flexShrink: 0, display: "grid", gap: 14 }}>
-          <SyncChartWidget onGo={onGoSync} />
-          <MatrixWidget counts={{ needsReply: triage.needsReply, waiting, awaiting: triage.awaiting, fyi: triage.fyi }} onGo={onGoNeedsYou} onGoApprovals={onGoApprovals} />
-          <ListMetricsCard title="Recent email actions" onGo={onGoNeedsYou}
-            rows={[
-              { label: "Need your reply", n: triage.needsReply, onGo: onGoNeedsYou },
-              { label: "Handled by agents", n: handled, onGo: onGoActivity },
-              { label: "Your open notes", n: notes.length, expand: (
-                <div style={{ display: "grid", gap: 6, borderTop: `1px solid ${P.border}`, paddingTop: 8 }}>
-                  {notes.length === 0 && <span style={{ fontFamily: SANS, fontSize: 12, color: P.text3 }}>No open notes — use the pencil (top bar) or hold Ask and say &ldquo;remember to…&rdquo;.</span>}
-                  {notes.map((n) => (
-                    <div key={n.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <button title="Mark done" onClick={() => { setNotes((xs) => xs.filter((x) => x.id !== n.id)); void fetch("/api/cos-notes", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: n.id, status: "done" }) }).catch(() => {}); }}
-                        style={{ width: 17, height: 17, borderRadius: 99, border: `1.6px solid ${P.amber}`, background: "transparent", cursor: "pointer", flexShrink: 0 }} />
-                      <span style={{ fontFamily: SANS, fontSize: 12.5, fontWeight: 700, color: P.text, flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>{n.title}</span>
-                      {n.stale && <span style={{ fontFamily: SANS, fontSize: 9, fontWeight: 800, color: P.red }}>STILL OPEN</span>}
-                    </div>
-                  ))}
-                </div>
-              ) },
-            ]} />
-          <ActiveAgentsCard wall={wall} onOpenAgent={onOpenAgent} onGo={onGoAgents} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0, display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14, alignItems: "start" }}>
-          {/* top row under the summary: alerts lead, approvals + events stack right */}
-          <SecurityAlertsCard alerts={alerts} onOpenEmail={onOpenEmail} onOpenAgent={onOpenAgent} composing={sum === null} theaterKeys={(wall?.cabinet ?? []).map((c) => c.agentKey)} />
-          <div style={{ display: "grid", gap: 14 }}>
-            <MetricCard title="Pending approvals" n={String(waiting)} sub={waiting > 0 ? `${waiting} drafted repl${waiting === 1 ? "y" : "ies"} waiting on your sign-off.` : "Queue is clear — nothing waiting on you."} cta="Approvals" onGo={onGoApprovals} />
-            <EventsWidget events={sum?.calendar ?? []} onGo={onGoCalendar} />
-          </div>
-        </div>
-      </div>
+    <div style={{ background: P.bg, borderRadius: 20, padding: 16, marginTop: 18, display: "grid", gap: 14, maxWidth: 820 }}>
+      <BriefPanel sum={sum} loading={sum === null} onRefreshed={() => window.location.reload()} />
+      <UpcomingPanel events={events ?? []} loading={events === null} onGoCalendar={onGoCalendar} />
+      <UrgentEmailPanel items={sum?.pressing ?? []} loading={sum === null} onOpenEmail={onOpenEmail} />
+      <WaitingOnYouPanel items={queue ?? []} loading={queue === null} onGoQueue={onGoApprovals} />
     </div>
   );
 }

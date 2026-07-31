@@ -86,6 +86,11 @@ export interface DemoEvent {
   id: string; title: string; who: string | null; role: string; dueLabel: string;
   status: "open" | "late" | "done"; stream: StreamKey; topic: string | null;
   messageId: string; date: string; why: string; source?: "gov" | "gmail";
+  /** ISO end; null when the provider omitted it (fixtures leave it unset) */
+  endDate?: string | null;
+  allDay?: boolean;
+  /** ids this event overlaps — computed read-time by /api/events, never stored */
+  conflictsWith?: string[];
 }
 
 /** Consolidated calendar = the mayor's Government (Outlook) day + his personal

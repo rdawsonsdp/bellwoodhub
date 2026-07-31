@@ -38,9 +38,14 @@ async function handle(req: NextRequest) {
       // fixtures serve the calendar in demo mode — there is nothing to pull
       return NextResponse.json({ ok: true, mode: "demo", note: "DEMO mode: fixture events serve the app; live ingest requires DATABASE_URL + active connector_accounts rows." });
     }
+    // Calendar rides the Gmail grant but is a SEPARATE capability: a mail-sync
+    // failure (status='error', e.g. a Gmail history 404) must not disqualify
+    // calendar ingest — that silently froze the mirror for a week (RD
+    // 2026-07-30). Any account not explicitly revoked is a candidate; the
+    // per-account try/catch below handles a token that turns out to be dead.
     const accounts = await query<AccountRow>(
       `SELECT id, address FROM pipeline.connector_accounts
-        WHERE status = 'active' AND provider = 'gmail' ORDER BY created_at`,
+        WHERE provider = 'gmail' AND status <> 'revoked' ORDER BY created_at`,
     );
     const results: Record<string, unknown>[] = [];
     for (const a of accounts) {

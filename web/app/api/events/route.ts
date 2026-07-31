@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { DEMO, demoEvents, type DemoEvent } from "@/lib/demo";
+import { markConflicts } from "@/lib/event-conflicts";
 import { query } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -13,6 +14,7 @@ interface CalRow {
   account_address: string;
   title: string | null;
   starts_at: Date;
+  ends_at: Date | null;
   all_day: boolean;
   location: string | null;
 }
@@ -28,11 +30,22 @@ function dueLabel(d: Date, allDay: boolean): string {
 // its source email. Live: the app.calendar_events mirror (Google Calendar via
 // cron/ingest-calendar) mapped to the same shape; no source email to drill to,
 // so messageId stays empty. Empty table → honest empty, never fixtures.
+/** Stamp conflictsWith onto every event. Advisory — order is never changed. */
+function withConflicts(events: DemoEvent[]): DemoEvent[] {
+  const conflicts = markConflicts(events.map((e) => ({
+    id: e.id,
+    date: e.date,
+    endDate: e.endDate ?? null,
+    allDay: e.allDay ?? false,
+  })));
+  return events.map((e) => ({ ...e, conflictsWith: conflicts.get(e.id) ?? [] }));
+}
+
 export async function GET() {
   try {
     if (!DEMO) {
       const rows = await query<CalRow>(
-        `SELECT id, account_address, title, starts_at, all_day, location
+        `SELECT id, account_address, title, starts_at, ends_at, all_day, location
            FROM app.calendar_events
           WHERE status <> 'cancelled'
             AND starts_at >= now() - interval '7 days'
@@ -53,14 +66,17 @@ export async function GET() {
           topic: null,
           messageId: "",
           date: starts.toISOString(),
+          endDate: r.ends_at ? new Date(r.ends_at).toISOString() : null,
+          allDay: r.all_day,
           why: "Google Calendar event",
           source: "gmail" as const, // gcal rides the Gmail grant → the Gmail lane in the UI
         };
       });
       const open = events.filter((e) => new Date(e.date).getTime() >= now).length;
-      return NextResponse.json({ events, stats: { open, late: 0, done: 0 } });
+      return NextResponse.json({ events: withConflicts(events), stats: { open, late: 0, done: 0 } });
     }
-    return NextResponse.json(demoEvents());
+    const d = demoEvents();
+    return NextResponse.json({ ...d, events: withConflicts(d.events) });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";
     return NextResponse.json({ error: message }, { status: 500 });

@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { profileForTier, profileOf, TASK_MODEL, type Task } from "./constants";
+import { profileForModel, profileOf, TASK_MODEL, type Task } from "./constants";
 
 let _client: Anthropic | null = null;
 
@@ -21,8 +21,8 @@ export function pickModel(task: Task): string {
 
 export interface CompleteOpts {
   task?: Task;
-  /** the model tier the user picked in the app; falls back to the task default */
-  tierId?: string | null;
+  /** the model the user picked in the app; falls back to the task default */
+  modelId?: string | null;
   system: string;
   user: string;
   /** override the task profile's budget; the profile supplies the default */
@@ -57,7 +57,7 @@ export interface CompletionMeta {
  *  disabled. */
 export async function completeMeta(opts: CompleteOpts): Promise<CompletionMeta> {
   const task = opts.task ?? "synthesize";
-  const p = opts.tierId ? profileForTier(task, opts.tierId) : profileOf(task);
+  const p = opts.modelId ? profileForModel(task, opts.modelId) : profileOf(task);
   const r = await anthropic().messages.create({
     model: p.model,
     max_tokens: opts.maxTokens ?? p.maxTokens,

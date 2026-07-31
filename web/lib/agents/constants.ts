@@ -48,7 +48,11 @@ export const TASK_PROFILE = {
   // effort 2026-07-30: at Sonnet/low the answers were shallow on exactly the
   // multi-step questions the product is for ("break down my Google spend by
   // month"), and xhigh is the documented setting for agentic/tool-using work.
-  synthesize: { model: MODEL_OPUS,   effort: "xhigh",  thinking: "adaptive", maxTokens: 16000 },
+  // Opus 5 (the user asked to increase the model) but at LOW effort: this path
+  // answers ordinary one-shot questions, and at xhigh a simple "what did we get
+  // from Google last month" took 48s — far too slow for a phone. Effort, not
+  // model, is the latency dial; the deep thinking belongs in `research` below.
+  synthesize: { model: MODEL_OPUS,   effort: "low",    thinking: "adaptive", maxTokens: 8192 },
   draft:      { model: MODEL_SONNET, effort: "medium", thinking: "adaptive", maxTokens: 8192 },
   // The Ask agent's tool loop — many turns, so it needs real headroom.
   research:   { model: MODEL_OPUS,   effort: "xhigh",  thinking: "adaptive", maxTokens: 32000 },
@@ -99,11 +103,19 @@ export const tierById = (id: string | null | undefined): ModelTier =>
  *  so a tier only moves the reasoning work. Haiku rejects `effort`, so the knob
  *  is dropped when a tier lands a task there. */
 export function profileForTier(task: Task, tierId?: string | null): TaskProfile {
+  return profileForModel(task, tierId ? tierById(tierId).reasoning : null);
+}
+
+/** Apply a concrete MODEL ID (e.g. "claude-sonnet-5") to a task profile.
+ *  This is what the picker actually stores — see lib/model-preference.
+ *  Cheap Haiku tasks stay on Haiku whatever is chosen: routing classification to
+ *  Opus burns money for no gain. Haiku rejects `effort`, and Opus 5 rejects
+ *  xhigh/max effort with thinking disabled, so both knobs are corrected here
+ *  rather than trusted from the base profile. */
+export function profileForModel(task: Task, modelId?: string | null): TaskProfile {
   const base = TASK_PROFILE[task];
-  if (base.model === MODEL_HAIKU) return base;
-  const tier = tierById(tierId);
-  if (tier.reasoning === base.model) return base;
-  const next: TaskProfile = { ...base, model: tier.reasoning };
-  if (tier.reasoning === MODEL_HAIKU) { delete next.effort; next.thinking = "disabled"; }
+  if (!modelId || base.model === MODEL_HAIKU || modelId === base.model) return base;
+  const next: TaskProfile = { ...base, model: modelId };
+  if (modelId.includes("haiku")) { delete next.effort; next.thinking = "disabled"; }
   return next;
 }

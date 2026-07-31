@@ -73,6 +73,31 @@ async function postJson<T>(url: string, body: unknown, timeoutMs?: number): Prom
   } catch { return null; }
 }
 
+/** Why a request failed, so the UI can say something TRUE. Collapsing 401, 500
+ *  and a timeout into one "took too long" message actively misleads — a
+ *  rejected request is not a slow one (RD 2026-07-31). */
+type PostFail = { kind: "timeout" | "auth" | "server" | "network"; status?: number };
+async function postJsonDetailed<T>(url: string, body: unknown, timeoutMs: number): Promise<{ ok: true; data: T } | { ok: false; fail: PostFail }> {
+  try {
+    const r = await fetch(url, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (r.ok) return { ok: true, data: (await r.json()) as T };
+    if (r.status === 401 || r.status === 403) return { ok: false, fail: { kind: "auth", status: r.status } };
+    return { ok: false, fail: { kind: "server", status: r.status } };
+  } catch (e) {
+    const timedOut = e instanceof DOMException && (e.name === "TimeoutError" || e.name === "AbortError");
+    return { ok: false, fail: { kind: timedOut ? "timeout" : "network" } };
+  }
+}
+
+const askFailMessage = (f: PostFail): string =>
+  f.kind === "auth"    ? "You're signed out — sign in again and re-run the question."
+  : f.kind === "network" ? "Couldn't reach the server. Check your connection and try again."
+  : f.kind === "server"  ? `The search failed (error ${f.status ?? "?"}). It's not your question — try again shortly.`
+  : "That question took too long to answer. Try narrowing it — a single topic or a shorter date range usually returns quickly.";
+
 /** Ask fans out across retrieval passes before synthesis — a cross-reference
  *  question measured 47s warm. Generous headroom, but NOT unbounded: past this
  *  the user gets an honest error instead of an endless spinner. */
@@ -189,8 +214,12 @@ export default function MobileApp() {
             a destination, and scroll containers keep bottom padding clear. */}
         <TabBar current={screen} go={(s) => {
           if (s === "ask") {
+            // TYPE-FIRST (RD 2026-07-31). Arriving on Ask used to open the mic
+            // and start listening immediately, which is startling and wrong for
+            // the common case — most questions get typed. Tap opens the keyboard;
+            // a DOUBLE tap (or the big hold-to-talk button) goes to voice.
             const now = Date.now();
-            setAskMode(now - askTapAt.current < 450 ? "text" : "voice");
+            setAskMode(now - askTapAt.current < 450 ? "voice" : "text");
             askTapAt.current = now;
             setAskSeq((x) => x + 1);
           }
@@ -1037,15 +1066,10 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
       topic: r.topic, stream: r.stream, docKind: getSourceType(r.typeKey)?.label ?? "Uploaded document",
       fields: r.fields, entities: r.entities,
     }));
-    const r = await postJson<AskResponse>("/api/ask", { question: Q, uploads }, ASK_TIMEOUT_MS);
+    const out = await postJsonDetailed<AskResponse>("/api/ask", { question: Q, uploads }, ASK_TIMEOUT_MS);
     setLoading(false);
-    // A null here means timeout, network drop, or a non-2xx — previously all
-    // three rendered as nothing at all, which reads as a hang. Say so instead.
-    if (!r) {
-      setErr("That question took too long to answer. Try narrowing it — a single topic or a shorter date range usually returns quickly.");
-      return;
-    }
-    setRes(r);
+    if (!out.ok) { setErr(askFailMessage(out.fail)); return; }
+    setRes(out.data);
   }
   async function mic() {
     if (rec === "rec") { recRef.current?.stop(); return; }

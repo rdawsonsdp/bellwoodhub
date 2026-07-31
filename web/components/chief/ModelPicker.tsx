@@ -36,10 +36,16 @@ export default function ModelPicker({ compact = false }: { compact?: boolean }) 
       .then((d: { models?: CatalogModel[]; selected?: string }) => {
         if (!alive) return;
         setModels(d.models ?? []);
-        // `selected` is a tier id ("opus-5"); match it to a catalog entry.
-        const hit = (d.models ?? []).find((m) => m.id.includes(d.selected?.replace(/[.-]/g, "") ?? ""))
-          ?? (d.models ?? []).find((m) => m.id === d.selected)
-          ?? (d.models ?? []).find((m) => m.family === "opus");
+        // `selected` is a TIER id ("opus-5"); catalog ids are "claude-opus-5".
+        // The old fuzzy match ("opus5") matched nothing and silently fell through
+        // to the first opus-family entry, so the control could display a model
+        // the user had not chosen (RD 2026-07-31).
+        const list = d.models ?? [];
+        const sel = d.selected ?? "";
+        const hit = list.find((m) => m.id === sel)                   // exact id
+          ?? list.find((m) => m.id === `claude-${sel}`)              // tier -> canonical id
+          ?? list.find((m) => m.id.replace(/^claude-/, "") === sel)  // reverse
+          ?? list.find((m) => m.family === sel.split("-")[0]);       // family fallback
         setSelected(hit?.id ?? null);
       })
       .catch(() => alive && setModels([]));

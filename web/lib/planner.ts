@@ -163,15 +163,37 @@ async function senderPass(question: string, since: string | null): Promise<strin
 /** "this year" / "in 2026" / "last year" → a since bound, so a completeness
  *  question is scoped to the period the user actually named. */
 export function sinceFromQuestion(question: string, now = new Date()): string | null {
+  return rangeFromQuestion(question, now)?.since ?? null;
+}
+
+/** The period the question names, as a RANGE. "last month" needs an upper bound
+ *  too — with only a lower bound the answer silently included everything since,
+ *  which is what made "what did we get from Google last month" return mail from
+ *  any date (RD 2026-07-31). */
+export function rangeFromQuestion(
+  question: string, now = new Date(),
+): { since: string; until?: string } | null {
   const q = question.toLowerCase();
-  const yr = q.match(/\b(20\d{2})\b/);
-  if (yr) return `${yr[1]}-01-01`;
-  if (/\bthis year\b|\byear to date\b|\bytd\b/.test(q)) return `${now.getUTCFullYear()}-01-01`;
-  if (/\blast year\b/.test(q)) return `${now.getUTCFullYear() - 1}-01-01`;
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+
+  if (/\blast month\b/.test(q)) {
+    const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+    const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    return { since: iso(start), until: iso(end) };
+  }
+  if (/\bthis month\b/.test(q)) {
+    return { since: iso(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))) };
+  }
   if (/\blast (\d+) months?\b/.test(q)) {
     const n = Number(RegExp.$1);
     const d = new Date(now); d.setUTCMonth(d.getUTCMonth() - n);
-    return d.toISOString().slice(0, 10);
+    return { since: iso(d) };
+  }
+  const yr = q.match(/\b(20\d{2})\b/);
+  if (yr) return { since: `${yr[1]}-01-01`, until: `${Number(yr[1]) + 1}-01-01` };
+  if (/\bthis year\b|\byear to date\b|\bytd\b/.test(q)) return { since: `${now.getUTCFullYear()}-01-01` };
+  if (/\blast year\b/.test(q)) {
+    return { since: `${now.getUTCFullYear() - 1}-01-01`, until: `${now.getUTCFullYear()}-01-01` };
   }
   return null;
 }
@@ -192,6 +214,22 @@ export async function resolveAnchors(question: string): Promise<Anchor[]> {
     [TENANT, qn],
   );
   return rows.map((r) => ({ aliasId: r.alias_id, entityId: r.entity_id, aliasType: r.alias_type, aliasValue: r.alias_value }));
+}
+
+/** Every message inside a named period — the candidate pool for a date-scoped
+ *  question. Bounded, and ordered newest-first so a huge window degrades to
+ *  "the most recent N" rather than an arbitrary slice. */
+async function messagesInRange(since: string | null, until: string | null): Promise<string[]> {
+  const rows = await query<{ message_id: string }>(
+    `SELECT message_id FROM canonical.messages
+      WHERE tenant_id = $1
+        AND ($2::timestamptz IS NULL OR sent_at >= $2)
+        AND ($3::timestamptz IS NULL OR sent_at <  $3)
+      ORDER BY sent_at DESC
+      LIMIT 2000`,
+    [TENANT, since, until],
+  );
+  return rows.map((r) => r.message_id);
 }
 
 /** Pass 1 — the complete candidate set for the present structuring predicate. */
@@ -340,35 +378,20 @@ const SYNTH_SYSTEM = `${VOICE}
 ${HONESTY}
 Answer ONLY from the numbered excerpts provided.
 
-STRUCTURE:
-1. If anything genuinely needs him — a deadline, a threat, an unanswered ask,
-   money, a decision only he can make — put it FIRST, each on its own line
-   starting with "> " so it stands out. Only for things that truly need action;
-   if nothing does, skip this entirely and say so ("Nothing here needs you.").
-2. Then 1–3 sentences telling the story: what this is, what happened, what it adds
-   up to. With citations.
-3. Then supporting detail only if it earns its place — grouped, not enumerated.
-   Skip it when the story already covers everything.
+ANSWER SHAPE — this is a SEARCH result, format it to be scanned, not read.
+Lead with the answer to the question that was asked. Never open with a status
+line like "Nothing here needs you" — that belongs on the daily brief, not here.
 
-FORMAT: you may use GitHub-flavoured markdown — "|" tables, ## headings, bullets,
-\`inline code\`, and fenced code blocks — and the client renders all of it. Reach
-for a TABLE when the answer compares the same handful of fields across several
-things (amounts by vendor, dates by project, status by item): a table is far
-easier to scan on a phone than the same facts written as prose. Keep tables
-narrow — 2–4 columns, short cells, citations in a cell like any other fact. Use
-prose when the answer is a story rather than a comparison; do not tabulate a
-single item or force unlike things into rows.
-
-ASK BACK when the question is genuinely ambiguous. If it names something you
-cannot find in the excerpts (a vendor, person, project or account you have no
-record of), or could reasonably mean two different things, do NOT silently guess
-and do NOT answer the question you wish had been asked. Give whatever you CAN
-answer from the excerpts, then end with a single specific question on its own
-line starting with "? " — naming the concrete options where you can, e.g.
-"? Did you mean Supabase — I have receipts under that name but nothing for
-'SopaBase'?". One question, never a list, and only when the answer genuinely
-turns on it. A near-certain spelling correction is not ambiguity: fix it, say
-you did, and carry on.
+1. One short sentence up top: the direct answer. If there is nothing, say what
+   you looked for and what you found instead — in one sentence, not a paragraph.
+2. Then the substance, formatted for consumption:
+   - a "|" TABLE when several items share the same fields (sender, date, amount,
+     status). This is usually the right choice for "what did I get from X".
+   - otherwise short bullets, one fact each, with the citation on the fact.
+   - bold the thing that matters in each line.
+   Do not write three dense paragraphs. If it can be a table or a list, it is.
+3. Only if something genuinely needs action, add lines starting with "> " AFTER
+   the answer — never before it, and never at all when nothing needs doing.
 
 Rules:
 - Put a [n] citation on every factual claim, matching the excerpt it came from.
@@ -428,11 +451,14 @@ export async function plan(question: string, f: PlanFilters = {}): Promise<PlanR
     embedQuery(question).then(toVector),
   ]);
 
-  // A completeness question ("all my Google invoices this year") is answered by
-  // the SENDER + DATE predicate, not by semantic similarity — so scope it here.
-  const since = f.since ?? sinceFromQuestion(question);
+  // Scope to the period the question names, on EVERY path. Previously the date
+  // was only consulted for completeness questions, so "last month" was parsed
+  // and then ignored — the answer covered the whole archive.
+  const range = rangeFromQuestion(question);
+  const since = f.since ?? range?.since ?? null;
+  const until = f.until ?? range?.until ?? null;
   const wantsAll = COMPLETENESS_INTENT.test(question);
-  const [structured, graph, byAddress, bySender] = await Promise.all([
+  const [structured, graph, byAddress, bySender, inRange] = await Promise.all([
     // NOT { ...f, since }: a date alone is not a structuring predicate. Passing
     // it made hasMeta true, so Pass 1 returned the 400 most recent messages of
     // ANY sender this year — LinkedIn, Wayfair, Facebook — at primary weight,
@@ -441,12 +467,19 @@ export async function plan(question: string, f: PlanFilters = {}): Promise<PlanR
     graphPass(anchors),
     emailPass(extractEmails(question)),
     wantsAll ? senderPass(question, since) : Promise.resolve<string[]>([]),
+    // A named period is a CANDIDATE POOL, not a ranked list. Semantic ranking
+    // then happens INSIDE the period, so "what did we get from Google last
+    // month" ranks June's Google mail instead of ranking the whole archive and
+    // discarding everything out of range afterwards (RD 2026-07-31).
+    since || until ? messagesInRange(since, until) : Promise.resolve<string[]>([]),
   ]);
 
-  const candidatePool = Array.from(new Set([...structured, ...graph.messageIds, ...byAddress, ...bySender]));
+  const candidatePool = Array.from(new Set([...structured, ...graph.messageIds, ...byAddress, ...bySender, ...inRange]));
   const [inSet, straggler] = await Promise.all([
     candidatePool.length ? semanticPass(qvec, candidatePool, Math.max(k * 2, 20)) : Promise.resolve<string[]>([]),
-    semanticPass(qvec, null, Math.max(k * 2, 20)),
+    // no unrestricted straggler when a period was named — it can only add
+    // out-of-range noise that the gate below would discard anyway.
+    (since || until) ? Promise.resolve<string[]>([]) : semanticPass(qvec, null, Math.max(k * 2, 20)),
   ]);
 
   // RRF fuse: structured & graph & literal-address (primary) + semantic in-set + straggler (safety net).
@@ -466,6 +499,13 @@ export async function plan(question: string, f: PlanFilters = {}): Promise<PlanR
   ]);
 
   let sources = await buildSources(fused, qvec);
+  // Hard date gate: the semantic passes rank by similarity and do not filter by
+  // date, so an out-of-period message can still surface. If the user named a
+  // period, honour it — a wrong-date answer is worse than a short one.
+  if (since || until) {
+    sources = sources.filter((s) =>
+      (!since || s.date >= since) && (!until || s.date < until));
+  }
   // Cross-source intent: diversify so no single stream dominates (≥1 per stream up to k).
   if (cross) sources = diversifyByStream(sources, Math.max(k, 10));
   else sources = sources.slice(0, k);

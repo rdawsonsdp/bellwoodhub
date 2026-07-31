@@ -27,8 +27,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaTool } from "@anthropic-ai/sdk/helpers/beta/json-schema";
 import { anthropic } from "./agents/claude";
-import { profileForTier } from "./agents/constants";
-import { getModelTierId } from "./model-preference";
+import { profileForModel } from "./agents/constants";
+import { getModelId } from "./model-preference";
 import { searchSources, getEntity, getEmailByMessageId } from "./backend";
 import { VOICE, HONESTY } from "./agents/voice";
 import type { Source } from "./types";
@@ -96,7 +96,7 @@ ANSWERING
 export async function askAgent(question: string): Promise<AskAgentResult> {
   // The tier the user picked in the Ask box — one place, so the agent and the
   // cron desks always run on the same model (RD 2026-07-31).
-  const p = profileForTier("research", await getModelTierId());
+  const p = profileForModel("research", await getModelId());
   // Sources accumulate across every tool call and keep stable [n] indexes, so a
   // citation minted on turn 1 still resolves after turn 6.
   const seen = new Map<string, Source>();

@@ -31,12 +31,15 @@ async function gate() {
   return session?.user?.email ? null : NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     if (DEMO) return NextResponse.json({ notes: DEMO_NOTES });
     const denied = await gate();
     if (denied) return denied;
-    return NextResponse.json({ notes: await listNotes("open") });
+    // ?status=all lets the Notes page show completed notes too. The dashboard
+    // still asks for open only, so its count is unchanged (RD 2026-07-31).
+    const status = req.nextUrl.searchParams.get("status") === "all" ? "all" : "open";
+    return NextResponse.json({ notes: await listNotes(status) });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Internal error" }, { status: 500 });
   }

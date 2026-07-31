@@ -23,6 +23,7 @@ import AnswerMd from "./AnswerMd";
 import Searching from "./Searching";
 import ModelPicker from "./ModelPicker";
 import AskEvalPanel from "./AskEvalPanel";
+import NotesScreen from "./NotesScreen";
 import ActivityScreen from "./ActivityScreen";
 import SyncScreen from "./SyncScreen";
 import { SyncProgressCard } from "./SyncProgress";
@@ -134,7 +135,7 @@ function Svg({ d, w = 22, sw = 1.9, fill = "none" }: { d: string; w?: number; sw
   return <svg width={w} height={w} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d.split("M").filter(Boolean).map((p, i) => <path key={i} d={"M" + p} />)}</svg>;
 }
 
-type Screen = "today" | "needsyou" | "queue" | "ask" | "emails" | "events" | "history" | "agents" | "sources" | "sync" | "activity" | "admin";
+type Screen = "today" | "needsyou" | "queue" | "ask" | "notes" | "emails" | "events" | "history" | "agents" | "sources" | "sync" | "activity" | "admin";
 /** Mayor mode = exactly these three destinations (Phase 4 nav collapse). */
 const MAYOR_SCREENS: Screen[] = ["today", "needsyou", "queue", "ask", "agents"];
 const THEME_CYCLE = ["auto", "midnight", "dim", "daylight", "contrast"];
@@ -167,6 +168,10 @@ export default function MobileApp() {
   // Ask tab = the mic (RD 2026-07-05): one tap starts voice immediately;
   // a second tap within 450ms switches to the text interface.
   const [askMode, setAskMode] = useState<"voice" | "text" | null>(null);
+  // Set when "save to notes" is tapped on an Ask result — the Notes screen
+  // opens with the question pre-filled, still confirm-first (RD 2026-07-31).
+  const [noteSeed, setNoteSeed] = useState<string | null>(null);
+  const saveToNotes = (text: string) => { setNoteSeed(text); setScreen("notes"); };
   const [askSeq, setAskSeq] = useState(0);
   const askTapAt = useRef(0);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -205,7 +210,8 @@ export default function MobileApp() {
             {screen === "today" && <WallScreen variant="mobile" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} onOpenAgent={(k) => { setAgentFocus(k); setScreen("agents"); }} onGoNeedsYou={() => setScreen("needsyou")} />}
             {screen === "needsyou" && <NeedsYouScreen variant="mobile" onOpenEmail={setEmailMid} />}
             {screen === "queue" && <QueueScreen variant="mobile" onOpenEmail={setEmailMid} />}
-            {screen === "ask" && <AskScreen key={`${askMode ?? "plain"}:${askSeq}`} textFocus={askMode === "text"} />}
+            {screen === "ask" && <AskScreen key={`${askMode ?? "plain"}:${askSeq}`} textFocus={askMode === "text"} onSaveNote={saveToNotes} />}
+            {screen === "notes" && <><ScreenHead title="Notes" sub="Anything you want kept — type it or hold to talk." /><NotesScreen key={noteSeed ?? "plain"} seed={noteSeed ?? undefined} /></>}
             {screen === "emails" && <EmailsScreen onAsk={() => setScreen("ask")} />}
             {screen === "events" && <EventsScreen />}
             {screen === "history" && <HistoryScreen />}
@@ -293,6 +299,7 @@ function TabBar({ current, go }: { current: Screen; go: (s: Screen) => void }) {
       {/* right group */}
       <div style={{ flex: 1, display: "flex" }}>
         <Tab s="queue" d={I.approvals} label="Queue" />
+        <Tab s="notes" d={I.brief} label="Notes" />
       </div>
       {/* the hero Ask button */}
       <button onClick={() => go("ask")} aria-label="Ask" style={{
@@ -345,6 +352,7 @@ const NAV_ITEMS: [Screen, string, string][] = [
   ["today", I.today, "Dashboard"],
   ["needsyou", I.emails, "Email Actions"],
   ["queue", I.approvals, "Queue"],
+  ["notes", I.brief, "Notes"],
   ["ask", I.search, "Ask"],
   ["emails", I.emails, "Emails"],
   ["events", I.events, "Calendar"],
@@ -1029,7 +1037,7 @@ function IngestedSection({ records }: { records: IngestedRecord[] }) {
   );
 }
 /* ── ASK — the KNOW tab (voice-first: hold-to-talk primary) ── */
-function AskScreen({ textFocus }: { textFocus?: boolean } = {}) {
+function AskScreen({ textFocus, onSaveNote }: { textFocus?: boolean; onSaveNote?: (t: string) => void } = {}) {
   const [q, setQ] = useState("");
   // Lets the Stop button cancel an in-flight search (RD 2026-07-31): a 12-40s
   // wait with no way out is a trap, especially on a phone.
@@ -1242,16 +1250,31 @@ function AskScreen({ textFocus }: { textFocus?: boolean } = {}) {
             )}
           </div>
         )}
-        {res && <AskResult res={res} />}
+        {res && <AskResult res={res} onSaveNote={onSaveNote} />}
       </div>
     </div>
   );
 }
-function AskResult({ res }: { res: AskResponse }) {
+function AskResult({ res, onSaveNote }: { res: AskResponse; onSaveNote?: (t: string) => void }) {
   const openEmail = useOpenEmail();
   return (
     <div style={{ marginTop: 18 }}>
-      <AskEvalPanel data={res.eval} />
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <AskEvalPanel data={res.eval} />
+        {onSaveNote && (
+          <button
+            onClick={() => onSaveNote(res.question)}
+            aria-label="Save this question to notes"
+            title="Save to notes"
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: `1px solid ${C.line}`, borderRadius: 999, padding: "4px 11px 4px 8px", color: C.dim, fontFamily: FONT.sans, fontSize: 11, fontWeight: 600, marginBottom: 10 }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+            </svg>
+            Save to notes
+          </button>
+        )}
+      </div>
       {res.answer && <div style={{ marginBottom: 18 }}><AnswerMd text={res.answer} size={15.5} /></div>}
       {res.who && (
         <div style={{ display: "grid", gap: 8 }}>

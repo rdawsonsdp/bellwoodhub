@@ -186,7 +186,33 @@ export function rangeFromQuestion(
   }
   if (/\blast (\d+) months?\b/.test(q)) {
     const n = Number(RegExp.$1);
-    const d = new Date(now); d.setUTCMonth(d.getUTCMonth() - n);
+    // Anchor to the FIRST of the month n back. Subtracting from the current day
+    // silently overflows — "3 months before 31 July" is 31 April, which JS rolls
+    // to 1 May, so the window quietly lost a month (RD 2026-07-31).
+    return { since: iso(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - n, 1))) };
+  }
+  // Quarters. "last quarter" returned 2025 mail because nothing parsed it and
+  // the question fell through unscoped (RD 2026-07-31). Calendar quarters:
+  // Q1 Jan-Mar, Q2 Apr-Jun, Q3 Jul-Sep, Q4 Oct-Dec.
+  const qStart = (y: number, qi: number) => new Date(Date.UTC(y, qi * 3, 1));
+  const explicitQ = q.match(/\bq([1-4])\b(?:\s*(?:of\s*)?(20\d{2}))?/);
+  if (explicitQ) {
+    const qi = Number(explicitQ[1]) - 1;
+    const y = explicitQ[2] ? Number(explicitQ[2]) : now.getUTCFullYear();
+    return { since: iso(qStart(y, qi)), until: iso(qStart(y + (qi === 3 ? 1 : 0), qi === 3 ? 0 : qi + 1)) };
+  }
+  if (/\b(last|previous|prior) quarter\b/.test(q)) {
+    const cur = Math.floor(now.getUTCMonth() / 3);
+    const y = cur === 0 ? now.getUTCFullYear() - 1 : now.getUTCFullYear();
+    const qi = cur === 0 ? 3 : cur - 1;
+    return { since: iso(qStart(y, qi)), until: iso(qStart(y + (qi === 3 ? 1 : 0), qi === 3 ? 0 : qi + 1)) };
+  }
+  if (/\bthis quarter\b|\bcurrent quarter\b/.test(q)) {
+    const cur = Math.floor(now.getUTCMonth() / 3);
+    return { since: iso(qStart(now.getUTCFullYear(), cur)) };
+  }
+  if (/\blast week\b/.test(q)) {
+    const d = new Date(now); d.setUTCDate(d.getUTCDate() - 7);
     return { since: iso(d) };
   }
   const yr = q.match(/\b(20\d{2})\b/);

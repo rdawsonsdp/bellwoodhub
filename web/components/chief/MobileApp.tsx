@@ -22,6 +22,7 @@ import ReleaseTag from "./ReleaseTag";
 import AnswerMd from "./AnswerMd";
 import Searching from "./Searching";
 import ModelPicker from "./ModelPicker";
+import AskEvalPanel from "./AskEvalPanel";
 import ActivityScreen from "./ActivityScreen";
 import SyncScreen from "./SyncScreen";
 import { SyncProgressCard } from "./SyncProgress";
@@ -76,24 +77,30 @@ async function postJson<T>(url: string, body: unknown, timeoutMs?: number): Prom
 /** Why a request failed, so the UI can say something TRUE. Collapsing 401, 500
  *  and a timeout into one "took too long" message actively misleads — a
  *  rejected request is not a slow one (RD 2026-07-31). */
-type PostFail = { kind: "timeout" | "auth" | "server" | "network"; status?: number };
-async function postJsonDetailed<T>(url: string, body: unknown, timeoutMs: number): Promise<{ ok: true; data: T } | { ok: false; fail: PostFail }> {
+type PostFail = { kind: "timeout" | "auth" | "server" | "network" | "stopped"; status?: number };
+async function postJsonDetailed<T>(url: string, body: unknown, timeoutMs: number, signal?: AbortSignal): Promise<{ ok: true; data: T } | { ok: false; fail: PostFail }> {
   try {
+    // Two ways to end the wait: the caller's Stop button, or the timeout.
+    const combined = signal
+      ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)])
+      : AbortSignal.timeout(timeoutMs);
     const r = await fetch(url, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
-      signal: AbortSignal.timeout(timeoutMs),
+      signal: combined,
     });
     if (r.ok) return { ok: true, data: (await r.json()) as T };
     if (r.status === 401 || r.status === 403) return { ok: false, fail: { kind: "auth", status: r.status } };
     return { ok: false, fail: { kind: "server", status: r.status } };
   } catch (e) {
-    const timedOut = e instanceof DOMException && (e.name === "TimeoutError" || e.name === "AbortError");
+    if (e instanceof DOMException && e.name === "AbortError") return { ok: false, fail: { kind: "stopped" } };
+    const timedOut = e instanceof DOMException && e.name === "TimeoutError";
     return { ok: false, fail: { kind: timedOut ? "timeout" : "network" } };
   }
 }
 
 const askFailMessage = (f: PostFail): string =>
-  f.kind === "auth"    ? "You're signed out — sign in again and re-run the question."
+  f.kind === "stopped" ? "Stopped."
+  : f.kind === "auth"    ? "You're signed out — sign in again and re-run the question."
   : f.kind === "network" ? "Couldn't reach the server. Check your connection and try again."
   : f.kind === "server"  ? `The search failed (error ${f.status ?? "?"}). It's not your question — try again shortly.`
   : "That question took too long to answer. Try narrowing it — a single topic or a shorter date range usually returns quickly.";
@@ -1022,6 +1029,9 @@ function IngestedSection({ records }: { records: IngestedRecord[] }) {
 /* ── ASK — the KNOW tab (voice-first: hold-to-talk primary) ── */
 function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: boolean } = {}) {
   const [q, setQ] = useState("");
+  // Lets the Stop button cancel an in-flight search (RD 2026-07-31): a 12-40s
+  // wait with no way out is a trap, especially on a phone.
+  const abortRef = useRef<AbortController | null>(null);
   const [res, setRes] = useState<AskResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [rec, setRec] = useState<"idle" | "rec" | "busy">("idle");
@@ -1066,9 +1076,16 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
       topic: r.topic, stream: r.stream, docKind: getSourceType(r.typeKey)?.label ?? "Uploaded document",
       fields: r.fields, entities: r.entities,
     }));
-    const out = await postJsonDetailed<AskResponse>("/api/ask", { question: Q, uploads }, ASK_TIMEOUT_MS);
+    const ctl = new AbortController();
+    abortRef.current = ctl;
+    const out = await postJsonDetailed<AskResponse>("/api/ask", { question: Q, uploads }, ASK_TIMEOUT_MS, ctl.signal);
+    abortRef.current = null;
     setLoading(false);
-    if (!out.ok) { setErr(askFailMessage(out.fail)); return; }
+    if (!out.ok) {
+      // "Stopped." is the user's own doing — show it quietly, not as a failure.
+      setErr(out.fail.kind === "stopped" ? null : askFailMessage(out.fail));
+      return;
+    }
     setRes(out.data);
   }
   async function mic() {
@@ -1136,7 +1153,15 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
               ✦ New
             </button>
           )}
-          <button type="submit" disabled={loading || rec !== "idle"} style={{ padding: "10px 18px", borderRadius: 999, border: 0, background: loading ? "rgba(231,181,60,.85)" : C.gold, color: "#081627", fontWeight: 700, fontSize: 14, minWidth: loading ? 96 : undefined, animation: loading ? "bwPulse 1.2s ease-in-out infinite" : undefined }}>{loading ? "Searching…" : "Ask"}</button>
+          {loading ? (
+            <button type="button" onClick={() => { abortRef.current?.abort(); }} aria-label="Stop the search"
+              style={{ padding: "10px 18px", borderRadius: 999, border: `1.5px solid ${C.line}`, background: "rgba(var(--ink),.06)", color: C.text2, fontWeight: 700, fontSize: 14, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7 }}>
+              <span aria-hidden style={{ width: 9, height: 9, borderRadius: 2, background: C.text3, display: "inline-block" }} />
+              Stop
+            </button>
+          ) : (
+            <button type="submit" disabled={rec !== "idle"} style={{ padding: "10px 18px", borderRadius: 999, border: 0, background: C.gold, color: "#081627", fontWeight: 700, fontSize: 14 }}>Ask</button>
+          )}
         </form>
 
         {/* lower-right of the Ask box, like the Claude composer: which model is
@@ -1201,9 +1226,13 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
             {recent.length ? (
               <div style={{ display: "grid" }}>
                 {recent.map((s) => (
-                  <button key={s} onClick={() => run(s)} style={{ display: "flex", alignItems: "center", gap: 11, padding: "13px 2px", textAlign: "left", background: "transparent", border: 0, borderBottom: "1px solid var(--c-cardbd)", color: C.text2, fontSize: 14, width: "100%" }}>
-                    <span style={{ color: C.dim }}><Svg d={I.search} w={15} /></span>
-                    <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s}</span>
+                  // Font scales with the viewport, and the row is allowed TWO
+                  // lines before clamping: at a fixed 14px a long question was
+                  // both oversized on a small phone and cut mid-word, so you
+                  // could not tell your saved questions apart (RD 2026-07-31).
+                  <button key={s} onClick={() => run(s)} style={{ display: "flex", alignItems: "flex-start", gap: 11, padding: "13px 2px", textAlign: "left", background: "transparent", border: 0, borderBottom: "1px solid var(--c-cardbd)", color: C.text2, fontSize: "clamp(12.5px, 3.5vw, 14px)", lineHeight: 1.4, width: "100%", minWidth: 0, overflow: "hidden" }}>
+                    <span style={{ color: C.dim, flexShrink: 0, marginTop: 1 }}><Svg d={I.search} w={15} /></span>
+                    <span style={{ flex: 1, minWidth: 0, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", overflowWrap: "anywhere" }}>{s}</span>
                   </button>
                 ))}
               </div>
@@ -1221,6 +1250,7 @@ function AskResult({ res }: { res: AskResponse }) {
   const openEmail = useOpenEmail();
   return (
     <div style={{ marginTop: 18 }}>
+      <AskEvalPanel data={res.eval} />
       {res.answer && <div style={{ marginBottom: 18 }}><AnswerMd text={res.answer} size={15.5} /></div>}
       {res.who && (
         <div style={{ display: "grid", gap: 8 }}>

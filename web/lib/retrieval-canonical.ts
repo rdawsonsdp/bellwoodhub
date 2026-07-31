@@ -84,6 +84,7 @@ export async function ask(question: string, filters: SearchOpts = {}): Promise<A
   if (AGG_OPEN.test(question)) {
     return { mode: "open_items", question, answer: "Here's what's still open — folded from the event log.", openItems: await openItems() };
   }
+  const t0 = Date.now();
   const r = await plan(question, {
     topic: filters.topic, source: sourceFromStream(filters.stream),
     // Pass k through UNSET when the caller didn't specify one: plan() owns the
@@ -92,7 +93,10 @@ export async function ask(question: string, filters: SearchOpts = {}): Promise<A
     // model got 8 excerpts for a question needing a year of billing (RD 2026-07-30).
     since: filters.since, until: filters.until, k: filters.k,
   });
+  const tRetrieval = Date.now() - t0;
+  const t1 = Date.now();
   const answer = await synthesize(question, r.sources);
+  const tSynthesis = Date.now() - t1;
   const applied: AppliedFilters = {};
   const auto: { person?: string; address?: string } = {};
   for (const a of r.anchors) {
@@ -100,8 +104,20 @@ export async function ask(question: string, filters: SearchOpts = {}): Promise<A
     else if (a.aliasType === "name_variant") { applied.person = a.aliasValue; auto.person = a.aliasValue; }
   }
   if (filters.topic) applied.topic = filters.topic;
+  const { profileOf } = await import("./agents/constants");
+  const { rangeFromQuestion } = await import("./planner");
+  const prof = profileOf("synthesize");
+  const range = rangeFromQuestion(question);
   return {
     mode: "rag", question, answer, sources: r.sources, crossSource: r.crossSource,
+    eval: {
+      path: "pipeline" as const,
+      model: prof.model,
+      effort: prof.effort,
+      range: range ? { since: range.since, until: range.until ?? null } : undefined,
+      sourcesReturned: r.sources.length,
+      timings: { retrievalMs: tRetrieval, synthesisMs: tSynthesis, totalMs: tRetrieval + tSynthesis },
+    },
     auto: Object.keys(auto).length ? auto : undefined,
     applied: Object.keys(applied).length ? applied : undefined,
   };

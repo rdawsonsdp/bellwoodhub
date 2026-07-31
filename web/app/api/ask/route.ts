@@ -65,7 +65,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         mode: "agent", question, answer: r.answer, sources: r.sources,
         crossSource: new Set(r.sources.map((s) => s.stream)).size >= 3,
-        trace: r.trace, iterations: r.iterations,
+        eval: {
+          path: "agent" as const,
+          model: r.model, effort: r.effort,
+          sourcesReturned: r.sources.length,
+          trace: r.trace, iterations: r.iterations,
+          timings: { totalMs: r.totalMs },
+          tokens: { input: r.inputTokens, output: r.outputTokens },
+        },
       });
     }
     const result = await ask(question, filters);

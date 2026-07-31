@@ -83,6 +83,28 @@ export interface AskResponse {
   crossSource?: boolean; // rag — answer spans 3+ source streams
   openItems?: OpenItem[]; // open_items
   who?: { constituents: WhoRow[]; internal: WhoRow[] }; // who_emails_most
+  /** show-the-work: how this answer was actually produced (testing aid) */
+  eval?: AskEval;
+}
+
+/** Everything needed to judge an answer without re-running it: which path and
+ *  model, where the time went, what was searched, and what got filtered out.
+ *  Surfaced behind the info button above the results (RD 2026-07-31) — during
+ *  testing "the answer looks wrong" is only actionable if you can see whether
+ *  retrieval or synthesis was at fault. */
+export interface AskEval {
+  path: "agent" | "pipeline";
+  model: string;
+  effort?: string;
+  /** the period parsed out of the question, if any */
+  range?: { since?: string | null; until?: string | null };
+  sourcesReturned: number;
+  /** agent path: each search it chose, in order */
+  trace?: { tool: string; input: string; got: number }[];
+  iterations?: number;
+  /** milliseconds */
+  timings: { retrievalMs?: number; synthesisMs?: number; totalMs: number };
+  tokens?: { input: number; output: number };
 }
 
 export interface TimelineMessage {

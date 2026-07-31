@@ -46,6 +46,9 @@ const MAX_K = 25;
 
 export interface AskAgentResult {
   answer: string;
+  model: string;
+  effort?: string;
+  totalMs: number;
   sources: Source[];
   /** show-the-work: what it searched for, in order */
   trace: { tool: string; input: string; got: number }[];
@@ -94,6 +97,7 @@ ANSWERING
 
 /** Answer a question by letting Claude drive retrieval. */
 export async function askAgent(question: string): Promise<AskAgentResult> {
+  const startedAt = Date.now();
   // The tier the user picked in the Ask box — one place, so the agent and the
   // cron desks always run on the same model (RD 2026-07-31).
   const p = profileForModel("research", await getModelId());
@@ -226,6 +230,7 @@ export async function askAgent(question: string): Promise<AskAgentResult> {
 
   return {
     answer: answer || "I couldn't complete that search. Try narrowing the question.",
+    model: p.model, effort: p.effort, totalMs: Date.now() - startedAt,
     // Newest-first, matching the pipeline's contract so the UI renders the same.
     sources: [...seen.values()].sort((a, b) => +new Date(b.date) - +new Date(a.date)),
     trace, iterations, inputTokens, outputTokens,

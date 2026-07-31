@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { TASK_MODEL, type Task } from "./constants";
+import { profileOf, TASK_MODEL, type Task } from "./constants";
 
 let _client: Anthropic | null = null;
 
@@ -23,8 +23,8 @@ export interface CompleteOpts {
   task?: Task;
   system: string;
   user: string;
+  /** override the task profile's budget; the profile supplies the default */
   maxTokens?: number;
-  temperature?: number;
 }
 
 /**
@@ -46,20 +46,29 @@ export interface CompletionMeta {
 }
 
 /** Same call as complete(), but returns the execution metadata alongside the
- *  text — the agent runner records it as run diagnostics (019). */
+ *  text — the agent runner records it as run diagnostics (019).
+ *
+ *  Model-specific knobs come from the task profile in constants.ts, never from
+ *  here, so a model generation change is a table edit (RD 2026-07-30). Fields
+ *  the profile omits are omitted from the request — that matters: Haiku 4.5
+ *  400s on output_config.effort, and Opus 5 400s on xhigh effort with thinking
+ *  disabled. */
 export async function completeMeta(opts: CompleteOpts): Promise<CompletionMeta> {
-  const model = pickModel(opts.task ?? "synthesize");
+  const p = profileOf(opts.task ?? "synthesize");
   const r = await anthropic().messages.create({
-    model,
-    max_tokens: opts.maxTokens ?? 1024,
-    temperature: opts.temperature ?? 0.2,
+    model: p.model,
+    max_tokens: opts.maxTokens ?? p.maxTokens,
+    thinking: p.thinking === "adaptive" ? { type: "adaptive" } : { type: "disabled" },
+    ...(p.effort ? { output_config: { effort: p.effort } } : {}),
     system: [{ type: "text", text: opts.system, cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: opts.user }],
   });
+  // Thinking blocks are skipped — callers parse the answer, and on the 5-series
+  // the raw chain of thought is never returned anyway.
   const text = r.content
     .filter((b): b is Anthropic.TextBlock => b.type === "text")
     .map((b) => b.text)
     .join("")
     .trim();
-  return { text, model: r.model ?? model, inputTokens: r.usage?.input_tokens ?? 0, outputTokens: r.usage?.output_tokens ?? 0 };
+  return { text, model: r.model ?? p.model, inputTokens: r.usage?.input_tokens ?? 0, outputTokens: r.usage?.output_tokens ?? 0 };
 }

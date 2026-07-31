@@ -61,7 +61,6 @@ export async function prepareUtterance(transcript: string): Promise<PreparedUtte
     const out = await complete({
       task: "classify",
       maxTokens: 300,
-      temperature: 0,
       system:
         `You triage one spoken utterance from a mayor into his own staff system. ` +
         `Decide: is it a QUESTION about his records/calendar (route to search), or a NOTE — ` +

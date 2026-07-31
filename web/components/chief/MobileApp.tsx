@@ -205,7 +205,7 @@ export default function MobileApp() {
             {screen === "today" && <WallScreen variant="mobile" onOpenEmail={setEmailMid} onGoApprovals={() => setScreen("queue")} onOpenAgent={(k) => { setAgentFocus(k); setScreen("agents"); }} onGoNeedsYou={() => setScreen("needsyou")} />}
             {screen === "needsyou" && <NeedsYouScreen variant="mobile" onOpenEmail={setEmailMid} />}
             {screen === "queue" && <QueueScreen variant="mobile" onOpenEmail={setEmailMid} />}
-            {screen === "ask" && <AskScreen key={`${askMode ?? "plain"}:${askSeq}`} autoVoice={askMode === "voice"} textFocus={askMode === "text"} />}
+            {screen === "ask" && <AskScreen key={`${askMode ?? "plain"}:${askSeq}`} textFocus={askMode === "text"} />}
             {screen === "emails" && <EmailsScreen onAsk={() => setScreen("ask")} />}
             {screen === "events" && <EventsScreen />}
             {screen === "history" && <HistoryScreen />}
@@ -221,13 +221,15 @@ export default function MobileApp() {
             a destination, and scroll containers keep bottom padding clear. */}
         <TabBar current={screen} go={(s) => {
           if (s === "ask") {
-            // TYPE-FIRST (RD 2026-07-31). Arriving on Ask used to open the mic
-            // and start listening immediately, which is startling and wrong for
-            // the common case — most questions get typed. Tap opens the keyboard;
-            // a DOUBLE tap (or the big hold-to-talk button) goes to voice.
-            const now = Date.now();
-            setAskMode(now - askTapAt.current < 450 ? "voice" : "text");
-            askTapAt.current = now;
+            // PUSH TO LISTEN (RD 2026-07-31). Ask NEVER opens the microphone on
+            // its own. Arriving here used to start recording immediately, which
+            // is startling, drains battery, and is wrong for the common case —
+            // most questions get typed. The only way to record is to physically
+            // hold the "Hold to talk" button. A double-tap shortcut was tried and
+            // removed too: an accidental double-tap is exactly the surprise this
+            // is meant to prevent.
+            setAskMode("text");
+            askTapAt.current = Date.now();
             setAskSeq((x) => x + 1);
           }
           setScreen(s);
@@ -1027,7 +1029,7 @@ function IngestedSection({ records }: { records: IngestedRecord[] }) {
   );
 }
 /* ── ASK — the KNOW tab (voice-first: hold-to-talk primary) ── */
-function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: boolean } = {}) {
+function AskScreen({ textFocus }: { textFocus?: boolean } = {}) {
   const [q, setQ] = useState("");
   // Lets the Stop button cancel an in-flight search (RD 2026-07-31): a 12-40s
   // wait with no way out is a trap, especially on a phone.
@@ -1116,11 +1118,10 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
   const recent = getRecentSearches();
   const status = rec === "rec" ? "Listening… release to search" : rec === "busy" ? "Transcribing your voice…" : routing ? "One moment…" : loading ? "Searching the record…" : null;
 
-  // hold-to-talk: press starts recording, release stops → transcribe → search
-  // mic-tab behavior (RD): arriving in voice mode starts listening at once;
-  // tapping the big button stops it. Unmount (mode switch) releases the mic.
+  // hold-to-talk ONLY: press starts recording, release stops → transcribe →
+  // search. Nothing auto-starts the microphone. The cleanup still releases the
+  // mic on unmount so navigating away can never leave it hot.
   useEffect(() => {
-    if (autoVoice) void mic();
     return () => { try { if (recRef.current?.state === "recording") recRef.current.stop(); } catch { /* released */ } };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

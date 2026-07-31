@@ -1,8 +1,20 @@
 {
   "project": "Bellwood Hub — Mayor's AI Chief of Staff",
   "tagline": "Graph-augmented, entity-resolved institutional-memory platform over the Village of Bellwood's ~70,000 municipal emails — a queryable chief of staff, not just search.",
-  "headline": "🔴 <b>An open door, closed</b> — 2026-07-30 found the production MCP endpoint serving all <b>125,459</b> personal messages <i>and</i> <code>draft_reply</code> to unauthenticated callers (<code>BUG-10</code>, now 401). The same session re-framed the product: root-cause work proved the live corpus holds <b>1</b> bellwood-addressed message and <b>2</b> <code>.gov</code> out of 125,459 — so the live instance is RD's <b>personal</b> Chief of Staff and the mayor's build becomes a separate release (<code>DEC-18</code>). Shipped Opus 5 / Sonnet 5 with per-task profiles, the brief-led three-panel dashboard shared by mobile and desktop, and the calendar (31 events, conflict flags). Deployed <code>7d602de</code> → bellwood-dev, <code>/chief</code> 200.",
+  "headline": "🟢 <b>Ask became an agent</b> — 2026-07-31 overnight. Given the same mailbox and the same model, Claude.ai answered “break down my Google spend by month” and this app did not, because Claude.ai <i>searched four times</i> and the app searched once. Ask is now a tool loop and reproduces that answer <b>figure for figure</b> — total <b>$542.61</b>, April's two-charge split intact — locked in as a regression test. The model is now the user's choice in the Ask box (default Opus 5), read <b>live</b> from the Models API so the list can't go stale, and stored server-side so the cron desks honour it. Deployed <code>5ef10b5</code>.",
   "glance": [
+    {
+      "k": "Ask",
+      "v": "agentic tool loop — matches Claude.ai",
+      "s": "done",
+      "d": "FEAT-48. lib/ask-agent.ts gives Claude search_email / read_email / person_or_place_history and lets it drive. Verified against Claude.ai as ground truth: Jan $44.26, Feb $51.14, Mar $40.30, Apr $136.95 (with the $36.95 + $100.00 split), May $193.71, Jun $33.82, Jul $42.43, total $542.61 — reproduced across repeated runs and encoded in eval/ask-agent.test.ts. Costs 270s / 167k input tokens, so it is gated to completeness and comparison questions; simple lookups keep the fast pipeline."
+    },
+    {
+      "k": "Model",
+      "v": "user-selectable · live catalog · Opus 5",
+      "s": "done",
+      "d": "FEAT-49 / DEC-21. Picker in the lower right of the Ask box. The catalog comes from the Models API rather than a hardcoded list — the old Admin console still offered Sonnet 4.6 and Opus 4.8 and priced Opus at $15/$75, which was never Opus 5's rate. 11 models discovered live including Fable 5. Stored in app.user_state, not localStorage, so the cron agents read the same choice."
+    },
     {
       "k": "Live deploy",
       "v": "bellwood-dev.vercel.app · /chief 200",
@@ -14,12 +26,6 @@
       "v": "MCP_SECRET-gated (was open)",
       "s": "done",
       "d": "BUG-10, critical. bellwood-dev.vercel.app/api/mcp answered unauthenticated requests with the full toolset over the real 125,459-message mailbox, including draft_reply. Confirmed by retrieving a genuine invoice with no credentials. Vercel env vars only apply on redeploy, so the fix stayed inert until the deploy — now 401 without the key."
-    },
-    {
-      "k": "Models",
-      "v": "Opus 5 / Sonnet 5 / Haiku 4.5",
-      "s": "done",
-      "d": "FEAT-45. SDK 0.40.1 → 0.115.0. A naive model-string swap would have 400'd every agent run: Sonnet 5 and Opus 5 both reject temperature, which completeMeta() sent on every call, and both default thinking ON, which shares the max_tokens budget and would have truncated the structured digests. Per-model knobs now live in TASK_PROFILE so a future generation is a table edit. Verified live: Haiku 4.5 rejects output_config.effort; Opus 5 rejects xhigh/max effort with thinking disabled."
     },
     {
       "k": "Dashboard",
@@ -112,6 +118,55 @@
     }
   ],
   "boards": [
+    {
+      "title": "2026-07-31 overnight — Ask as an agent (deployed 5ef10b5)",
+      "rows": [
+        {
+          "t": "FEAT-48 Ask is a tool loop — matches Claude.ai figure for figure",
+          "s": "done"
+        },
+        {
+          "t": "FEAT-49 User-selectable model, live catalog from the Models API",
+          "s": "done"
+        },
+        {
+          "t": "FEAT-50 Opus 5 @ xhigh for synthesis + research",
+          "s": "done"
+        },
+        {
+          "t": "BUG-13 /api/ask was being killed in production (60s -> 300s)",
+          "s": "done"
+        },
+        {
+          "t": "BUG-14 Mobile Ask failed silently — the reported hang",
+          "s": "done"
+        },
+        {
+          "t": "BUG-15 Three hidden k=8 caps + a regression of my own",
+          "s": "done"
+        },
+        {
+          "t": "BUG-16 Progress ladder froze after 7.4s",
+          "s": "done"
+        },
+        {
+          "t": "FEAT-51 Tables, code, links, and one clarifying question",
+          "s": "done"
+        },
+        {
+          "t": "ISS-16 Attachment text unreachable — blocks a COMPLETE spend total",
+          "s": "pending"
+        },
+        {
+          "t": "ISS-17 Agentic Ask is 270s — worth streaming the answer",
+          "s": "pending"
+        },
+        {
+          "t": "DEP-6 Google Console redirect URIs — owner RD",
+          "s": "blocked"
+        }
+      ]
+    },
     {
       "title": "2026-07-30 — personal-instance pivot · Opus 5 · dashboard · security (deployed 7d602de)",
       "rows": [
@@ -350,10 +405,34 @@
     }
   ],
   "blocker": {
-    "class": "bad",
-    "text": "<b>DEP-6 — Google Console redirect URIs (owner: RD).</b> Sign-in on the deployed app fails with <code>redirect_uri_mismatch</code> until <code>https://bellwood-dev.vercel.app/api/auth/callback/google</code> and <code>http://localhost:3200/api/auth/callback/google</code> are added to OAuth client <code>32902323271-bhekte5q27…</code>. Second: <b>ISS-11</b> — Gmail sync has been down since 2026-07-23, so the corpus is a week stale."
+    "class": "warn",
+    "text": "<b>DEP-6 — Google Console redirect URIs (owner: RD).</b> Sign-in on the deployed app still fails until <code>https://bellwood-dev.vercel.app/api/auth/callback/google</code> and <code>http://localhost:3200/api/auth/callback/google</code> are registered on OAuth client <code>32902323271-bhekte5q27…</code>. This also gates the new model picker in production, which correctly returns 401 unauthenticated."
   },
   "issues": [
+    {
+      "id": "ISS-16",
+      "kind": "issue",
+      "sev": "med",
+      "title": "Attachment text is unreachable — blocks a complete spend total",
+      "status": "pending",
+      "detail": "canonical.messages has no attachment column. Google Workspace invoice emails only link to a PDF; Claude.ai read those PDFs, we cannot. Google Cloud Platform receipts DO carry the amount in the body, which is why the Cloud table is exact. A complete Google total including Workspace needs attachment extraction added to ingestion. The agent states this limitation rather than guessing."
+    },
+    {
+      "id": "ISS-17",
+      "kind": "issue",
+      "sev": "low",
+      "title": "Agentic Ask costs 270s / 167k input tokens",
+      "status": "pending",
+      "detail": "First working version was 590s / 501k — over the 300s function limit. Capping page size at 25, iterations at 8 and instructing economy brought it to 270s / 167k with identical accuracy, but that leaves only 30s of margin and is a 4.5-minute wait. Streaming the answer so it builds visibly is the obvious next step."
+    },
+    {
+      "id": "ISS-18",
+      "kind": "issue",
+      "sev": "low",
+      "title": "eval/ask-retrieval.test.ts has 2 failing checks on the pipeline path",
+      "status": "pending",
+      "detail": "Now much less important since research questions bypass the pipeline entirely. Decide whether to fix or retire the suite."
+    },
     {
       "id": "BUG-12",
       "kind": "bug",
@@ -630,6 +709,10 @@
     }
   ],
   "decisions": [
+    {
+      "id": "DEC-21",
+      "text": "<b>The model is a user-facing setting</b> — deliberately reversing DEC-19 for this one control. It is a familiar affordance (Claude.ai puts it under the composer), it is the one knob with a real cost/quality tradeoff the user should own, and every option is a valid model so it is safe to expose. The catalog is read live from the Models API so it cannot go stale."
+    },
     {
       "id": "DEC-18",
       "text": "<b>The live instance is RD's personal Chief of Staff.</b> Bellwood is the demo persona only; the mayor's version becomes a separate copy/release. Settled after root-cause work proved the corpus holds 1 bellwood-addressed message and 2 .gov out of 125,459 — the reported 'retrieval quality' problem was a missing municipal corpus, not a ranking failure."

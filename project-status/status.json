@@ -1,8 +1,56 @@
 {
   "project": "Bellwood Hub — Mayor's AI Chief of Staff",
   "tagline": "Graph-augmented, entity-resolved institutional-memory platform over the Village of Bellwood's ~70,000 municipal emails — a queryable chief of staff, not just search.",
-  "headline": "🟡 <b>Agents became instructable</b> — 2026-07-18 night session shipped <b>Focus + the one box</b> (configure an agent with one plain-English instruction; the retrieval query is derived from it) and the first agent routed entirely by instruction, a <b>Google Security</b> desk whose first live run on a real mailbox produced 4 cited findings from 0 stream-routed messages. Two silent-failure bugs closed (a backfill that could stall forever while reporting success; an audit ledger that was append-only but anon-readable) and a panel that fabricated \"92% recovered\" and invented gap cards beside live answers was deleted. On branch <code>agent-focus-and-sync-fixes</code> — <b>pushed, not merged</b>.",
+  "headline": "🔴 <b>An open door, closed</b> — 2026-07-30 found the production MCP endpoint serving all <b>125,459</b> personal messages <i>and</i> <code>draft_reply</code> to unauthenticated callers (<code>BUG-10</code>, now 401). The same session re-framed the product: root-cause work proved the live corpus holds <b>1</b> bellwood-addressed message and <b>2</b> <code>.gov</code> out of 125,459 — so the live instance is RD's <b>personal</b> Chief of Staff and the mayor's build becomes a separate release (<code>DEC-18</code>). Shipped Opus 5 / Sonnet 5 with per-task profiles, the brief-led three-panel dashboard shared by mobile and desktop, and the calendar (31 events, conflict flags). Deployed <code>7d602de</code> → bellwood-dev, <code>/chief</code> 200.",
   "glance": [
+    {
+      "k": "Live deploy",
+      "v": "bellwood-dev.vercel.app · /chief 200",
+      "s": "done",
+      "d": "Deployed 2026-07-30 (7d602de). Four commits: model upgrade + task profiles, calendar fix, dashboard rebuild, docs. Verified after deploy: /chief 200, /hub 200, MCP 401 without key and 200 with it, auth callback origin pinned."
+    },
+    {
+      "k": "MCP endpoint",
+      "v": "MCP_SECRET-gated (was open)",
+      "s": "done",
+      "d": "BUG-10, critical. bellwood-dev.vercel.app/api/mcp answered unauthenticated requests with the full toolset over the real 125,459-message mailbox, including draft_reply. Confirmed by retrieving a genuine invoice with no credentials. Vercel env vars only apply on redeploy, so the fix stayed inert until the deploy — now 401 without the key."
+    },
+    {
+      "k": "Models",
+      "v": "Opus 5 / Sonnet 5 / Haiku 4.5",
+      "s": "done",
+      "d": "FEAT-45. SDK 0.40.1 → 0.115.0. A naive model-string swap would have 400'd every agent run: Sonnet 5 and Opus 5 both reject temperature, which completeMeta() sent on every call, and both default thinking ON, which shares the max_tokens budget and would have truncated the structured digests. Per-model knobs now live in TASK_PROFILE so a future generation is a table edit. Verified live: Haiku 4.5 rejects output_config.effort; Opus 5 rejects xhigh/max effort with thinking disabled."
+    },
+    {
+      "k": "Dashboard",
+      "v": "Brief + 3 panels, mobile = desktop",
+      "s": "done",
+      "d": "FEAT-46. Seven widgets became a brief plus what's coming up, urgent email, and waiting on you. Mobile (NeedsToKnowCard) and desktop (DashboardHub) had drifted into different products; both now render the same components from components/chief/dashboard/panels.tsx. The brief carries per-desk attribution, a Run now button, and the next scheduled pass."
+    },
+    {
+      "k": "Calendar",
+      "v": "31 events · conflict flags",
+      "s": "done",
+      "d": "FEAT-47 + BUG-9. Two independent causes had kept the mirror empty for a week: the ingest cron selected only status='active' accounts (the Gmail account sat at 'error' from an unrelated mail 404), and the Google Calendar API was disabled on the Cloud project. Conflict detection is a pure function with 7 checks; all-day events are excluded deliberately."
+    },
+    {
+      "k": "Sign-in (deployed)",
+      "v": "blocked on Google Console",
+      "s": "blocked",
+      "d": "DEP-6, owner RD. AUTH_URL is now pinned so the redirect_uri stops varying by hostname, but the two callback URIs must still be registered on OAuth client 32902323271-bhekte5q27… before sign-in works."
+    },
+    {
+      "k": "Mail sync",
+      "v": "down since 2026-07-23",
+      "s": "blocked",
+      "d": "ISS-11. gmail 404: Requested entity was not found. 462 messages behind. This is also what tripped the calendar ingest's status filter."
+    },
+    {
+      "k": "Triage coverage",
+      "v": "400 of 125,459 (0.32%)",
+      "s": "at-risk",
+      "d": "ISS-9. MAX_THREADS = 400 and WINDOW_DAYS = 45 in lib/triage/run.ts. The retired Priority Matrix reported '97% FYI' — 97% of the 400, shown as though it described the whole mailbox. The bulk-mail classifier (FYI_SENDER) already exists and costs nothing; it is simply starved of scope."
+    },
     {
       "k": "Today screen · Chief of Staff",
       "v": "Persona briefing — see + act",
@@ -64,6 +112,67 @@
     }
   ],
   "boards": [
+    {
+      "title": "2026-07-30 — personal-instance pivot · Opus 5 · dashboard · security (deployed 7d602de)",
+      "rows": [
+        {
+          "t": "BUG-10 Production MCP served the whole mailbox unauthenticated — closed",
+          "s": "done"
+        },
+        {
+          "t": "FEAT-45 Opus 5 / Sonnet 5 + per-task capability profiles (SDK 0.115.0)",
+          "s": "done"
+        },
+        {
+          "t": "FEAT-46 Dashboard: one brief + three panels, shared by mobile and desktop",
+          "s": "done"
+        },
+        {
+          "t": "FEAT-47 Calendar live — 31 events, conflict detection",
+          "s": "done"
+        },
+        {
+          "t": "BUG-9 Calendar ingest silently disqualified by an unrelated mail error",
+          "s": "done"
+        },
+        {
+          "t": "BUG-11 AUTH_URL unset — redirect_uri varied by hostname",
+          "s": "done"
+        },
+        {
+          "t": "DEC-18 Live instance is RD's personal CoS; mayor build is a separate release",
+          "s": "done"
+        },
+        {
+          "t": "DEP-6 Google Console redirect URIs — owner RD",
+          "s": "blocked"
+        },
+        {
+          "t": "ISS-11 Gmail sync down since 2026-07-23 (462 behind)",
+          "s": "blocked"
+        },
+        {
+          "t": "ISS-9 Triage covers 0.32% of the mailbox (MAX_THREADS=400)",
+          "s": "pending"
+        },
+        {
+          "t": "ISS-10 Privacy wall unimplemented in the live path",
+          "s": "pending"
+        },
+        {
+          "t": "RSK-7 Read-only role gate must not leak a mutation (audit in flight)",
+          "s": "pending"
+        },
+        {
+          "t": "BUG-12 MCP guard fails open when MCP_SECRET unset (bellwood-hub/mayor still open)",
+          "s": "pending"
+        },
+        {
+          "t": "ISS-15 GET handlers that write — non-GET gate is not read-only",
+          "s": "pending"
+        }
+      ]
+    },
     {
       "title": "2026-07-18 night — branch agent-focus-and-sync-fixes (pushed, not merged)",
       "rows": [
@@ -241,10 +350,98 @@
     }
   ],
   "blocker": {
-    "class": "warn",
-    "text": "<b>TASK-13 — verify <code>RETRIEVAL_BACKEND=canonical</code> on bellwood-mayor and the pilot.</b> It defaults to <code>poc</code>, an OpenAI-embedded store that is empty on any stack built from the canonical migrations. The symptom is not an error: Ask returns \"0 sources recovered\" on every question, and the error text blames a missing OpenAI key. Found on the test stack — <b>the Mayor's app may be failing this way now, independent of the branch merge.</b>"
+    "class": "bad",
+    "text": "<b>DEP-6 — Google Console redirect URIs (owner: RD).</b> Sign-in on the deployed app fails with <code>redirect_uri_mismatch</code> until <code>https://bellwood-dev.vercel.app/api/auth/callback/google</code> and <code>http://localhost:3200/api/auth/callback/google</code> are added to OAuth client <code>32902323271-bhekte5q27…</code>. Second: <b>ISS-11</b> — Gmail sync has been down since 2026-07-23, so the corpus is a week stale."
   },
   "issues": [
+    {
+      "id": "BUG-12",
+      "kind": "bug",
+      "sev": "high",
+      "title": "The MCP shared-secret guard fails OPEN when unset",
+      "status": "pending",
+      "detail": "app/api/[transport]/route.ts:181 reads `if (!secret) return true;` — any environment without MCP_SECRET serves the entire corpus and draft_reply to anonymous callers. MCP_SECRET was set on bellwood-dev and verified (401 without key), but bellwood-hub and bellwood-mayor were both answering 200 unauthenticated and were not fixed; local dev has no secret either. Fix: invert to fail closed, then set the secret per environment. Found by the RSK-7 adversarial audit."
+    },
+    {
+      "id": "ISS-15",
+      "kind": "issue",
+      "sev": "med",
+      "title": "Several GET handlers write — a non-GET gate is not a read-only gate",
+      "status": "pending",
+      "detail": "GET /api/triage/senders seeds app.important_senders on first read (product state, not a cache). /api/wall, /api/queue, /api/inbox, /api/email and /api/agents/run each write an app.audit_log row per GET, and the middleware POSTs an access.page row per page view. Next 14 also auto-implements HEAD by invoking the GET handler verbatim, so HEAD is not inert. Blocking a viewer's non-GET requests therefore still leaves writes reachable."
+    },
+    {
+      "id": "BUG-10",
+      "kind": "bug",
+      "sev": "high",
+      "title": "Production MCP endpoint served the entire personal mailbox unauthenticated",
+      "status": "done",
+      "detail": "bellwood-dev.vercel.app/api/mcp answered any unauthenticated POST with the full five-tool set over canonical.messages (125,459 real messages) plus draft_reply. Confirmed by retrieving a genuine Zoom past-due invoice with no credentials. MCP_SECRET was set hours earlier but Vercel only applies env vars on redeploy, so the endpoint stayed open until the deploy. Verified after: 401 without the key, 200 with it."
+    },
+    {
+      "id": "BUG-9",
+      "kind": "bug",
+      "sev": "high",
+      "title": "Calendar ingest was a silent no-op for a week",
+      "status": "done",
+      "detail": "cron/ingest-calendar selected only status='active' accounts. The Gmail account sat at status='error' from an unrelated mail-sync 404, so the every-2-hours cron ran and did nothing. Calendar rides the Gmail grant but is a separate capability and must fail independently. Compounding second cause: the Google Calendar API was disabled on the Cloud project."
+    },
+    {
+      "id": "BUG-11",
+      "kind": "bug",
+      "sev": "med",
+      "title": "OAuth redirect_uri_mismatch — AUTH_URL unset",
+      "status": "done",
+      "detail": "NextAuth v5 derived the origin from whichever hostname was hit, so per-deployment URLs sent a redirect_uri that can never be pre-registered. Pinned AUTH_URL to https://bellwood-dev.vercel.app. Console URIs remain RD's action (DEP-6)."
+    },
+    {
+      "id": "ISS-9",
+      "kind": "issue",
+      "sev": "high",
+      "title": "Triage covers 400 of 125,459 messages (0.32%)",
+      "status": "pending",
+      "detail": "MAX_THREADS = 400 and WINDOW_DAYS = 45 in lib/triage/run.ts. The retired Priority Matrix showed '97% FYI' — 97% of that 400-thread sample, presented as the whole mailbox. The bulk-mail classifier already exists as the FYI_SENDER regex and buckets deterministically at zero model cost; the fix is scope, not a new classifier. Caution: Google security alerts and invoices are no-reply senders too, so the axis that matters is actionable-vs-ambient, not bulk-vs-personal."
+    },
+    {
+      "id": "ISS-10",
+      "kind": "issue",
+      "sev": "high",
+      "title": "The privacy wall is not implemented in the live path",
+      "status": "pending",
+      "detail": "canonical.messages has no mailbox/lane column and retrieval applies no lane filter. mailbox_id is read in exactly three places, all to render a 'walled' label. Moving an account from gov to biz would change a badge and remove nothing from search. Low practical risk on a personal instance where everything is RD's own mail, but material for the mayor build where FOIA separation is a stated non-negotiable."
+    },
+    {
+      "id": "ISS-11",
+      "kind": "issue",
+      "sev": "high",
+      "title": "Gmail sync broken since 2026-07-23",
+      "status": "blocked",
+      "detail": "gmail 404: Requested entity was not found. Last successful sync 2026-07-23, 462 messages behind. Also the trigger condition that exposed BUG-9."
+    },
+    {
+      "id": "ISS-12",
+      "kind": "issue",
+      "sev": "med",
+      "title": "Municipal desks are dead weight on the personal instance",
+      "status": "pending",
+      "detail": "police, fire, council and constituent have each run 111 times and return the honest-empty sentinel every time. Only 3 of 9 desks invoke a model at all. Worth noting positively: they are honest — empty digests, no fabricated citations, exactly the R4 honest-gap behaviour, verified against real data."
+    },
+    {
+      "id": "ISS-13",
+      "kind": "issue",
+      "sev": "med",
+      "title": "Branding mismatch on the personal instance",
+      "status": "pending",
+      "detail": "The live app greets 'Good evening, Mayor Harvey' over a Bellwood village logo on an instance now defined as RD's personal Chief of Staff. Lives in WallScreen, outside the dashboard rebuild's scope."
+    },
+    {
+      "id": "ISS-14",
+      "kind": "issue",
+      "sev": "low",
+      "title": "/api/dashboard is dead code",
+      "status": "pending",
+      "detail": "No component fetches it."
+    },
     {
       "id": "BUG-2",
       "kind": "bug",
@@ -336,6 +533,13 @@
   ],
   "risks": [
     {
+      "id": "RSK-7",
+      "like": "med",
+      "impact": "high",
+      "title": "A read-only role that leaks a mutation lets a viewer send mail as RD or run up model spend",
+      "mitigation": "Enforce server-side at the middleware chokepoint, fail-closed (deny non-GET). Must cover Server Actions (POSTed to page URLs), side-effecting GETs, and every path in the middleware OPEN allowlist. Adversarial bypass audit commissioned before shipping."
+    },
+    {
       "id": "RSK-1",
       "like": "high",
       "impact": "high",
@@ -392,6 +596,12 @@
   ],
   "deps": [
     {
+      "id": "DEP-6",
+      "title": "Google Console redirect URIs (owner: RD)",
+      "status": "blocking",
+      "detail": "Sign-in on the deployed app fails until https://bellwood-dev.vercel.app/api/auth/callback/google and http://localhost:3200/api/auth/callback/google are registered on OAuth client 32902323271-bhekte5q27… at console.cloud.google.com/apis/credentials?project=32902323271. AUTH_URL is already pinned so this will not recur per-deployment."
+    },
+    {
       "id": "DEP-4",
       "title": "Throwaway Supabase project bellwoodhub-agent-test",
       "status": "pending",
@@ -420,6 +630,18 @@
     }
   ],
   "decisions": [
+    {
+      "id": "DEC-18",
+      "text": "<b>The live instance is RD's personal Chief of Staff.</b> Bellwood is the demo persona only; the mayor's version becomes a separate copy/release. Settled after root-cause work proved the corpus holds 1 bellwood-addressed message and 2 .gov out of 125,459 — the reported 'retrieval quality' problem was a missing municipal corpus, not a ranking failure."
+    },
+    {
+      "id": "DEC-19",
+      "text": "<b>Configuration stays with the developer.</b> Agents, models and connectors are configured at the prompt/deploy level in Claude Code, not exposed as end-user settings — exposing them creates noise and confusion for the person the app is for. Motivates retiring most of AdminPanel (550 lines) and AgentsPage (879 lines)."
+    },
+    {
+      "id": "DEC-20",
+      "text": "<b>Do not move the desks to Managed Agents.</b> Each desk is a single structured completion — gather slice, one call, validate, store — not a tool loop, so there is no loop to hand over. Migrating would move citation validation, the audit ledger and the human send-gate off our infrastructure, and those three are the product. Instead add a tool-use loop over the five functions the MCP server already wraps."
+    },
     {
       "id": "DEC-16",
       "text": "<b>One instruction box, not four fields.</b> Configuring an agent meant charter + goals + urgency rules + focus — a taxonomy to learn before you could say what you wanted. Now one plain-English box; the old fields survive behind Advanced. The retrieval query is derived from the instruction by one Haiku call at save time, cached, and shown in the preview — never derived in the runner, because reading config must not cost a model call."

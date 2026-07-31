@@ -93,6 +93,89 @@ async function emailPass(emails: string[]): Promise<string[]> {
   return rows.map((r) => r.message_id);
 }
 
+/** Vendor/sender pass — the missing link for "break down my Google spend".
+ *
+ *  A question naming an organisation is a STRUCTURED query (sender = Google,
+ *  date >= Jan 1), not a fuzzy one, but nothing was extracting that: the
+ *  question supplied no topic/source/date filter and matched no alias, so Pass 1
+ *  returned nothing and the whole plan fell through to semantic top-k. That
+ *  ranked newsletters ABOUT Google's spending above the user's own
+ *  payments-noreply@google.com receipts — 19 of which were indexed and
+ *  searchable the whole time (RD 2026-07-30).
+ *
+ *  Tokens are matched against real sender identities in the corpus, so this is
+ *  grounded in what actually exists rather than a guessed vendor list. */
+const SENDER_STOPWORDS = new Set([
+  "this","that","what","when","where","which","with","from","have","want","need","show","give","tell",
+  "complete","breakdown","break","down","month","monthly","year","quarter","spend","spending","cost",
+  "costs","total","table","every","each","list","much","many","about","into","over","under","please",
+  "invoice","invoices","payment","payments","receipt","receipts","billing","charge","charges","summary",
+  "account","accounts","email","emails","record","records","last","past","been","were","would","could",
+]);
+
+/** What KIND of mail the question is about, as subject patterns. A sender alone
+ *  is far too broad: Google sent 1,012 messages this year but only ~19 are
+ *  billing, so ordering the sender match by recency buried every invoice under
+ *  security alerts and notifications (caught by eval/ask-retrieval.test.ts). */
+function subjectPatterns(question: string): string[] {
+  const q = question.toLowerCase();
+  const pats: string[] = [];
+  if (/\bspend|spent|cost|billing|invoice|charge|payment|receipt|paid|subscription|price|budget\b/.test(q)) {
+    pats.push("%invoice%", "%payment%", "%receipt%", "%billing%", "%charge%", "%subscription%", "%order%", "%statement%");
+  }
+  if (/\bmeeting|calendar|schedul|invite\b/.test(q)) pats.push("%meeting%", "%invit%", "%calendar%");
+  if (/\bsecurity|breach|password|sign-?in|login\b/.test(q)) pats.push("%security%", "%password%", "%sign-in%", "%alert%");
+  return pats;
+}
+
+async function senderPass(question: string, since: string | null): Promise<string[]> {
+  const tokens = Array.from(new Set(
+    (question.toLowerCase().match(/[a-z][a-z0-9.&-]{2,}/g) ?? [])
+      // strip trailing punctuation, else "year." and "table." slip past the stoplist
+      .map((t) => t.replace(/[.&-]+$/, ""))
+      .filter((t) => t.length >= 3 && !SENDER_STOPWORDS.has(t)),
+  )).slice(0, 6);
+  if (!tokens.length) return [];
+  const pats = subjectPatterns(question);
+  // TIERED: mail from that sender that also matches what the question is ABOUT
+  // comes first and is never crowded out; the rest of the sender's mail follows
+  // as context. Recency only breaks ties WITHIN a tier.
+  const rows = await query<{ message_id: string }>(
+    `SELECT m.message_id
+       FROM canonical.messages m
+      WHERE m.tenant_id = $1
+        AND ($3::timestamptz IS NULL OR m.sent_at >= $3)
+        AND EXISTS (
+          SELECT 1 FROM unnest($2::text[]) t
+           WHERE m.from_email ILIKE '%' || t || '%'
+              OR m.from_name  ILIKE '%' || t || '%'
+        )
+      ORDER BY
+        CASE WHEN cardinality($4::text[]) = 0 THEN 0
+             WHEN m.subject ILIKE ANY($4::text[]) THEN 0 ELSE 1 END,
+        m.sent_at DESC
+      LIMIT 400`,
+    [TENANT, tokens, since, pats],
+  );
+  return rows.map((r) => r.message_id);
+}
+
+/** "this year" / "in 2026" / "last year" → a since bound, so a completeness
+ *  question is scoped to the period the user actually named. */
+export function sinceFromQuestion(question: string, now = new Date()): string | null {
+  const q = question.toLowerCase();
+  const yr = q.match(/\b(20\d{2})\b/);
+  if (yr) return `${yr[1]}-01-01`;
+  if (/\bthis year\b|\byear to date\b|\bytd\b/.test(q)) return `${now.getUTCFullYear()}-01-01`;
+  if (/\blast year\b/.test(q)) return `${now.getUTCFullYear() - 1}-01-01`;
+  if (/\blast (\d+) months?\b/.test(q)) {
+    const n = Number(RegExp.$1);
+    const d = new Date(now); d.setUTCMonth(d.getUTCMonth() - n);
+    return d.toISOString().slice(0, 10);
+  }
+  return null;
+}
+
 /** Resolve question text to canonical identities via the alias ledger (replaces the POC's hard-coded lists). */
 export async function resolveAnchors(question: string): Promise<Anchor[]> {
   const qn = norm(question);
@@ -267,11 +350,36 @@ STRUCTURE:
 3. Then supporting detail only if it earns its place — grouped, not enumerated.
    Skip it when the story already covers everything.
 
+FORMAT: you may use GitHub-flavoured markdown — "|" tables, ## headings, bullets,
+\`inline code\`, and fenced code blocks — and the client renders all of it. Reach
+for a TABLE when the answer compares the same handful of fields across several
+things (amounts by vendor, dates by project, status by item): a table is far
+easier to scan on a phone than the same facts written as prose. Keep tables
+narrow — 2–4 columns, short cells, citations in a cell like any other fact. Use
+prose when the answer is a story rather than a comparison; do not tabulate a
+single item or force unlike things into rows.
+
+ASK BACK when the question is genuinely ambiguous. If it names something you
+cannot find in the excerpts (a vendor, person, project or account you have no
+record of), or could reasonably mean two different things, do NOT silently guess
+and do NOT answer the question you wish had been asked. Give whatever you CAN
+answer from the excerpts, then end with a single specific question on its own
+line starting with "? " — naming the concrete options where you can, e.g.
+"? Did you mean Supabase — I have receipts under that name but nothing for
+'SopaBase'?". One question, never a list, and only when the answer genuinely
+turns on it. A near-certain spelling correction is not ambiguity: fix it, say
+you did, and carry on.
+
 Rules:
 - Put a [n] citation on every factual claim, matching the excerpt it came from.
 - Say who promised what and whether it happened.
-- Never render a chronological transcript of every excerpt. That is the inbox he
-  already has.
+- Never render a chronological transcript of every excerpt UNLESS he explicitly
+  asked for a breakdown, a total, a table, or "every"/"all" of something. A
+  summary is the default because the raw list is the inbox he already has — but
+  when the ask IS the enumeration ("break down my Google spend by month"), give
+  the complete enumeration and do not compress it into a sentence. Cover every
+  period in range: if a month has no record, show the row and mark it as no
+  record rather than dropping it, so a gap is visible instead of silent.
 - End with one short "Recommended next step:" line — and only when there is a real
   next step. Recommend only; never claim to have taken an action.`;
 
@@ -283,31 +391,59 @@ export async function synthesize(question: string, sources: Source[]): Promise<s
   const context = sources
     .map((s) => `[${s.index}] ${s.date.slice(0, 10)} · ${s.stream} · ${s.fromName ?? s.fromEmail ?? "unknown"} · "${s.subject ?? "(no subject)"}"\n${s.snippet}`)
     .join("\n\n");
+  // 900 was sized for a 3-sentence answer. A monthly table with a row and a
+  // citation per month does not fit in it — the answer simply stopped partway.
+  const wide = COMPLETENESS_INTENT.test(question);
   return complete({
     task: "synthesize",
     system: SYNTH_SYSTEM,
     user: `Question: ${question}\n\nExcerpts:\n${context}`,
-    maxTokens: 900,
+    maxTokens: wide ? 4000 : 900,
   });
 }
 
 const CROSS_INTENT = /cross[- ]?reference|every source|across (every|all)|police and fire|each source|all sources/i;
 
+/** A question demanding COMPLETENESS rather than a summary — "break it down by
+ *  month", "every invoice", "total spend", "list all". The default k=8 cannot
+ *  answer these: a year of Google billing is 19 emails in this corpus, so a
+ *  monthly table built from 8 excerpts is missing two-thirds of the year and no
+ *  model can recover the rest (RD 2026-07-30 — the answer looked "incomplete",
+ *  but the data was never handed to the model). Completeness is a RETRIEVAL
+ *  property here, not a model capability. */
+const COMPLETENESS_INTENT =
+  /\b(break ?down|breakdown|itemi[sz]e|by month|per month|monthly|by quarter|each month|complete|comprehensive|full (list|breakdown|picture)|every (invoice|charge|payment|receipt|email)|all (invoices|charges|payments|receipts)|how much .* (total|altogether|in all)|total(l?ed)? (spend|cost|charges))\b/i;
+
+/** Retrieval width for a completeness question. Enough to cover a year of
+ *  monthly billing with headroom, still well inside the context window. */
+const COMPLETENESS_K = 60;
+
 /** The planner entry point. */
 export async function plan(question: string, f: PlanFilters = {}): Promise<PlanResult> {
-  const k = f.k ?? 8;
+  // An explicit caller-supplied k always wins; otherwise a completeness
+  // question gets the wide net and everything else keeps the fast default.
+  const k = f.k ?? (COMPLETENESS_INTENT.test(question) ? COMPLETENESS_K : 8);
   const [anchors, qvec] = await Promise.all([
     resolveAnchors(question),
     embedQuery(question).then(toVector),
   ]);
 
-  const [structured, graph, byAddress] = await Promise.all([
+  // A completeness question ("all my Google invoices this year") is answered by
+  // the SENDER + DATE predicate, not by semantic similarity — so scope it here.
+  const since = f.since ?? sinceFromQuestion(question);
+  const wantsAll = COMPLETENESS_INTENT.test(question);
+  const [structured, graph, byAddress, bySender] = await Promise.all([
+    // NOT { ...f, since }: a date alone is not a structuring predicate. Passing
+    // it made hasMeta true, so Pass 1 returned the 400 most recent messages of
+    // ANY sender this year — LinkedIn, Wayfair, Facebook — at primary weight,
+    // swamping the sender matches (RD 2026-07-30).
     structuredPass(f, anchors),
     graphPass(anchors),
     emailPass(extractEmails(question)),
+    wantsAll ? senderPass(question, since) : Promise.resolve<string[]>([]),
   ]);
 
-  const candidatePool = Array.from(new Set([...structured, ...graph.messageIds, ...byAddress]));
+  const candidatePool = Array.from(new Set([...structured, ...graph.messageIds, ...byAddress, ...bySender]));
   const [inSet, straggler] = await Promise.all([
     candidatePool.length ? semanticPass(qvec, candidatePool, Math.max(k * 2, 20)) : Promise.resolve<string[]>([]),
     semanticPass(qvec, null, Math.max(k * 2, 20)),
@@ -318,6 +454,12 @@ export async function plan(question: string, f: PlanFilters = {}): Promise<PlanR
   let fused = rrf([
     { ids: structured, w: W_STRUCTURED },
     { ids: byAddress, w: W_STRUCTURED },
+    // Sender+intent matches are a RELATIONAL answer ("mail from Google about
+    // billing"), so they rank as primary evidence. Feeding them only into the
+    // candidate pool was not enough: semantic similarity then buried an invoice
+    // titled "We've received your payment for 6066-2765-7543" under prose that
+    // merely discussed spending (eval/ask-retrieval.test.ts caught this).
+    { ids: bySender, w: W_STRUCTURED },
     { ids: graph.messageIds, w: W_GRAPH },
     { ids: inSet, w: W_SEMANTIC },
     { ids: straggler, w: W_SEMANTIC * (cross ? 1.0 : 0.7) },

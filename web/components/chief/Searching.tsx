@@ -33,10 +33,21 @@ const STAGES: { at: number; label: (n: string | null) => string }[] = [
   { at: 3200, label: () => "Checking what connects to what" },
   { at: 5200, label: () => "Reading the ones that matter" },
   { at: 7400, label: () => "Writing your answer" },
+  // A cross-reference question fans out over several retrieval passes before
+  // synthesis — measured 47s (RD 2026-07-30). The ladder used to end at 7.4s,
+  // so a long question sat on one frozen line for forty seconds and read as a
+  // hang. These later rungs keep the state honest about what is happening.
+  { at: 12000, label: () => "Cross-checking the sources against each other" },
+  { at: 20000, label: () => "Working through a broad question — still going" },
+  { at: 35000, label: () => "Nearly there — assembling the citations" },
 ];
+
+/** Past this, show the clock. Below it the elapsed count is just noise. */
+const SHOW_CLOCK_AFTER_MS = 12000;
 
 export default function Searching({ size = 17 }: { size?: number }) {
   const [stage, setStage] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
   const [count, setCount] = useState<string | null>(null);
   const started = useRef(Date.now());
 
@@ -60,6 +71,7 @@ export default function Searching({ size = 17 }: { size?: number }) {
       let i = 0;
       for (let s = 0; s < STAGES.length; s++) if (ms >= STAGES[s].at) i = s;
       setStage(i);
+      setElapsed(Math.floor(ms / 1000));
     }, 300);
     return () => window.clearInterval(t);
   }, []);
@@ -80,6 +92,14 @@ export default function Searching({ size = 17 }: { size?: number }) {
           {STAGES[stage].label(count)}
           <span style={{ animation: "pulseDot 1.1s infinite" }}>…</span>
         </span>
+        {/* Elapsed is MEASURED, unlike the stage ladder — so it is the one
+            number here that is safe to show. It also tells the user the app is
+            alive during a long synthesis. */}
+        {elapsed * 1000 >= SHOW_CLOCK_AFTER_MS && (
+          <span style={{ fontFamily: FONT.mono, fontSize: size - 5, color: C.dim, marginLeft: "auto" }}>
+            {elapsed}s
+          </span>
+        )}
       </div>
 
       {/* Indeterminate sweep. Deliberately NOT a percentage — nothing here is

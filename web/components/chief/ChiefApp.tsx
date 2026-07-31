@@ -32,6 +32,7 @@ import ReleaseTag from "./ReleaseTag";
 import SendLivePill from "./SendLivePill";
 import AnswerMd from "./AnswerMd";
 import Searching from "./Searching";
+import ModelPicker from "./ModelPicker";
 import ActivityScreen from "./ActivityScreen";
 import SyncScreen from "./SyncScreen";
 import NeedsYouScreen from "./NeedsYouScreen";
@@ -163,6 +164,10 @@ export default function ChiefApp() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: text }),
+        // Bounded like mobile: a cross-reference Ask measured 47s warm, so this
+        // is generous — but an unbounded fetch can outlive the server's own
+        // limit and spin forever (RD 2026-07-30).
+        signal: AbortSignal.timeout(290_000),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Request failed");
@@ -434,6 +439,11 @@ function Topbar({ onAsk, onReset, asked }: { onAsk?: (q: string) => void; onRese
       <div /* The primary way into the record, on every screen (RD 2026-07-18) — the
            Ask screen's box, promoted into the header rather than a cramped pill. */
         style={{ position: "relative", flex: 1, maxWidth: 720, margin: "0 auto", display: "flex", alignItems: "center", gap: 9, background: "var(--c-sidebar, rgba(var(--ink),.04))", border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 6px 6px 18px", boxShadow: "0 6px 22px rgba(20,20,10,.07)" }}>
+        {/* the model badge sits just outside the pill's lower-right, mirroring
+            the mobile placement so both shells say the same thing (RD 2026-07-31) */}
+        <div style={{ position: "absolute", right: 8, top: "calc(100% + 5px)" }}>
+          <ModelPicker compact />
+        </div>
         <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth={2} strokeLinecap="round"><path d="M11 11m-7 0a7 7 0 1 0 14 0a7 7 0 1 0-14 0M21 21l-4.3-4.3" /></svg>
         <input
           value={v}

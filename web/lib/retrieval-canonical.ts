@@ -59,7 +59,11 @@ export async function searchSources(
 ): Promise<{ sources: Source[]; crossSource: boolean; applied?: AppliedFilters }> {
   const r = await plan(question, {
     topic: filters.topic, source: sourceFromStream(filters.stream),
-    since: filters.since, until: filters.until, k: filters.k ?? 8,
+    // Pass k through UNSET when the caller didn't specify one: plan() owns the
+    // default and widens it for a completeness question ("break down by month",
+    // "every invoice"). Defaulting to 8 here made that widening dead code — the
+    // model got 8 excerpts for a question needing a year of billing (RD 2026-07-30).
+    since: filters.since, until: filters.until, k: filters.k,
   });
   const applied: AppliedFilters = {};
   if (filters.topic) applied.topic = filters.topic;
@@ -82,7 +86,11 @@ export async function ask(question: string, filters: SearchOpts = {}): Promise<A
   }
   const r = await plan(question, {
     topic: filters.topic, source: sourceFromStream(filters.stream),
-    since: filters.since, until: filters.until, k: filters.k ?? 8,
+    // Pass k through UNSET when the caller didn't specify one: plan() owns the
+    // default and widens it for a completeness question ("break down by month",
+    // "every invoice"). Defaulting to 8 here made that widening dead code — the
+    // model got 8 excerpts for a question needing a year of billing (RD 2026-07-30).
+    since: filters.since, until: filters.until, k: filters.k,
   });
   const answer = await synthesize(question, r.sources);
   const applied: AppliedFilters = {};

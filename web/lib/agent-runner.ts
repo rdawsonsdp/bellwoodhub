@@ -29,6 +29,7 @@ import { fetchFocusSlice, fetchFocusSlicePlanned, type FocusHit } from "./agent-
 import { effectiveFocusQuery, type AgentOverrides } from "./agent-instruction";
 import { allAgents, getCustomAgent, overridesOf } from "./agent-registry";
 import { completeMeta } from "./agents/claude";
+import { getModelTierId } from "./model-preference";
 import { VOICE } from "./agents/voice";
 import type { Task } from "./agents/constants";
 
@@ -505,7 +506,7 @@ export async function runAgentLive(agent: DomainAgent): Promise<AgentRunResult> 
     // costs the entire run with "Unterminated string in JSON". Found the moment
     // an agent created in the app had real volume to summarize (2026-07-18);
     // the built-in desks hid it by being quiet.
-    const meta = await completeMeta({ task, system, user, maxTokens: 4096 });
+    const meta = await completeMeta({ task, system, user, maxTokens: 4096, tierId: await getModelTierId() });
     const raw = meta.text;
     let parsed: { digest?: { sourceMessageIds?: unknown[] }[] };
     try {

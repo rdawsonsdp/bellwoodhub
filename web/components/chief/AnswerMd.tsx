@@ -4,10 +4,16 @@
  * instead of raw markup (RD 2026-07-05). Hand-rolled: no dependency, no
  * dangerouslySetInnerHTML — every node is built as React elements.
  *
- * Covers exactly what the synthesizer emits: #–#### headings, **bold**,
- * *italic*, "- " bullets, "1." ordered lists, | pipe | tables |, --- rules,
- * and [n] citations, which stay the tappable chips that scroll to the
- * matching source card (ids `src-<n>`, same contract as before).
+ * Covers what the synthesizer emits: #–#### headings, **bold**, *italic*,
+ * `inline code`, ``` fenced code, [text](url) links, "- " bullets, "1." ordered
+ * lists, | pipe | tables |, --- rules, "> " callouts, and [n] citations, which
+ * stay the tappable chips that scroll to the matching source card (ids
+ * `src-<n>`, same contract as before).
+ *
+ * Anything that can be wide — tables and code — scrolls inside ITS OWN box.
+ * The page body must never scroll horizontally: on a phone an overflowing child
+ * widens the layout viewport and every 100%-width element above it renders at a
+ * fraction of the screen (RD 2026-07-30).
  */
 import type { CSSProperties, ReactNode } from "react";
 import { C, FONT, card, cite } from "@/lib/cos-design";
@@ -24,10 +30,18 @@ function citeChip(n: string, key: string): ReactNode {
   );
 }
 
-/** Inline pass: **bold**, *italic*, [n] chips. */
+const codeInline: CSSProperties = {
+  fontFamily: FONT.mono, fontSize: "0.88em", padding: "1.5px 5px", borderRadius: 5,
+  background: "rgba(var(--ink),.07)", border: `1px solid ${C.line2}`, overflowWrap: "anywhere",
+};
+
+/** Inline pass: `code`, **bold**, [text](url) links, [n] chips, *italic*.
+ *  Order matters — `code` first so markup inside it stays literal, and the link
+ *  alternative before the [n] citation so "[a](b)" is not mistaken for a chip
+ *  (the citation branch is digits-only, so the two cannot collide). */
 function inline(text: string, keyBase: string): ReactNode[] {
   const out: ReactNode[] = [];
-  const re = /(\*\*[^*]+\*\*|\[(\d+)\]|\*[^*\n]+\*)/g;
+  const re = /(`[^`\n]+`|\*\*[^*]+\*\*|\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)|\[(\d+)\]|\*[^*\n]+\*)/g;
   let last = 0;
   let i = 0;
   let m: RegExpExecArray | null;
@@ -35,8 +49,13 @@ function inline(text: string, keyBase: string): ReactNode[] {
     if (m.index > last) out.push(text.slice(last, m.index));
     const tok = m[0];
     const key = `${keyBase}-${i++}`;
-    if (tok.startsWith("**")) out.push(<b key={key} style={{ fontWeight: 700, color: C.text }}>{tok.slice(2, -2)}</b>);
-    else if (m[2] != null) out.push(citeChip(m[2], key));
+    if (tok.startsWith("`")) out.push(<code key={key} style={codeInline}>{tok.slice(1, -1)}</code>);
+    else if (tok.startsWith("**")) out.push(<b key={key} style={{ fontWeight: 700, color: C.text }}>{tok.slice(2, -2)}</b>);
+    else if (m[2] != null && m[3] != null) out.push(
+      <a key={key} href={m[3]} target="_blank" rel="noopener noreferrer"
+        style={{ color: C.gold, textDecoration: "underline", overflowWrap: "anywhere" }}>{m[2]}</a>,
+    );
+    else if (m[4] != null) out.push(citeChip(m[4], key));
     else out.push(<i key={key}>{tok.slice(1, -1)}</i>);
     last = m.index + tok.length;
   }
@@ -115,6 +134,43 @@ export default function AnswerMd({ text, size = 15.5 }: { text: string; size?: n
     if (/^-{3,}\s*$/.test(line)) {
       blocks.push(<div key={key} style={{ borderTop: `1px solid ${C.line2}`, margin: "12px 0" }} />);
       i++; continue;
+    }
+
+    // "? " clarifying question — the synthesizer asks back rather than guessing
+    // at an unrecognised vendor/person/account (RD 2026-07-30). Rendered as a
+    // distinct prompt so it reads as a question TO the user, not as an answer.
+    if (/^\?\s+/.test(line)) {
+      const q = line.replace(/^\?\s+/, "");
+      blocks.push(
+        <div key={key} style={{ margin: "12px 0 6px", border: `1px solid ${C.line}`, borderLeft: `3px solid ${C.blue ?? C.gold}`, borderRadius: "0 12px 12px 0", padding: "11px 13px", display: "grid", gap: 6, overflowWrap: "anywhere" }}>
+          <div style={{ fontFamily: FONT.mono, fontSize: size - 6, letterSpacing: ".08em", textTransform: "uppercase", color: C.dim, fontWeight: 700 }}>
+            One thing to confirm
+          </div>
+          <div style={{ ...body, fontSize: size - 0.5 }}>{inline(q, key)}</div>
+        </div>,
+      );
+      i++; continue;
+    }
+
+    // ``` fenced code — scrolls inside its own box like the table below, so a
+    // long line can never widen the page (the phone-overflow rule).
+    if (/^\s*```/.test(line)) {
+      const lang = line.replace(/^\s*```/, "").trim();
+      const buf: string[] = [];
+      i++;
+      while (i < lines.length && !/^\s*```/.test(lines[i])) { buf.push(lines[i]); i++; }
+      i++; // closing fence
+      blocks.push(
+        <div key={key} style={{ ...card, padding: 0, margin: "10px 0", overflow: "hidden" }}>
+          {lang && (
+            <div style={{ fontFamily: FONT.mono, fontSize: size - 5.5, letterSpacing: ".08em", textTransform: "uppercase", color: C.dim, padding: "7px 12px", borderBottom: `1px solid ${C.line2}` }}>{lang}</div>
+          )}
+          <pre className="scrl" style={{ margin: 0, padding: "11px 12px", overflowX: "auto", fontFamily: FONT.mono, fontSize: size - 3, lineHeight: 1.55, color: C.text2 }}>
+            <code>{buf.join("\n")}</code>
+          </pre>
+        </div>,
+      );
+      continue;
     }
 
     if (isTableRow(line)) {

@@ -21,6 +21,7 @@ import NoteButton from "./NoteButton";
 import ReleaseTag from "./ReleaseTag";
 import AnswerMd from "./AnswerMd";
 import Searching from "./Searching";
+import ModelPicker from "./ModelPicker";
 import ActivityScreen from "./ActivityScreen";
 import SyncScreen from "./SyncScreen";
 import { SyncProgressCard } from "./SyncProgress";
@@ -60,9 +61,22 @@ function useApi<T>(url: string | null): { data: T | null; loading: boolean; relo
   }, [url, tick]);
   return { data, loading, reload: () => setTick((t) => t + 1) };
 }
-async function postJson<T>(url: string, body: unknown): Promise<T | null> {
-  try { const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); return r.ok ? await r.json() : null; } catch { return null; }
+async function postJson<T>(url: string, body: unknown, timeoutMs?: number): Promise<T | null> {
+  try {
+    const r = await fetch(url, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      // Unbounded fetch is how a slow Ask became "it hung": on a phone the
+      // request can outlive the server's own limit, and the spinner never ends.
+      ...(timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
+    });
+    return r.ok ? await r.json() : null;
+  } catch { return null; }
 }
+
+/** Ask fans out across retrieval passes before synthesis — a cross-reference
+ *  question measured 47s warm. Generous headroom, but NOT unbounded: past this
+ *  the user gets an honest error instead of an endless spinner. */
+const ASK_TIMEOUT_MS = 290_000;
 
 /* ── icons ── */
 const I = {
@@ -1023,8 +1037,15 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
       topic: r.topic, stream: r.stream, docKind: getSourceType(r.typeKey)?.label ?? "Uploaded document",
       fields: r.fields, entities: r.entities,
     }));
-    const r = await postJson<AskResponse>("/api/ask", { question: Q, uploads });
-    setRes(r); setLoading(false);
+    const r = await postJson<AskResponse>("/api/ask", { question: Q, uploads }, ASK_TIMEOUT_MS);
+    setLoading(false);
+    // A null here means timeout, network drop, or a non-2xx — previously all
+    // three rendered as nothing at all, which reads as a hang. Say so instead.
+    if (!r) {
+      setErr("That question took too long to answer. Try narrowing it — a single topic or a shorter date range usually returns quickly.");
+      return;
+    }
+    setRes(r);
   }
   async function mic() {
     if (rec === "rec") { recRef.current?.stop(); return; }
@@ -1093,6 +1114,12 @@ function AskScreen({ autoVoice, textFocus }: { autoVoice?: boolean; textFocus?: 
           )}
           <button type="submit" disabled={loading || rec !== "idle"} style={{ padding: "10px 18px", borderRadius: 999, border: 0, background: loading ? "rgba(231,181,60,.85)" : C.gold, color: "#081627", fontWeight: 700, fontSize: 14, minWidth: loading ? 96 : undefined, animation: loading ? "bwPulse 1.2s ease-in-out infinite" : undefined }}>{loading ? "Searching…" : "Ask"}</button>
         </form>
+
+        {/* lower-right of the Ask box, like the Claude composer: which model is
+            answering, and a way to change it (RD 2026-07-31). */}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+          <ModelPicker />
+        </div>
 
         {/* voice-first: the primary control is hold-to-talk */}
         <button
@@ -1194,10 +1221,13 @@ function AskResult({ res }: { res: AskResponse }) {
       {res.sources && res.sources.length > 0 && (
         <div style={{ marginTop: 8 }}>
           <div style={{ fontFamily: FONT.mono, fontSize: 10.5, letterSpacing: ".1em", color: C.dim, textTransform: "uppercase", margin: "8px 0 10px" }}>Sources · {res.sources.length}</div>
-          <div style={{ display: "grid", gap: 9 }}>
+          {/* minWidth:0 on the track — a grid item defaults to min-content
+              width, so an unbreakable token inside still blows the track out
+              even with width:100% on the child (BUG-7 class, recurred in Ask). */}
+          <div style={{ display: "grid", gap: 9, minWidth: 0 }}>
             {res.sources.map((s: Source) => (
-              <button key={s.index} onClick={() => openEmail(s.messageId)} style={{ ...cardS, padding: 13, textAlign: "left", color: C.text, display: "block", width: "100%" }}>
-                <div style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center", flexWrap: "wrap" }}>
+              <button key={s.index} onClick={() => openEmail(s.messageId)} style={{ ...cardS, padding: 13, textAlign: "left", color: C.text, display: "block", width: "100%", minWidth: 0, overflow: "hidden" }}>
+                <div style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center", flexWrap: "wrap", minWidth: 0 }}>
                   <span style={chip(`[${s.index}]`, C.gold)}>[{s.index}]</span>
                   {s.docKind
                     ? <span style={chip(s.docKind, C.blue)}>{s.docKind}</span>
@@ -1206,8 +1236,13 @@ function AskResult({ res }: { res: AskResponse }) {
                   <span style={{ marginLeft: "auto", fontFamily: FONT.mono, fontSize: 10, color: C.dim }}>{s.date.slice(0, 10)}</span>
                   <Svg d="M7 17L17 7M9 7h8v8" w={12} />
                 </div>
-                <div style={{ fontSize: 13.5, fontWeight: 600 }}>{s.subject || "(no subject)"}</div>
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 5, lineHeight: 1.5 }}>{s.snippet}</div>
+                {/* Snippets are raw email bodies — quoted ">" chains and
+                    bracketed addresses are unbreakable tokens. Without this the
+                    card widens past the viewport, the layout viewport grows with
+                    it, and every 100%-width element above renders at a fraction
+                    of the screen (seen on iPhone, RD 2026-07-30). */}
+                <div style={{ fontSize: 13.5, fontWeight: 600, overflowWrap: "anywhere" }}>{s.subject || "(no subject)"}</div>
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 5, lineHeight: 1.5, overflowWrap: "anywhere" }}>{s.snippet}</div>
               </button>
             ))}
           </div>

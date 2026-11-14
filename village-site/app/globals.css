@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+/* Bellwood brand: navy and gold on white, the same palette as the Mayor's
+   Brief. Every text/background pair used on the site meets WCAG AA (4.5:1).
+   TODO(content): swap in the official village colors if they differ. */
+@theme {
+  --color-navy-950: #0a1c33;
+  --color-navy-900: #0f2947;
+  --color-navy-800: #14335c; /* Bellwood navy */
+  --color-navy-700: #1d4577;
+  --color-navy-600: #2a5a96;
+  --color-navy-200: #c5d5e9;
+  --color-navy-100: #e3ebf5;
+  --color-navy-50: #f2f6fb;
+
+  --color-gold-800: #6f4c05;
+  --color-gold-700: #8c6107; /* gold text on white: 5.4:1 */
+  --color-gold-600: #a9750c;
+  --color-gold-500: #c19a2e;
+  --color-gold-400: #e7b53c; /* gold on navy: 7.4:1 */
+  --color-gold-100: #f8ecc9;
+  --color-gold-50: #fdf8ea;
+
+  --color-paper: #faf7ef;
+  --color-ink: #201d14;
+  --color-ink-2: #3c3a2e;
+  --color-ink-3: #55523f;
+  --color-line: #d9d4c3;
+
+  --color-danger-700: #9b1c13;
+  --color-danger-50: #fdf0ee;
+  --color-success-700: #0a6b44;
+  --color-success-50: #ecf8f2;
+
+  --font-sans: var(--font-public-sans), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+:root {
+  --focus: var(--color-navy-800);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: #ffffff;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+}
+
+/* One clear focus ring everywhere. Dark sections switch the ring to gold. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.on-dark {
+  --focus: var(--color-gold-400);
+}
+
+/* Links inside running text are always underlined, never colour alone. */
+.prose-link,
+.prose a {
+  color: var(--color-navy-700);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+}
+.prose-link:hover,
+.prose a:hover {
+  color: var(--color-navy-950);
+  text-decoration-thickness: 3px;
+}
+.prose p + p,
+.prose ul,
+.prose ol {
+  margin-top: 1rem;
+}
+.prose ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+.prose ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+.prose h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-navy-900);
+}
+.prose h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,80 @@
+import type { PaymentType } from "@/lib/types";
+
+// The five outside payment sites the Village uses today. The Village does not
+// take payments on this website: every card sends people to the vendor.
+// TODO(content): confirm each vendor's official name and what residents need
+// to have ready, and whether any payment type has moved to a different vendor.
+export const placeholderPaymentTypes: PaymentType[] = [
+  {
+    id: "pay-water",
+    slug: "water-bill",
+    title: "Water bill",
+    title_es: "Factura de agua",
+    covers: "Your water and sewer bill for a Bellwood home or business.",
+    covers_es: "Su factura de agua y alcantarillado de una casa o negocio en Bellwood.",
+    need_ready: "Your water account number. It is printed at the top of your bill.",
+    need_ready_es: "Su número de cuenta de agua. Está impreso en la parte superior de su factura.",
+    vendor_name: "PanAm Portal",
+    vendor_url: "https://panamportal.com/bellwood/water-bill/",
+    sort_order: 1,
+    is_active: true,
+  },
+  {
+    id: "pay-sticker",
+    slug: "vehicle-sticker",
+    title: "Vehicle sticker",
+    title_es: "Calcomanía de vehículo",
+    covers: "Buy or renew the village sticker for a car, truck or motorcycle kept in Bellwood.",
+    covers_es: "Compre o renueve la calcomanía de la villa para un auto, camión o motocicleta en Bellwood.",
+    need_ready: "Your license plate number and your renewal notice, if you got one.",
+    need_ready_es: "Su número de placa y su aviso de renovación, si lo recibió.",
+    vendor_name: "PanAm Portal",
+    vendor_url: "https://panamportal.com/bellwood/vehicle-sticker/",
+    sort_order: 2,
+    is_active: true,
+  },
+  {
+    id: "pay-parking",
+    slug: "parking-tickets-fines",
+    title: "Parking tickets and code fines",
+    title_es: "Multas de estacionamiento y de ordenanzas",
+    covers:
+      "Parking tickets, ordinance tickets and building code fines. You can also ask for a hearing here.",
+    covers_es:
+      "Multas de estacionamiento, de ordenanzas y del código de construcción. Aquí también puede pedir una audiencia.",
+    need_ready: "The ticket or citation number, or your license plate number.",
+    need_ready_es: "El número de la multa o citación, o su número de placa.",
+    vendor_name: "DACRA Adjudication",
+    vendor_url: "https://bellwood-il.dacragov.com",
+    sort_order: 3,
+    is_active: true,
+  },
+  {
+    id: "pay-redlight",
+    slug: "red-light-speed-tickets",
+    title: "Red light and speed camera tickets",
+    title_es: "Multas de cámaras de semáforo y de velocidad",
+    covers: "A ticket mailed to you after a camera recorded your vehicle at a red light or speeding.",
+    covers_es: "Una multa enviada por correo después de que una cámara registró su vehículo en un semáforo en rojo o con exceso de velocidad.",
+    need_ready: "The notice number and PIN printed on the notice you got in the mail.",
+    need_ready_es: "El número de aviso y el PIN impresos en el aviso que recibió por correo.",
+    vendor_name: "RedLightViolations.com",
+    vendor_url: "https://secure.redlightviolations.com",
+    sort_order: 4,
+    is_active: true,
+  },
+  {
+    id: "pay-photonotice",
+    slug: "verra-redflex-notices",
+    title: "Verra Mobility or Redflex camera notices",
+    title_es: "Avisos de cámaras de Verra Mobility o Redflex",
+    covers: "A camera notice that names Verra Mobility or Redflex and tells you to pay at photonotice.com.",
+    covers_es: "Un aviso de cámara que menciona a Verra Mobility o Redflex y le indica pagar en photonotice.com.",
+    need_ready: "The notice number and PIN printed on your notice.",
+    need_ready_es: "El número de aviso y el PIN impresos en su aviso.",
+    vendor_name: "Verra Mobility (photonotice.com)",
+    vendor_url: "https://www.photonotice.com",
+    sort_order: 5,
+    is_active: true,
+  },
+];
